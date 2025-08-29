@@ -3,7 +3,7 @@ import { signIn } from 'next-auth/react'
 import { useState } from 'react'
 import Logo from '../components/logo'
 
-export default function TechLoginPage() {
+export default function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -13,10 +13,14 @@ export default function TechLoginPage() {
     setError('')
     const res = await signIn('credentials', {
       redirect: false,
-      username, password, role: 'TECH'
+      username,
+      password
     })
     if (res?.ok) {
-      window.location.href = '/tech'
+      const sessionRes = await fetch('/api/auth/session')
+      const session = await sessionRes.json()
+      const role = session?.user?.role
+      window.location.href = role === 'ADMIN' ? '/admin/panel' : '/tech'
     } else {
       setError('Identifiants invalides.')
     }
@@ -25,7 +29,7 @@ export default function TechLoginPage() {
   return (
     <div className="max-w-md mx-auto">
       <div className="mb-8 flex items-center justify-center gap-3">
-        <Logo subtitle="Espace Technicien" />
+        <Logo subtitle="Connexion" />
       </div>
       <form onSubmit={onSubmit} className="card space-y-4">
         <div>
@@ -38,7 +42,7 @@ export default function TechLoginPage() {
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button className="btn btn-primary w-full" type="submit">Se connecter</button>
-        <p className="text-xs text-gray-500">Accès réservé aux techniciens ENGEL.</p>
+        <p className="text-xs text-gray-500">Accès réservé aux utilisateurs ENGEL.</p>
       </form>
     </div>
   )

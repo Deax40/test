@@ -9,6 +9,8 @@ export default function TechPage() {
   const [lieu, setLieu] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0,16))
   const [actorName, setActorName] = useState('')
+  const [etat, setEtat] = useState('CORRECT')
+  const [photo, setPhoto] = useState(null)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
@@ -20,16 +22,24 @@ export default function TechPage() {
   async function submit(e) {
     e.preventDefault()
     setMessage('')
+    const formData = new FormData()
+    formData.append('qrData', qrData)
+    formData.append('lieu', lieu)
+    formData.append('date', date)
+    formData.append('actorName', actorName)
+    formData.append('etat', etat)
+    if (photo) formData.append('photo', photo)
     const res = await fetch('/api/logs', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ qrData, lieu, date, actorName })
+      body: formData
     })
     if (res.ok) {
       setMessage('Enregistré ✅')
       setQrData('')
       setLieu('')
       setActorName('')
+      setEtat('CORRECT')
+      setPhoto(null)
       setDate(new Date().toISOString().slice(0,16))
     } else {
       const t = await res.text()
@@ -72,6 +82,19 @@ export default function TechPage() {
           <label className="label">Date & heure</label>
           <input className="input" type="datetime-local" value={date} onChange={e=>setDate(e.target.value)} required/>
         </div>
+        <div>
+          <label className="label">État</label>
+          <select className="input" value={etat} onChange={e=>setEtat(e.target.value)}>
+            <option value="CORRECT">État correct</option>
+            <option value="ENDOMMAGE">État endommagé</option>
+          </select>
+        </div>
+        {etat === 'ENDOMMAGE' && (
+          <div>
+            <label className="label">Photo</label>
+            <input className="input" type="file" accept="image/*" onChange={e=>setPhoto(e.target.files[0] || null)} required/>
+          </div>
+        )}
         <div>
           <label className="label">Qui le fait</label>
           <input className="input" value={actorName} onChange={e=>setActorName(e.target.value)} placeholder="Nom du technicien" required/>

@@ -18,7 +18,7 @@ export default function RootLayout({ children }) {
               </a>
               <nav className="text-sm text-muted">
                 <a className="mr-4 hover:underline" href="/">Technicien</a>
-                <a className="hover:underline" href="/admin">Admin</a>
+                <a className="hover:underline" href="/admin/panel">Admin</a>
               </nav>
             </div>
           </header>
