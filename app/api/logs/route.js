@@ -1,6 +1,7 @@
 import { prisma } from '../../../lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../lib/auth'
+import nodemailer from 'nodemailer'
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
@@ -61,5 +62,36 @@ export async function POST(req) {
       createdBy: { connect: { username: session.user.username } }
     }
   })
+  if (etat === 'ENDOMMAGE') {
+    try {
+      const admins = await prisma.user.findMany({
+        where: { role: 'ADMIN', NOT: { email: null } },
+        select: { email: true, name: true }
+      })
+      if (admins.length > 0 && photoBuffer) {
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: Number(process.env.SMTP_PORT || 587),
+          secure: false,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+          }
+        })
+        const to = admins.map(a => a.email).join(',')
+        await transporter.sendMail({
+          from: process.env.SMTP_FROM || process.env.SMTP_USER,
+          to,
+          subject: 'Équipement endommagé signalé',
+          text: `Un équipement a été scanné en état endommagé par ${actorName} (${session.user.username}).\nQR: ${qrData}\nLieu: ${lieu}\nDate: ${new Date(date).toLocaleString('fr-FR')}`,
+          attachments: [
+            { filename: `photo.${photoType?.split('/')[1] || 'jpg'}`, content: photoBuffer, contentType: photoType || 'image/jpeg' }
+          ]
+        })
+      }
+    } catch (err) {
+      console.error('Error sending email', err)
+    }
+  }
   return Response.json({ ok: true, log })
 }
