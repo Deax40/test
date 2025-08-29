@@ -4,11 +4,8 @@ import { useState } from 'react'
 export default function AddUserForm() {
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
- codex/add-technician-status-section-and-update-admin-page-wml5vj
   const [email, setEmail] = useState('')
-
- main
+  const [password, setPassword] = useState('')
   const [role, setRole] = useState('TECH')
   const [msg, setMsg] = useState('')
 
@@ -18,19 +15,11 @@ export default function AddUserForm() {
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-codex/add-technician-status-section-and-update-admin-page-wml5vj
       body: JSON.stringify({ name, username, email, password, role })
     })
     if (res.ok) {
       setMsg('Utilisateur ajouté avec succès.')
       setName(''); setUsername(''); setEmail(''); setPassword(''); setRole('TECH')
-
-      body: JSON.stringify({ name, username, password, role })
-    })
-    if (res.ok) {
-      setMsg('Utilisateur ajouté.')
-      setName(''); setUsername(''); setPassword(''); setRole('TECH')
- main
       window.location.reload()
     } else {
       setMsg('Erreur: ' + await res.text())
@@ -38,11 +27,7 @@ codex/add-technician-status-section-and-update-admin-page-wml5vj
   }
 
   return (
- codex/add-technician-status-section-and-update-admin-page-wml5vj
     <form onSubmit={onSubmit} className="grid gap-3 md:grid-cols-6 items-end">
-
-    <form onSubmit={onSubmit} className="grid gap-3 md:grid-cols-5 items-end">
-main
       <div>
         <label className="label">Nom</label>
         <input className="input" value={name} onChange={e=>setName(e.target.value)} placeholder="Nom complet" required/>
@@ -52,13 +37,10 @@ main
         <input className="input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="adminX" required/>
       </div>
       <div>
-codex/add-technician-status-section-and-update-admin-page-wml5vj
         <label className="label">Email</label>
         <input className="input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@example.com" required/>
       </div>
       <div>
-
- main
         <label className="label">Mot de passe</label>
         <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" required/>
       </div>
@@ -70,11 +52,7 @@ codex/add-technician-status-section-and-update-admin-page-wml5vj
         </select>
       </div>
       <button className="btn btn-primary">Ajouter</button>
- codex/add-technician-status-section-and-update-admin-page-wml5vj
       {msg && <p className="text-sm col-span-6">{msg}</p>}
-
-      {msg && <p className="text-sm col-span-5">{msg}</p>}
-main
     </form>
   )
 }

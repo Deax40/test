@@ -63,11 +63,15 @@ export default async function AdminPanelPage() {
                   <td className="px-3 py-2 text-sm">{log.lieu}</td>
                   <td className="px-3 py-2 text-sm">{log.actorName} ({log.createdBy?.username || '—'})</td>
                   <td className="px-3 py-2 text-sm">{log.etat === 'ENDOMMAGE' ? 'Endommagé' : 'Correct'}</td>
+ codex/add-technician-status-section-and-update-admin-page-mp44d9
+                  <td className="px-3 py-2 text-sm">{log.photoType ? <a className="underline" href={`/api/logs/${log.id}/photo`} target="_blank" rel="noopener noreferrer">Voir</a> : '—'}</td>
+
                   <td className="px-3 py-2 text-sm">
                     {log.photoType ? (
                       <a className="underline" href={`/api/logs/${log.id}/photo`} target="_blank" rel="noopener noreferrer">Voir</a>
                     ) : '—'}
                   </td>
+ main
                 </tr>
               ))}
             </tbody>
@@ -87,9 +91,13 @@ export default async function AdminPanelPage() {
               <li key={u.id} className="flex items-center justify-between p-3">
                 <div className="text-sm">
                   <div className="font-medium">{u.name}</div>
+ codex/add-technician-status-section-and-update-admin-page-mp44d9
+                  <div className="text-gray-500">@{u.username} • {u.email || '—'} • {u.role === 'ADMIN' ? 'Admin' : 'Tech'} • créé le {new Date(u.createdAt).toLocaleDateString('fr-FR')}</div>
+
                   <div className="text-gray-500">
                     @{u.username} • {u.email || '—'} • {u.role === 'ADMIN' ? 'Admin' : 'Tech'} • créé le {new Date(u.createdAt).toLocaleDateString('fr-FR')}
                   </div>
+ main
                 </div>
                 <DeleteButton id={u.id} />
               </li>
