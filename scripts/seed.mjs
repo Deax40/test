@@ -10,6 +10,7 @@ async function main() {
     create: {
       username: 'admin',
       name: 'Administrateur',
+      email: 'admin@example.com',
       role: 'ADMIN',
       passwordHash: await bcrypt.hash('admin123', 10),
     }
@@ -21,6 +22,7 @@ async function main() {
     create: {
       username: 'tech',
       name: 'Technicien Démo',
+      email: 'tech@example.com',
       role: 'TECH',
       passwordHash: await bcrypt.hash('tech123', 10),
     }

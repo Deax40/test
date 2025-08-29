@@ -12,6 +12,7 @@ model User {
   id           String   @id @default(cuid())
   username     String   @unique
   name         String
+  email        String?  @unique
   passwordHash String
   role         String   @default("TECH") // "TECH" ou "ADMIN" defaut automatiquement en temps que tech
   createdAt    DateTime @default(now())
@@ -24,6 +25,9 @@ model Log {
   lieu         String
   date         DateTime
   actorName    String
+  etat         String   @default("CORRECT")
+  photo        Bytes?
+  photoType    String?
   createdAt    DateTime @default(now())
   createdById  String?
   createdBy    User?    @relation("UserLogs", fields: [createdById], references: [id])
