@@ -24,6 +24,9 @@ model Log {
   lieu         String
   date         DateTime
   actorName    String
+  etat         String   @default("CORRECT")
+  photo        Bytes?
+  photoType    String?
   createdAt    DateTime @default(now())
   createdById  String?
   createdBy    User?    @relation("UserLogs", fields: [createdById], references: [id])
