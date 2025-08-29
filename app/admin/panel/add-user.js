@@ -4,8 +4,8 @@ import { useState } from 'react'
 export default function AddUserForm() {
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [role, setRole] = useState('TECH')
   const [msg, setMsg] = useState('')
 
