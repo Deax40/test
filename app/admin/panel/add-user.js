@@ -18,7 +18,7 @@ export default function AddUserForm() {
       body: JSON.stringify({ name, username, email, password, role })
     })
     if (res.ok) {
-      setMsg('Utilisateur ajouté.')
+      setMsg('Utilisateur ajouté avec succès.')
       setName(''); setUsername(''); setEmail(''); setPassword(''); setRole('TECH')
       window.location.reload()
     } else {
