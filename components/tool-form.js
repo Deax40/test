@@ -21,11 +21,37 @@ export default function ToolForm({ tool }) {
     transporteur: '',
     tracking: ''
   })
+  const [saving, setSaving] = useState(false)
 
   const update = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      const data = new FormData()
+      data.append('tool', tool)
+      data.append('status', status)
+      data.append('lieu', form.lieu)
+      data.append('client', form.client)
+      data.append('etat', form.etat)
+      data.append('transporteur', form.transporteur)
+      data.append('tracking', form.tracking)
+      const res = await fetch('/api/tool-logs', { method: 'POST', body: data })
+      if (res.ok) {
+        setStatus('')
+        setForm({ lieu: '', client: '', etat: '', transporteur: '', tracking: '' })
+        alert('Enregistrement effectué')
+      } else {
+        alert('Erreur lors de l\'enregistrement')
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <form className="card mt-4 space-y-4">
+    <form className="card mt-4 space-y-4" onSubmit={handleSubmit}>
       <h3 className="font-semibold">{tool}</h3>
       <div>
         <label className="label">Status</label>
@@ -88,7 +114,9 @@ export default function ToolForm({ tool }) {
         </>
       )}
 
-      <button className="btn btn-primary" type="submit">Enregistrer</button>
+      <button className="btn btn-primary" type="submit" disabled={saving}>
+        {saving ? 'Enregistrement...' : 'Enregistrer'}
+      </button>
     </form>
   )
 }
