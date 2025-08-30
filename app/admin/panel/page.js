@@ -4,6 +4,7 @@ import { prisma } from '../../../lib/prisma'
 import Link from 'next/link'
 import DeleteButton from './delete-button'
 import AddUserForm from './add-user'
+import Nav from '../../../components/nav'
 
 async function getData() {
   const logs = await prisma.log.findMany({
@@ -45,11 +46,9 @@ export default async function AdminPanelPage() {
 
   return (
     <div className="space-y-8">
+      <Nav active="admin" />
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Journal des scans (du plus ancien au plus récent)</h2>
-          <a className="btn" href="/api/auth/signout">Se déconnecter</a>
-        </div>
+        <h2 className="text-lg font-semibold mb-4">Journal des scans (du plus ancien au plus récent)</h2>
         <div className="overflow-x-auto">
           <table className="table">
             <thead className="bg-gray-100">
