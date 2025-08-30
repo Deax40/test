@@ -20,6 +20,21 @@ async function getData() {
       createdBy: { select: { username: true, name: true } }
     }
   })
+  const toolLogs = await prisma.toolLog.findMany({
+    orderBy: { createdAt: 'asc' },
+    select: {
+      id: true,
+      tool: true,
+      status: true,
+      lieu: true,
+      client: true,
+      etat: true,
+      transporteur: true,
+      tracking: true,
+      createdAt: true,
+      createdBy: { select: { username: true, name: true } }
+    }
+  })
   const users = await prisma.user.findMany({
     select: {
       id: true,
@@ -30,7 +45,7 @@ async function getData() {
       createdAt: true
     }
   })
-  return { logs, users }
+  return { logs, toolLogs, users }
 }
 
 export default async function AdminPanelPage() {
@@ -42,7 +57,7 @@ export default async function AdminPanelPage() {
       </div>
     )
   }
-  const { logs, users } = await getData()
+  const { logs, toolLogs, users } = await getData()
 
   return (
     <div className="space-y-8">
@@ -81,6 +96,39 @@ export default async function AdminPanelPage() {
                       </a>
                     ) : '—'}
                   </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="card">
+        <h2 className="text-lg font-semibold mb-4">Journal des outils</h2>
+        <div className="overflow-x-auto">
+          <table className="table">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Date</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Outil</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Status</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Client</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Lieu</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Transporteur</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Tracking</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Technicien</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {toolLogs.map(log => (
+                <tr key={log.id}>
+                  <td className="px-3 py-2 text-sm">{new Date(log.createdAt).toLocaleString('fr-FR')}</td>
+                  <td className="px-3 py-2 text-sm">{log.tool}</td>
+                  <td className="px-3 py-2 text-sm">{log.status}</td>
+                  <td className="px-3 py-2 text-sm">{log.client || '—'}</td>
+                  <td className="px-3 py-2 text-sm">{log.lieu || '—'}</td>
+                  <td className="px-3 py-2 text-sm">{log.transporteur || '—'}</td>
+                  <td className="px-3 py-2 text-sm">{log.tracking || '—'}</td>
+                  <td className="px-3 py-2 text-sm">{log.createdBy?.name} ({log.createdBy?.username || '—'})</td>
                 </tr>
               ))}
             </tbody>
