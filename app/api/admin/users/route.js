@@ -1,24 +1,28 @@
-// app/api/admin/users/route.ts  (ou .js si tu veux rester en JS)
-import { prisma } from "@/lib/prisma";           // idéalement via alias @
+// app/api/admin/users/route.js
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
-export const runtime = "nodejs"; // important pour bcryptjs
+export const runtime = "nodejs"; // nécessaire pour bcryptjs (pas d'Edge)
 
+// GET /api/admin/users
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
   const users = await prisma.user.findMany({
     select: { id: true, username: true, name: true, email: true, role: true, createdAt: true },
   });
+
   return NextResponse.json({ users });
 }
 
-export async function POST(req: Request) {
+// POST /api/admin/users
+export async function POST(req) {
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -46,6 +50,7 @@ export async function POST(req: Request) {
   if (byEmail) return NextResponse.json({ error: "Email already exists" }, { status: 409 });
 
   const passwordHash = await bcrypt.hash(password, 10);
+
   const user = await prisma.user.create({
     data: { username, name, email, passwordHash, role },
     select: { id: true, username: true, name: true, email: true, role: true, createdAt: true },
