@@ -1,10 +1,11 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { signOut, useSession } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { Scanner } from '@yudiel/react-qr-scanner'
+import Nav from '../../components/nav'
 
 export default function ScanPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const [qrData, setQrData] = useState('')
   const [lieu, setLieu] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0,16))
@@ -48,65 +49,60 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Scanner un QR code</h2>
-          <div className="flex gap-2">
-            {session?.user?.role === 'ADMIN' && (
-              <a className="btn" href="/admin/panel">Administration</a>
-            )}
-            <button className="btn" onClick={() => signOut({ callbackUrl: '/' })}>Se déconnecter</button>
+    <div>
+      <Nav active="scan" />
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="card">
+          <h2 className="text-lg font-semibold mb-4">Scanner un QR code</h2>
+          <div className="rounded-xl overflow-hidden bg-gray-100">
+            <Scanner
+              onScan={(result) => {
+                if (!result) return
+                const text = Array.isArray(result)
+                  ? (result[0]?.rawValue || result[0]?.text)
+                  : (result?.rawValue || result?.text || String(result))
+                if (text) setQrData(text)
+              }}
+              onError={(err) => console.error(err)}
+            />
           </div>
+          <p className="text-xs text-gray-500 mt-2">Autorisez l'accès à la caméra. Si besoin, vous pouvez aussi coller manuellement la donnée scannée ci-dessous.</p>
         </div>
-        <div className="rounded-xl overflow-hidden bg-gray-100">
-          <Scanner
-            onScan={(result) => {
-              if (!result) return;
-              const text = Array.isArray(result)
-                ? (result[0]?.rawValue || result[0]?.text)
-                : (result?.rawValue || result?.text || String(result));
-              if (text) setQrData(text);
-            }}
-            onError={(err) => console.error(err)}
-          />
-        </div>
-        <p className="text-xs text-gray-500 mt-2">Autorisez l'accès à la caméra. Si besoin, vous pouvez aussi coller manuellement la donnée scannée ci-dessous.</p>
-      </div>
-      <form onSubmit={submit} className="card space-y-4">
-        <h2 className="text-lg font-semibold">Détails</h2>
-        <div>
-          <label className="label">Donnée QR</label>
-          <textarea className="input" rows={3} value={qrData} onChange={e=>setQrData(e.target.value)} placeholder="Contenu du QR code" required/>
-        </div>
-        <div>
-          <label className="label">Lieu</label>
-          <input className="input" value={lieu} onChange={e=>setLieu(e.target.value)} placeholder="Entrepôt A, allée 3" required/>
-        </div>
-        <div>
-          <label className="label">Date & heure</label>
-          <input className="input" type="datetime-local" value={date} onChange={e=>setDate(e.target.value)} required/>
-        </div>
-        <div>
-          <label className="label">État</label>
-          <select className="input" value={etat} onChange={e=>setEtat(e.target.value)}>
-            <option value="CORRECT">État correct</option>
-            <option value="ENDOMMAGE">État endommagé</option>
-          </select>
-        </div>
-        {etat === 'ENDOMMAGE' && (
+        <form onSubmit={submit} className="card space-y-4">
+          <h2 className="text-lg font-semibold">Détails</h2>
           <div>
-            <label className="label">Photo</label>
-            <input className="input" type="file" accept="image/*" onChange={e=>setPhoto(e.target.files[0] || null)} required/>
+            <label className="label">Donnée QR</label>
+            <textarea className="input" rows={3} value={qrData} onChange={e=>setQrData(e.target.value)} placeholder="Contenu du QR code" required/>
           </div>
-        )}
-        <div>
-          <label className="label">Qui le fait</label>
-          <input className="input" value={actorName} onChange={e=>setActorName(e.target.value)} placeholder="Nom du technicien" required/>
-        </div>
-        {message && <p className={`text-sm ${message.startsWith('Erreur') ? 'text-red-600' : 'text-green-600'}`}>{message}</p>}
-        <button className="btn btn-primary w-full">Enregistrer</button>
-      </form>
+          <div>
+            <label className="label">Lieu</label>
+            <input className="input" value={lieu} onChange={e=>setLieu(e.target.value)} placeholder="Entrepôt A, allée 3" required/>
+          </div>
+          <div>
+            <label className="label">Date & heure</label>
+            <input className="input" type="datetime-local" value={date} onChange={e=>setDate(e.target.value)} required/>
+          </div>
+          <div>
+            <label className="label">État</label>
+            <select className="input" value={etat} onChange={e=>setEtat(e.target.value)}>
+              <option value="CORRECT">État correct</option>
+              <option value="ENDOMMAGE">État endommagé</option>
+            </select>
+          </div>
+          {etat === 'ENDOMMAGE' && (
+            <div>
+              <label className="label">Photo</label>
+              <input className="input" type="file" accept="image/*" onChange={e=>setPhoto(e.target.files[0] || null)} required/>
+            </div>
+          )}
+          <div>
+            <label className="label">Qui le fait</label>
+            <input className="input" value={actorName} onChange={e=>setActorName(e.target.value)} placeholder="Nom du technicien" required/>
+          </div>
+          {message && <p className={`text-sm ${message.startsWith('Erreur') ? 'text-red-600' : 'text-green-600'}`}>{message}</p>}
+          <button className="btn btn-primary w-full">Enregistrer</button>
+        </form>
+      </div>
     </div>
   )
 }
