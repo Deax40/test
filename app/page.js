@@ -17,10 +17,7 @@ export default function LoginPage() {
       password
     })
     if (res?.ok) {
-      const sessionRes = await fetch('/api/auth/session')
-      const session = await sessionRes.json()
-      const role = session?.user?.role
-      window.location.href = role === 'ADMIN' ? '/admin/panel' : '/tech'
+      window.location.href = '/scan'
     } else {
       setError('Identifiants invalides.')
     }
