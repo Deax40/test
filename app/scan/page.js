@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { signOut, useSession } from 'next-auth/react'
 import { Scanner } from '@yudiel/react-qr-scanner'
 
-export default function TechPage() {
+export default function ScanPage() {
   const { data: session, status } = useSession()
   const [qrData, setQrData] = useState('')
   const [lieu, setLieu] = useState('')
@@ -52,7 +52,12 @@ export default function TechPage() {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Scanner un QR code</h2>
-          <button className="btn" onClick={() => signOut({ callbackUrl: '/' })}>Se déconnecter</button>
+          <div className="flex gap-2">
+            {session?.user?.role === 'ADMIN' && (
+              <a className="btn" href="/admin/panel">Administration</a>
+            )}
+            <button className="btn" onClick={() => signOut({ callbackUrl: '/' })}>Se déconnecter</button>
+          </div>
         </div>
         <div className="rounded-xl overflow-hidden bg-gray-100">
           <Scanner

@@ -6,10 +6,9 @@ Application **Next.js** pour ENGEL permettant aux **techniciens** de scanner des
 
 ## Fonctions
 
-- Login **Technicien** (page d'accueil `/`)
-- Page **Scan** `/tech` avec lecteur de QR (mobile/desktop)
+- Login (page d'accueil `/`)
+- Page **Scan** `/scan` avec lecteur de QR (mobile/desktop)
 - Persistance des logs en base (Prisma)
-- Login **Admin** `/admin`
 - **Admin Panel** `/admin/panel` : liste des logs (du plus ancien au plus récent), ajout et suppression d’administrateurs
 - **RBAC** : seules les personnes Admin peuvent gérer les admins et voir les logs
 - **UI épurée** avec TailwindCSS
@@ -50,10 +49,10 @@ npm run dev
 
 5. Accès :
 
-- Technicien (login sur `/`) :
+- Technicien :
   - **user**: `tech`
   - **pass**: `tech123`
-- Administrateur (login sur `/admin`) :
+- Administrateur :
   - **user**: `admin`
   - **pass**: `admin123`
 
@@ -75,14 +74,14 @@ npm run dev
 
 4. Après déploiement, exécutez (si Postgres) `npm run prisma:deploy` via un job ou un shell (ou activez les migrations Prisma automatiques).
 
-5. Connectez-vous sur `/admin` avec l’admin seedé et ajoutez de nouveaux admins.
+5. Connectez-vous sur `/` avec l’admin seedé et ajoutez de nouveaux admins.
 
 ---
 
 ## ✏️ Personnalisation
 
 - **Branding** : modifiez les composants dans `components/` et les couleurs dans `app/globals.css`.
-- **Champs du log** : ajustez `prisma/schema.prisma` et les formulaires dans `app/tech/page.js`.
+- **Champs du log** : ajustez `prisma/schema.prisma` et les formulaires dans `app/scan/page.js`.
 - **Ordre des logs** : dans `app/admin/panel/page.js`, changez `orderBy: { createdAt: 'asc' }` en `'desc'` si vous préférez du plus récent au plus ancien.
 
 ---
