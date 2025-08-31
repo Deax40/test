@@ -53,14 +53,19 @@ export default function CarePage() {
         <ul className="divide-y">
           {results.map(t => (
             <li key={t.id}>
-              <button className="w-full p-2 text-left hover:bg-gray-50" onClick={() => setSelected(t.name)}>{t.name}</button>
+              <button
+                className="w-full p-2 text-left hover:bg-gray-50"
+                onClick={() => setSelected(selected === t.id ? null : t.id)}
+              >
+                {t.name}
+              </button>
+              {selected === t.id && <ToolForm tool={t.name} />}
             </li>
           ))}
           {results.length === 0 && (
             <li className="p-2 text-sm text-gray-500">Aucun résultat</li>
           )}
         </ul>
-        {selected && <ToolForm tool={selected} />}
       </div>
     </div>
   )

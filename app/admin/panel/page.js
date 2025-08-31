@@ -65,69 +65,72 @@ export default async function AdminPanelPage() {
   return (
     <div className="space-y-8">
       <Nav active="admin" />
-      <div className="card">
-        <h2 className="text-lg font-semibold mb-2">Journal des scans (du plus ancien au plus récent)</h2>
-        <div className="mb-4">
-          <p className="text-xs text-gray-500">Le journal est remis à zéro après 7 scans.</p>
-          <p className="text-xs text-gray-500 mt-1">Voulez-vous enregistrer la base en Excel ou TXT ?</p>
-          <div className="mt-2 space-x-2">
-            <a className="btn px-3 py-1 text-sm" href="/api/logs?format=csv" target="_blank" rel="noopener noreferrer">Excel</a>
-            <a className="btn px-3 py-1 text-sm" href="/api/logs?format=txt" target="_blank" rel="noopener noreferrer">TXT</a>
+      <details className="card">
+        <summary className="text-lg font-semibold cursor-pointer">Journal des scans (du plus ancien au plus récent)</summary>
+        <div className="mt-2">
+          <div className="mb-4">
+            <p className="text-xs text-gray-500">Le journal est remis à zéro après 7 scans.</p>
+            <p className="text-xs text-gray-500 mt-1">Voulez-vous enregistrer la base en Excel ou TXT ?</p>
+            <div className="mt-2 space-x-2">
+              <a className="btn px-3 py-1 text-sm" href="/api/logs?format=csv" target="_blank" rel="noopener noreferrer">Excel</a>
+              <a className="btn px-3 py-1 text-sm" href="/api/logs?format=txt" target="_blank" rel="noopener noreferrer">TXT</a>
+            </div>
           </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Date</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">QR</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Lieu</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Technicien</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">État</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Problème</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Photo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {logs.map(log => (
-                <tr key={log.id}>
-                  <td className="px-3 py-2 text-sm">{new Date(log.date).toLocaleString('fr-FR')}</td>
-                  <td className="px-3 py-2 text-sm max-w-[300px] truncate" title={log.qrData}>{log.qrData}</td>
-                  <td className="px-3 py-2 text-sm">{log.lieu}</td>
-                  <td className="px-3 py-2 text-sm">{log.actorName} ({log.createdBy?.username || '—'})</td>
-                  <td className="px-3 py-2 text-sm">{log.etat === 'PROBLEME' ? 'Problème' : 'RAS'}</td>
-                  <td className="px-3 py-2 text-sm">{log.probleme || '—'}</td>
-                  <td className="px-3 py-2 text-sm">
-                    {log.photoType ? (
-                      <a
-                        className="underline"
-                        href={`/api/logs/${log.id}/photo`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Voir
-                      </a>
-                    ) : '—'}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="table">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Date</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">QR</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Lieu</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Technicien</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">État</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Problème</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Photo</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div className="card">
-        <h2 className="text-lg font-semibold mb-2">Journal des outils</h2>
-        <div className="mb-4">
-          <p className="text-xs text-gray-500">Le journal est remis à zéro après 10 scans.</p>
-          <p className="text-xs text-gray-500 mt-1">Voulez-vous enregistrer la base en Excel ou TXT ?</p>
-          <div className="mt-2 space-x-2">
-            <a className="btn px-3 py-1 text-sm" href="/api/tool-logs?format=csv" target="_blank" rel="noopener noreferrer">Excel</a>
-            <a className="btn px-3 py-1 text-sm" href="/api/tool-logs?format=txt" target="_blank" rel="noopener noreferrer">TXT</a>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {logs.map(log => (
+                  <tr key={log.id}>
+                    <td className="px-3 py-2 text-sm">{new Date(log.date).toLocaleString('fr-FR')}</td>
+                    <td className="px-3 py-2 text-sm max-w-[300px] truncate" title={log.qrData}>{log.qrData}</td>
+                    <td className="px-3 py-2 text-sm">{log.lieu}</td>
+                    <td className="px-3 py-2 text-sm">{log.actorName} ({log.createdBy?.username || '—'})</td>
+                    <td className="px-3 py-2 text-sm">{log.etat === 'PROBLEME' ? 'Problème' : 'RAS'}</td>
+                    <td className="px-3 py-2 text-sm">{log.probleme || '—'}</td>
+                    <td className="px-3 py-2 text-sm">
+                      {log.photoType ? (
+                        <a
+                          className="underline"
+                          href={`/api/logs/${log.id}/photo`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Voir
+                        </a>
+                      ) : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead className="bg-gray-100">
+      </details>
+      <details className="card">
+        <summary className="text-lg font-semibold cursor-pointer">Journal des outils</summary>
+        <div className="mt-2">
+          <div className="mb-4">
+            <p className="text-xs text-gray-500">Le journal est remis à zéro après 10 scans.</p>
+            <p className="text-xs text-gray-500 mt-1">Voulez-vous enregistrer la base en Excel ou TXT ?</p>
+            <div className="mt-2 space-x-2">
+              <a className="btn px-3 py-1 text-sm" href="/api/tool-logs?format=csv" target="_blank" rel="noopener noreferrer">Excel</a>
+              <a className="btn px-3 py-1 text-sm" href="/api/tool-logs?format=txt" target="_blank" rel="noopener noreferrer">TXT</a>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="table">
+              <thead className="bg-gray-100">
                 <tr>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Date</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Outil</th>
@@ -156,39 +159,44 @@ export default async function AdminPanelPage() {
                 ))}
               </tbody>
             </table>
+          </div>
         </div>
-      </div>
+      </details>
 
-      <div className="card">
-        <h2 className="text-lg font-semibold mb-4">Gestion des outils</h2>
-        <ManageTools />
-      </div>
+      <details className="card">
+        <summary className="text-lg font-semibold cursor-pointer">Gestion des outils</summary>
+        <div className="mt-2">
+          <ManageTools />
+        </div>
+      </details>
 
-      <div className="card">
-        <h2 className="text-lg font-semibold mb-4">Gestion des utilisateurs</h2>
-        <AddUserForm />
-        <p className="text-xs text-gray-500 mt-2">Seuls les comptes ADMIN peuvent ajouter/supprimer des utilisateurs.</p>
+      <details className="card">
+        <summary className="text-lg font-semibold cursor-pointer">Gestion des utilisateurs</summary>
+        <div className="mt-2">
+          <AddUserForm />
+          <p className="text-xs text-gray-500 mt-2">Seuls les comptes ADMIN peuvent ajouter/supprimer des utilisateurs.</p>
 
-        <div className="mt-6">
-          <h3 className="font-medium mb-2">Utilisateurs existants</h3>
-          <ul className="divide-y divide-gray-200 rounded-xl border">
-            {users.map(u => (
-              <li key={u.id} className="flex items-center justify-between p-3">
-                <div className="text-sm">
-                  <div className="font-medium">{u.name}</div>
-                  <div className="text-gray-500">
-                    @{u.username} • {u.email || '—'} • {u.role === 'ADMIN' ? 'Admin' : 'Tech'} • créé le {new Date(u.createdAt).toLocaleDateString('fr-FR')}
+          <div className="mt-6">
+            <h3 className="font-medium mb-2">Utilisateurs existants</h3>
+            <ul className="divide-y divide-gray-200 rounded-xl border">
+              {users.map(u => (
+                <li key={u.id} className="flex items-center justify-between p-3">
+                  <div className="text-sm">
+                    <div className="font-medium">{u.name}</div>
+                    <div className="text-gray-500">
+                      @{u.username} • {u.email || '—'} • {u.role === 'ADMIN' ? 'Admin' : 'Tech'} • créé le {new Date(u.createdAt).toLocaleDateString('fr-FR')}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center">
-                  <EditUserForm user={u} />
-                  <ViewUserButton user={u} />
-                </div>
-              </li>
-            ))}
-          </ul>
+                  <div className="flex items-center">
+                    <EditUserForm user={u} />
+                    <ViewUserButton user={u} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-      </div>
+      </details>
     </div>
   )
 }
