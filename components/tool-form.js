@@ -17,7 +17,8 @@ export default function ToolForm({ tool }) {
   const [form, setForm] = useState({
     lieu: '',
     client: '',
-    etat: '',
+    etat: 'RAS',
+    probleme: '',
     transporteur: '',
     tracking: ''
   })
@@ -35,12 +36,13 @@ export default function ToolForm({ tool }) {
       data.append('lieu', form.lieu)
       data.append('client', form.client)
       data.append('etat', form.etat)
+      data.append('probleme', form.probleme)
       data.append('transporteur', form.transporteur)
       data.append('tracking', form.tracking)
       const res = await fetch('/api/tool-logs', { method: 'POST', body: data })
       if (res.ok) {
         setStatus('')
-        setForm({ lieu: '', client: '', etat: '', transporteur: '', tracking: '' })
+        setForm({ lieu: '', client: '', etat: 'RAS', probleme: '', transporteur: '', tracking: '' })
         alert('Enregistrement effectué')
       } else {
         alert('Erreur lors de l\'enregistrement')
@@ -96,7 +98,19 @@ export default function ToolForm({ tool }) {
           </div>
           <div>
             <label className="label">État du matériel</label>
-            <textarea className="input" name="etat" value={form.etat} onChange={update} rows={3} />
+            <div className="flex items-center space-x-4 mt-1">
+              <label className="flex items-center space-x-1">
+                <input type="radio" name="etat" value="RAS" checked={form.etat === 'RAS'} onChange={update} />
+                <span>RAS</span>
+              </label>
+              <label className="flex items-center space-x-1">
+                <input type="radio" name="etat" value="PROBLEME" checked={form.etat === 'PROBLEME'} onChange={update} />
+                <span>Problème</span>
+              </label>
+            </div>
+            {form.etat === 'PROBLEME' && (
+              <textarea className="input mt-2" name="probleme" value={form.probleme} onChange={update} rows={3} placeholder="Décrire le problème" />
+            )}
           </div>
         </>
       )}
