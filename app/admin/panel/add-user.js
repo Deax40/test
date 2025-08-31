@@ -4,7 +4,6 @@ import { useState } from 'react'
 export default function AddUserForm() {
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('TECH')
   const [msg, setMsg] = useState('')
@@ -15,11 +14,11 @@ export default function AddUserForm() {
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, username, email, password, role })
+      body: JSON.stringify({ name, username, password, role })
     })
     if (res.ok) {
       setMsg('Utilisateur ajouté avec succès.')
-      setName(''); setUsername(''); setEmail(''); setPassword(''); setRole('TECH')
+      setName(''); setUsername(''); setPassword(''); setRole('TECH')
       window.location.reload()
     } else {
       setMsg('Erreur: ' + await res.text())
@@ -35,10 +34,6 @@ export default function AddUserForm() {
       <div>
         <label className="label">Nom d'utilisateur</label>
         <input className="input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="adminX" required/>
-      </div>
-      <div>
-        <label className="label">Email</label>
-        <input className="input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@example.com" required/>
       </div>
       <div>
         <label className="label">Mot de passe</label>

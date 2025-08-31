@@ -5,6 +5,7 @@ import Link from 'next/link'
 import AddUserForm from './add-user'
 import EditUserForm from './edit-user'
 import ViewUserButton from './view-user'
+import ManageTools from './manage-tools'
 import Nav from '../../../components/nav'
 
 async function getData() {
@@ -44,8 +45,7 @@ async function getData() {
       name: true,
       email: true,
       role: true,
-      createdAt: true,
-      passwordHash: true
+      createdAt: true
     }
   })
   return { logs, toolLogs, users }
@@ -155,6 +155,11 @@ export default async function AdminPanelPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="card">
+        <h2 className="text-lg font-semibold mb-4">Gestion des outils</h2>
+        <ManageTools />
       </div>
 
       <div className="card">

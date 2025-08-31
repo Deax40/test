@@ -36,7 +36,7 @@ export async function POST(req) {
   email = email?.trim()?.toLowerCase();
   role = role === "ADMIN" ? "ADMIN" : "TECH";
 
-  if (!username || !name || !email || !password) {
+  if (!username || !name || !password) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
   if (password.length < 8) {
@@ -46,13 +46,16 @@ export async function POST(req) {
   const byUsername = await prisma.user.findUnique({ where: { username } });
   if (byUsername) return NextResponse.json({ error: "Username already exists" }, { status: 409 });
 
-  const byEmail = await prisma.user.findUnique({ where: { email } });
-  if (byEmail) return NextResponse.json({ error: "Email already exists" }, { status: 409 });
+  let byEmail = null;
+  if (email) {
+    byEmail = await prisma.user.findUnique({ where: { email } });
+    if (byEmail) return NextResponse.json({ error: "Email already exists" }, { status: 409 });
+  }
 
   const passwordHash = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.create({
-    data: { username, name, email, passwordHash, role },
+    data: { username, name, email: email || null, passwordHash, role },
     select: { id: true, username: true, name: true, email: true, role: true, createdAt: true },
   });
 

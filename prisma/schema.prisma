@@ -47,3 +47,10 @@ model ToolLog {
   createdById  String?
   createdBy    User?    @relation(fields: [createdById], references: [id])
 }
+
+model Tool {
+  id        String   @id @default(cuid())
+  name      String
+  category  String
+  createdAt DateTime @default(now())
+}

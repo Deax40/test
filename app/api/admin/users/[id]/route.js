@@ -28,7 +28,7 @@ export async function PUT(req, { params }) {
   name = name?.trim()
   email = email?.trim()?.toLowerCase()
   role = role === 'ADMIN' ? 'ADMIN' : 'TECH'
-  const data = { username, name, email, role }
+  const data = { username, name, role, email: email || null }
   if (password) {
     if (password.length < 8) {
       return new Response('Password too short', { status: 400 })
