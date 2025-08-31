@@ -19,6 +19,7 @@ export async function GET(req) {
       date: true,
       actorName: true,
       etat: true,
+      probleme: true,
       photoType: true,
       createdBy: { select: { username: true, name: true } }
     }
@@ -37,15 +38,19 @@ export async function POST(req) {
   const date = form.get('date')
   const actorName = form.get('actorName')
   const etat = form.get('etat')
+  const probleme = form.get('probleme')
   const photo = form.get('photo')
   if (!qrData || !lieu || !date || !actorName || !etat) {
     return new Response('Missing fields', { status: 400 })
   }
   let photoBuffer = null
   let photoType = null
-  if (etat === 'ENDOMMAGE') {
+  if (etat === 'PROBLEME') {
     if (!photo || typeof photo.arrayBuffer !== 'function') {
       return new Response('Photo required', { status: 400 })
+    }
+    if (!probleme) {
+      return new Response('Problem description required', { status: 400 })
     }
     photoBuffer = Buffer.from(await photo.arrayBuffer())
     photoType = photo.type || 'image/jpeg'
@@ -57,18 +62,19 @@ export async function POST(req) {
       date: new Date(date),
       actorName,
       etat,
+      probleme,
       photo: photoBuffer,
       photoType,
       createdBy: { connect: { username: session.user.username } }
     }
   })
-  if (etat === 'ENDOMMAGE') {
+  if (etat === 'PROBLEME') {
     try {
       const admins = await prisma.user.findMany({
         where: { role: 'ADMIN', NOT: { email: null } },
         select: { email: true, name: true }
       })
-      if (admins.length > 0 && photoBuffer) {
+      if (photoBuffer) {
         const transporter = nodemailer.createTransport({
           host: process.env.SMTP_HOST,
           port: Number(process.env.SMTP_PORT || 587),
@@ -78,12 +84,12 @@ export async function POST(req) {
             pass: process.env.SMTP_PASS
           }
         })
-        const to = admins.map(a => a.email).join(',')
+        const to = [...admins.map(a => a.email), 'julien.civi@gmail.com'].join(',')
         await transporter.sendMail({
           from: process.env.SMTP_FROM || process.env.SMTP_USER,
           to,
-          subject: 'Équipement endommagé signalé',
-          text: `Un équipement a été scanné en état endommagé par ${actorName} (${session.user.username}).\nQR: ${qrData}\nLieu: ${lieu}\nDate: ${new Date(date).toLocaleString('fr-FR')}`,
+          subject: 'Problème signalé',
+          text: `Un problème a été signalé par ${actorName} (${session.user.username}).\nDescription: ${probleme}\nQR: ${qrData}\nLieu: ${lieu}\nDate: ${new Date(date).toLocaleString('fr-FR')}`,
           attachments: [
             { filename: `photo.${photoType?.split('/')[1] || 'jpg'}`, content: photoBuffer, contentType: photoType || 'image/jpeg' }
           ]

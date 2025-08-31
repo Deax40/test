@@ -25,7 +25,8 @@ model Log {
   lieu        String
   date        DateTime
   actorName   String
-  etat        String   @default("CORRECT")
+  etat        String   @default("RAS")
+  probleme    String?
   photo       Bytes?
   photoType   String?
   createdAt   DateTime @default(now())
