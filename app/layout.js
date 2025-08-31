@@ -6,6 +6,11 @@ export const metadata = {
   description: 'Application de scan QR et administration'
 }
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1
+}
+
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
