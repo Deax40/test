@@ -18,6 +18,7 @@ export async function GET(req) {
       lieu: true,
       client: true,
       etat: true,
+      probleme: true,
       transporteur: true,
       tracking: true,
       createdAt: true,
@@ -25,13 +26,15 @@ export async function GET(req) {
     }
   })
   if (format === 'csv') {
-    const header = 'Date,Outil,Status,Client,Lieu,Transporteur,Tracking,Technicien\n'
+    const header = 'Date,Outil,Status,Client,Lieu,Etat,Probleme,Transporteur,Tracking,Technicien\n'
     const body = logs.map(l => [
       new Date(l.createdAt).toLocaleString('fr-FR'),
       l.tool,
       l.status,
       l.client || '',
       l.lieu || '',
+      l.etat || '',
+      l.probleme || '',
       l.transporteur || '',
       l.tracking || '',
       l.createdBy?.name || ''
@@ -46,7 +49,7 @@ export async function GET(req) {
   }
   if (format === 'txt') {
     const txt = logs
-      .map(l => `${new Date(l.createdAt).toLocaleString('fr-FR')} | ${l.tool} | ${l.status} | ${l.client || ''} | ${l.lieu || ''} | ${l.transporteur || ''} | ${l.tracking || ''} | ${l.createdBy?.name || ''}`)
+      .map(l => `${new Date(l.createdAt).toLocaleString('fr-FR')} | ${l.tool} | ${l.status} | ${l.client || ''} | ${l.lieu || ''} | ${l.etat || ''} | ${l.probleme || ''} | ${l.transporteur || ''} | ${l.tracking || ''} | ${l.createdBy?.name || ''}`)
       .join('\n')
     return new Response(txt, {
       headers: {
@@ -69,6 +72,7 @@ export async function POST(req) {
   const lieu = form.get('lieu') || null
   const client = form.get('client') || null
   const etat = form.get('etat') || null
+  const probleme = form.get('probleme') || null
   const transporteur = form.get('transporteur') || null
   const tracking = form.get('tracking') || null
   if (!tool || !status) {
@@ -81,6 +85,7 @@ export async function POST(req) {
       lieu,
       client,
       etat,
+      probleme,
       transporteur,
       tracking,
       createdBy: { connect: { username: session.user.username } }

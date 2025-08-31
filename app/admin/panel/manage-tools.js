@@ -58,9 +58,11 @@ export default function ManageTools() {
 
       <div className="mt-6 grid md:grid-cols-2 gap-6">
         {['CARE', 'COMMUN'].map(cat => (
-          <div key={cat}>
-            <h3 className="font-medium mb-2">{cat === 'CARE' ? 'Care' : 'Commun'}</h3>
-            <ul className="divide-y divide-gray-200 rounded-xl border">
+          <details key={cat} className="rounded-xl border">
+            <summary className="font-medium p-3 cursor-pointer select-none">
+              {cat === 'CARE' ? 'Care' : 'Commun'}
+            </summary>
+            <ul className="divide-y divide-gray-200">
               {toolsByCategory(cat).map(t => (
                 <li key={t.id} className="flex items-center justify-between p-3 text-sm">
                   {t.name}
@@ -71,7 +73,7 @@ export default function ManageTools() {
                 <li className="p-3 text-sm text-gray-500">Aucun outil</li>
               )}
             </ul>
-          </div>
+          </details>
         ))}
       </div>
     </div>

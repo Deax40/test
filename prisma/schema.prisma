@@ -41,6 +41,7 @@ model ToolLog {
   lieu         String?
   client       String?
   etat         String?
+  probleme     String?
   transporteur String?
   tracking     String?
   createdAt    DateTime @default(now())
