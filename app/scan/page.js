@@ -87,7 +87,7 @@ export default function ScanPage() {
           </div>
           <div>
             <label className="label">Date & heure</label>
-            <input className="input bg-gray-100" type="datetime-local" value={date} readOnly/>
+            <input className="input bg-gray-100 text-gray-500" type="datetime-local" value={date} readOnly/>
           </div>
           <div>
             <label className="label">État</label>
@@ -110,7 +110,7 @@ export default function ScanPage() {
           )}
           <div>
             <label className="label">Qui le fait</label>
-            <input className="input bg-gray-100" value={actorName} readOnly/>
+            <input className="input bg-gray-100 text-gray-500" value={actorName} readOnly/>
           </div>
           {message && <p className={`text-sm ${message.startsWith('Erreur') ? 'text-red-600' : 'text-green-600'}`}>{message}</p>}
           <button className="btn btn-success w-full">Enregistrer</button>
