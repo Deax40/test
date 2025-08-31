@@ -43,7 +43,7 @@ export default function EditUserForm({ user }) {
       </div>
       <div>
         <label className="label">Email</label>
-        <input className="input" type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
+        <input className="input" type="email" value={email} onChange={e=>setEmail(e.target.value)} />
       </div>
       <div>
         <label className="label">Mot de passe (laisser vide pour ne pas changer)</label>
