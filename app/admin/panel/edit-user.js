@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import DeleteButton from './delete-button'
 
 export default function EditUserForm({ user }) {
   const [editing, setEditing] = useState(false)
@@ -58,6 +59,7 @@ export default function EditUserForm({ user }) {
       {msg && <p className="text-sm">{msg}</p>}
       <div className="flex gap-2">
         <button className="btn btn-success">Enregistrer</button>
+        <DeleteButton id={user.id} />
         <button type="button" className="btn" onClick={() => setEditing(false)}>Annuler</button>
       </div>
     </form>

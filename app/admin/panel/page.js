@@ -2,9 +2,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../lib/auth'
 import { prisma } from '../../../lib/prisma'
 import Link from 'next/link'
-import DeleteButton from './delete-button'
 import AddUserForm from './add-user'
 import EditUserForm from './edit-user'
+import ViewUserButton from './view-user'
 import Nav from '../../../components/nav'
 
 async function getData() {
@@ -44,7 +44,8 @@ async function getData() {
       name: true,
       email: true,
       role: true,
-      createdAt: true
+      createdAt: true,
+      passwordHash: true
     }
   })
   return { logs, toolLogs, users }
@@ -174,7 +175,7 @@ export default async function AdminPanelPage() {
                 </div>
                 <div className="flex items-center">
                   <EditUserForm user={u} />
-                  <DeleteButton id={u.id} />
+                  <ViewUserButton user={u} />
                 </div>
               </li>
             ))}
