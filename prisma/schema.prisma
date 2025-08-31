@@ -46,17 +46,3 @@ model ToolLog {
   createdById  String?
   createdBy    User?    @relation(fields: [createdById], references: [id])
 }
-
-model ToolLog {
-  id           String   @id @default(cuid())
-  tool         String
-  status       String
-  lieu         String?
-  client       String?
-  etat         String?
-  transporteur String?
-  tracking     String?
-  createdAt    DateTime @default(now())
-  createdById  String?
-  createdBy    User?    @relation(fields: [createdById], references: [id])
-}
