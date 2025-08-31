@@ -10,7 +10,8 @@ export default function ScanPage() {
   const [lieu, setLieu] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0,16))
   const [actorName, setActorName] = useState('')
-  const [etat, setEtat] = useState('CORRECT')
+  const [etat, setEtat] = useState('RAS')
+  const [probleme, setProbleme] = useState('')
   const [photo, setPhoto] = useState(null)
   const [message, setMessage] = useState('')
 
@@ -29,6 +30,9 @@ export default function ScanPage() {
     formData.append('date', date)
     formData.append('actorName', actorName)
     formData.append('etat', etat)
+    if (etat === 'PROBLEME') {
+      formData.append('probleme', probleme)
+    }
     if (photo) formData.append('photo', photo)
     const res = await fetch('/api/logs', {
       method: 'POST',
@@ -39,7 +43,8 @@ export default function ScanPage() {
       setQrData('')
       setLieu('')
       setActorName('')
-      setEtat('CORRECT')
+      setEtat('RAS')
+      setProbleme('')
       setPhoto(null)
       setDate(new Date().toISOString().slice(0,16))
     } else {
@@ -85,15 +90,21 @@ export default function ScanPage() {
           <div>
             <label className="label">État</label>
             <select className="input" value={etat} onChange={e=>setEtat(e.target.value)}>
-              <option value="CORRECT">État correct</option>
-              <option value="ENDOMMAGE">État endommagé</option>
+              <option value="RAS">RAS</option>
+              <option value="PROBLEME">Problème</option>
             </select>
           </div>
-          {etat === 'ENDOMMAGE' && (
-            <div>
-              <label className="label">Photo</label>
-              <input className="input" type="file" accept="image/*" onChange={e=>setPhoto(e.target.files[0] || null)} required/>
-            </div>
+          {etat === 'PROBLEME' && (
+            <>
+              <div>
+                <label className="label">Description du problème</label>
+                <textarea className="input" rows={3} value={probleme} onChange={e=>setProbleme(e.target.value)} required/>
+              </div>
+              <div>
+                <label className="label">Photo</label>
+                <input className="input" type="file" accept="image/*" onChange={e=>setPhoto(e.target.files[0] || null)} required/>
+              </div>
+            </>
           )}
           <div>
             <label className="label">Qui le fait</label>

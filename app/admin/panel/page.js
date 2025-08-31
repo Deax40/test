@@ -16,6 +16,7 @@ async function getData() {
       date: true,
       actorName: true,
       etat: true,
+      probleme: true,
       photoType: true,
       createdBy: { select: { username: true, name: true } }
     }
@@ -73,6 +74,7 @@ export default async function AdminPanelPage() {
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Lieu</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Technicien</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">État</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Problème</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Photo</th>
               </tr>
             </thead>
@@ -83,7 +85,8 @@ export default async function AdminPanelPage() {
                   <td className="px-3 py-2 text-sm max-w-[300px] truncate" title={log.qrData}>{log.qrData}</td>
                   <td className="px-3 py-2 text-sm">{log.lieu}</td>
                   <td className="px-3 py-2 text-sm">{log.actorName} ({log.createdBy?.username || '—'})</td>
-                  <td className="px-3 py-2 text-sm">{log.etat === 'ENDOMMAGE' ? 'Endommagé' : 'Correct'}</td>
+                  <td className="px-3 py-2 text-sm">{log.etat === 'PROBLEME' ? 'Problème' : 'RAS'}</td>
+                  <td className="px-3 py-2 text-sm">{log.probleme || '—'}</td>
                   <td className="px-3 py-2 text-sm">
                     {log.photoType ? (
                       <a
