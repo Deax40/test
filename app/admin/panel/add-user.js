@@ -51,7 +51,7 @@ export default function AddUserForm() {
           <option value="ADMIN">Administrateur</option>
         </select>
       </div>
-      <button className="btn btn-primary">Ajouter</button>
+      <button className="btn btn-success">Ajouter</button>
       {msg && <p className="text-sm col-span-6">{msg}</p>}
     </form>
   )

@@ -38,7 +38,7 @@ export default function LoginPage() {
           <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" required />
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button className="btn btn-primary w-full" type="submit">Se connecter</button>
+        <button className="btn btn-success w-full" type="submit">Se connecter</button>
         <p className="text-xs text-gray-500">Accès réservé aux utilisateurs ENGEL.</p>
       </form>
     </div>

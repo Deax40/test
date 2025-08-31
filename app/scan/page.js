@@ -113,7 +113,7 @@ export default function ScanPage() {
             <input className="input bg-gray-100" value={actorName} readOnly/>
           </div>
           {message && <p className={`text-sm ${message.startsWith('Erreur') ? 'text-red-600' : 'text-green-600'}`}>{message}</p>}
-          <button className="btn btn-primary w-full">Enregistrer</button>
+          <button className="btn btn-success w-full">Enregistrer</button>
         </form>
       </div>
     </div>
