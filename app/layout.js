@@ -9,7 +9,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
-      <body className="min-h-screen">
+      <body className="min-h-screen relative">
         <Providers>
           <header className="border-b header-bar">
             <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-center">

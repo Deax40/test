@@ -67,10 +67,13 @@ export default async function AdminPanelPage() {
       <div className="card">
         <h2 className="text-lg font-semibold mb-2">Journal des scans (du plus ancien au plus récent)</h2>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-gray-500">Le journal est remis à zéro après 7 scans.</p>
+          <div>
+            <p className="text-xs text-gray-500">Le journal est remis à zéro après 7 scans.</p>
+            <p className="text-xs text-gray-500 mt-1">Voulez-vous enregistrer la base en Excel ou TXT ?</p>
+          </div>
           <div className="space-x-2">
-            <a className="btn" href="/api/logs?format=csv" target="_blank" rel="noopener noreferrer">Excel</a>
-            <a className="btn" href="/api/logs?format=txt" target="_blank" rel="noopener noreferrer">TXT</a>
+            <a className="btn btn-success" href="/api/logs?format=csv" target="_blank" rel="noopener noreferrer">Excel</a>
+            <a className="btn btn-success" href="/api/logs?format=txt" target="_blank" rel="noopener noreferrer">TXT</a>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -116,10 +119,13 @@ export default async function AdminPanelPage() {
       <div className="card">
         <h2 className="text-lg font-semibold mb-2">Journal des outils</h2>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-gray-500">Le journal est remis à zéro après 10 scans.</p>
+          <div>
+            <p className="text-xs text-gray-500">Le journal est remis à zéro après 10 scans.</p>
+            <p className="text-xs text-gray-500 mt-1">Voulez-vous enregistrer la base en Excel ou TXT ?</p>
+          </div>
           <div className="space-x-2">
-            <a className="btn" href="/api/tool-logs?format=csv" target="_blank" rel="noopener noreferrer">Excel</a>
-            <a className="btn" href="/api/tool-logs?format=txt" target="_blank" rel="noopener noreferrer">TXT</a>
+            <a className="btn btn-success" href="/api/tool-logs?format=csv" target="_blank" rel="noopener noreferrer">Excel</a>
+            <a className="btn btn-success" href="/api/tool-logs?format=txt" target="_blank" rel="noopener noreferrer">TXT</a>
           </div>
         </div>
         <div className="overflow-x-auto">

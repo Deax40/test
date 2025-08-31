@@ -6,5 +6,5 @@ export default function DeleteButton({ id }) {
     if (res.ok) window.location.reload()
     else alert('Échec de la suppression.')
   }
-  return <button className="btn" onClick={onDelete}>Supprimer</button>
+  return <button className="btn btn-danger" onClick={onDelete}>Supprimer</button>
 }

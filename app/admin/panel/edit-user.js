@@ -57,7 +57,7 @@ export default function EditUserForm({ user }) {
       </div>
       {msg && <p className="text-sm">{msg}</p>}
       <div className="flex gap-2">
-        <button className="btn btn-primary">Enregistrer</button>
+        <button className="btn btn-success">Enregistrer</button>
         <button type="button" className="btn" onClick={() => setEditing(false)}>Annuler</button>
       </div>
     </form>

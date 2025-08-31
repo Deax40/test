@@ -114,7 +114,7 @@ export default function ToolForm({ tool }) {
         </>
       )}
 
-      <button className="btn btn-primary" type="submit" disabled={saving}>
+      <button className="btn btn-success" type="submit" disabled={saving}>
         {saving ? 'Enregistrement...' : 'Enregistrer'}
       </button>
     </form>
