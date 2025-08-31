@@ -4,6 +4,7 @@ import { prisma } from '../../../lib/prisma'
 import Link from 'next/link'
 import DeleteButton from './delete-button'
 import AddUserForm from './add-user'
+import EditUserForm from './edit-user'
 import Nav from '../../../components/nav'
 
 async function getData() {
@@ -64,7 +65,14 @@ export default async function AdminPanelPage() {
     <div className="space-y-8">
       <Nav active="admin" />
       <div className="card">
-        <h2 className="text-lg font-semibold mb-4">Journal des scans (du plus ancien au plus récent)</h2>
+        <h2 className="text-lg font-semibold mb-2">Journal des scans (du plus ancien au plus récent)</h2>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-gray-500">Le journal est remis à zéro après 7 scans.</p>
+          <div className="space-x-2">
+            <a className="btn" href="/api/logs?format=csv" target="_blank" rel="noopener noreferrer">Excel</a>
+            <a className="btn" href="/api/logs?format=txt" target="_blank" rel="noopener noreferrer">TXT</a>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="table">
             <thead className="bg-gray-100">
@@ -106,7 +114,14 @@ export default async function AdminPanelPage() {
         </div>
       </div>
       <div className="card">
-        <h2 className="text-lg font-semibold mb-4">Journal des outils</h2>
+        <h2 className="text-lg font-semibold mb-2">Journal des outils</h2>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-gray-500">Le journal est remis à zéro après 10 scans.</p>
+          <div className="space-x-2">
+            <a className="btn" href="/api/tool-logs?format=csv" target="_blank" rel="noopener noreferrer">Excel</a>
+            <a className="btn" href="/api/tool-logs?format=txt" target="_blank" rel="noopener noreferrer">TXT</a>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="table">
             <thead className="bg-gray-100">
@@ -155,7 +170,10 @@ export default async function AdminPanelPage() {
                     @{u.username} • {u.email || '—'} • {u.role === 'ADMIN' ? 'Admin' : 'Tech'} • créé le {new Date(u.createdAt).toLocaleDateString('fr-FR')}
                   </div>
                 </div>
-                <DeleteButton id={u.id} />
+                <div className="flex items-center">
+                  <EditUserForm user={u} />
+                  <DeleteButton id={u.id} />
+                </div>
               </li>
             ))}
           </ul>

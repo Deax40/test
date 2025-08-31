@@ -10,6 +10,7 @@ export async function GET(req) {
   }
   const { searchParams } = new URL(req.url)
   const order = searchParams.get('order') === 'asc' ? 'asc' : 'desc'
+  const format = searchParams.get('format')
   const logs = await prisma.log.findMany({
     orderBy: { createdAt: order },
     select: {
@@ -24,6 +25,35 @@ export async function GET(req) {
       createdBy: { select: { username: true, name: true } }
     }
   })
+  if (format === 'csv') {
+    const header = 'Date,QR,Lieu,Technicien,Etat,Probleme\n'
+    const body = logs.map(l => [
+      new Date(l.date).toLocaleString('fr-FR'),
+      l.qrData,
+      l.lieu,
+      l.actorName,
+      l.etat,
+      l.probleme || ''
+    ].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n')
+    const csv = header + body
+    return new Response(csv, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="logs.csv"'
+      }
+    })
+  }
+  if (format === 'txt') {
+    const txt = logs
+      .map(l => `${new Date(l.date).toLocaleString('fr-FR')} | ${l.qrData} | ${l.lieu} | ${l.actorName} | ${l.etat} | ${l.probleme || ''}`)
+      .join('\n')
+    return new Response(txt, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="logs.txt"'
+      }
+    })
+  }
   return Response.json({ logs })
 }
 
@@ -68,6 +98,10 @@ export async function POST(req) {
       createdBy: { connect: { username: session.user.username } }
     }
   })
+  const count = await prisma.log.count()
+  if (count >= 7) {
+    await prisma.log.deleteMany({})
+  }
   if (etat === 'PROBLEME') {
     try {
       const admins = await prisma.user.findMany({

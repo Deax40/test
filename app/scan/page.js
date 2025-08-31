@@ -5,7 +5,7 @@ import { Scanner } from '@yudiel/react-qr-scanner'
 import Nav from '../../components/nav'
 
 export default function ScanPage() {
-  const { status } = useSession()
+  const { status, data: session } = useSession()
   const [qrData, setQrData] = useState('')
   const [lieu, setLieu] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0,16))
@@ -19,7 +19,10 @@ export default function ScanPage() {
     if (status === 'unauthenticated') {
       window.location.href = '/'
     }
-  }, [status])
+    if (status === 'authenticated') {
+      setActorName(session?.user?.name || session?.user?.username || '')
+    }
+  }, [status, session])
 
   async function submit(e) {
     e.preventDefault()
@@ -42,7 +45,6 @@ export default function ScanPage() {
       setMessage('Enregistré ✅')
       setQrData('')
       setLieu('')
-      setActorName('')
       setEtat('RAS')
       setProbleme('')
       setPhoto(null)
@@ -85,7 +87,7 @@ export default function ScanPage() {
           </div>
           <div>
             <label className="label">Date & heure</label>
-            <input className="input" type="datetime-local" value={date} onChange={e=>setDate(e.target.value)} required/>
+            <input className="input bg-gray-100" type="datetime-local" value={date} readOnly/>
           </div>
           <div>
             <label className="label">État</label>
@@ -108,7 +110,7 @@ export default function ScanPage() {
           )}
           <div>
             <label className="label">Qui le fait</label>
-            <input className="input" value={actorName} onChange={e=>setActorName(e.target.value)} placeholder="Nom du technicien" required/>
+            <input className="input bg-gray-100" value={actorName} readOnly/>
           </div>
           {message && <p className={`text-sm ${message.startsWith('Erreur') ? 'text-red-600' : 'text-green-600'}`}>{message}</p>}
           <button className="btn btn-primary w-full">Enregistrer</button>
