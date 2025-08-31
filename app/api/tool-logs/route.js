@@ -61,7 +61,8 @@ export async function GET(req) {
 
 export async function POST(req) {
   const session = await getServerSession(authOptions)
-  if (!session || session.user?.role !== 'TECH') {
+  // Allow both TECH and ADMIN roles to register tool logs
+  if (!session || !['TECH', 'ADMIN'].includes(session.user?.role)) {
     return new Response('Unauthorized', { status: 401 })
   }
   const form = await req.formData()
