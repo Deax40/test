@@ -5,7 +5,7 @@ import { signOut, useSession } from 'next-auth/react'
 export default function Nav({ active }) {
   const { data: session } = useSession()
   return (
-    <nav className="mb-6 flex items-center justify-between">
+    <nav className="mb-6 flex items-center justify-between p-3 rounded-xl header-bar">
       <div className="flex gap-4">
         <Link href="/scan" className={active === 'scan' ? 'font-semibold' : ''}>SCAN</Link>
         <Link href="/care" className={active === 'care' ? 'font-semibold' : ''}>CARE</Link>

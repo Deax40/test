@@ -31,7 +31,7 @@ export default function LoginPage() {
       <form onSubmit={onSubmit} className="card space-y-4">
         <div>
           <label className="label">Nom d'utilisateur</label>
-          <input className="input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="tech01" required />
+          <input className="input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="Entrez votre nom d'utilisateur" required />
         </div>
         <div>
           <label className="label">Mot de passe</label>
