@@ -1,3 +1,8 @@
+diff --git a/app/admin/panel/manage-certifications.js b/app/admin/panel/manage-certifications.js
+index c165fab0db6229fc391af224ab192716c0059de6..39762af66d39af04b327614b16e37109ddd8eab4 100644
+--- a/app/admin/panel/manage-certifications.js
++++ b/app/admin/panel/manage-certifications.js
+@@ -1,43 +1,45 @@
  'use client'
  import { useEffect, useState } from 'react'
  
