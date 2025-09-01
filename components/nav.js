@@ -11,12 +11,20 @@ export default function Nav({ active }) {
         <Link href="/care" className={`btn ${active === 'care' ? 'btn-primary' : ''}`}>CARE</Link>
         <Link href="/commun" className={`btn ${active === 'commun' ? 'btn-primary' : ''}`}>COMMUN</Link>
         {session?.user?.role === 'ADMIN' && (
-          <Link
-            href="/admin/panel"
-            className={`btn ${active === 'admin' ? 'btn-primary' : ''}`}
-          >
-            ADMIN
-          </Link>
+          <>
+            <Link
+              href="/admin/panel"
+              className={`btn ${active === 'admin' ? 'btn-primary' : ''}`}
+            >
+              ADMIN
+            </Link>
+            <Link
+              href="/admin/revision"
+              className={`btn ${active === 'revision' ? 'btn-primary' : ''}`}
+            >
+              RÉVISION
+            </Link>
+          </>
         )}
       </div>
       <button className="btn w-full sm:w-auto" onClick={() => signOut({ callbackUrl: '/' })}>Se déconnecter</button>
