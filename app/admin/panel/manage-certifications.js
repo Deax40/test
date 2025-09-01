@@ -15,7 +15,9 @@ export default function ManageCertifications() {
       const toolsRes = await fetch(`/api/tools?category=${cat}`, { cache: 'no-store' })
       if (!toolsRes.ok) throw new Error('tools')
       const toolsData = await toolsRes.json()
-      const toolsList = Array.isArray(toolsData.tools) ? toolsData.tools : []
+      const toolsList = Array.isArray(toolsData.tools)
+        ? toolsData.tools.filter(t => !(t.id || '').startsWith('static'))
+        : []
       setTools(toolsList)
     } catch (e) {
       setTools([])
