@@ -46,20 +46,24 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url)
   const category = searchParams.get('category')
   const normalizedCategory = category?.toUpperCase()
+  // For CARE tools, return the static list directly without hitting the DB
+  if (normalizedCategory === 'CARE') {
+    return Response.json({ tools: STATIC_CARE_TOOLS })
+  }
+
+  // Otherwise fetch from the database and append any static tools needed
   let tools = await prisma.tool.findMany({
     where: normalizedCategory
       ? { category: { equals: normalizedCategory, mode: 'insensitive' } }
       : {},
     orderBy: { name: 'asc' }
   })
+
   if (normalizedCategory === 'COMMUN') {
     tools = [...tools, ...STATIC_COMMUN_TOOLS]
       .sort((a, b) => a.name.localeCompare(b.name))
   }
-  if (normalizedCategory === 'CARE') {
-    tools = [...tools, ...STATIC_CARE_TOOLS]
-      .sort((a, b) => a.name.localeCompare(b.name))
-  }
+
   return Response.json({ tools })
 }
 
