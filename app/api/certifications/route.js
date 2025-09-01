@@ -23,6 +23,10 @@ export async function POST(req) {
     if (!toolId || !months || !file) {
       return new Response('Missing fields', { status: 400 })
     }
+    const tool = await prisma.tool.findUnique({ where: { id: toolId } })
+    if (!tool) {
+      return new Response('Invalid tool', { status: 400 })
+    }
     const buffer = Buffer.from(await file.arrayBuffer())
     const fileType = file.type || 'application/octet-stream'
     const expiresAt = new Date()
