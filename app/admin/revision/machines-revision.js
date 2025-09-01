@@ -51,7 +51,7 @@ export default function MachinesRevision() {
   }, [machines])
 
   const threeMonthsMs = 1000 * 60 * 60 * 24 * 90
-  const approaching = machines.some(
+  const approachingMachines = machines.filter(
     m => m.nextRevision && m.nextRevision - Date.now() <= threeMonthsMs
   )
 
@@ -67,13 +67,17 @@ export default function MachinesRevision() {
 
   return (
     <div className="space-y-6">
-      {approaching && (
-        <p className="text-red-600 font-semibold">
-          Bientôt la fin de l'échéance
+      {approachingMachines.length > 0 && (
+        <p className="text-red-700 font-bold text-lg">
+          Bientôt la fin de l'échéance pour :{' '}
+          {approachingMachines.map(m => m.name).join(', ')}
         </p>
       )}
       {machines.map(m => (
-        <div key={m.name} className="card space-y-2">
+        <div
+          key={m.name}
+          className={`card space-y-2 ${approachingMachines.some(am => am.name === m.name) ? 'border border-red-500' : ''}`}
+        >
           <h2 className="font-semibold">{m.name}</h2>
           <div className="flex items-center gap-2">
             <label className="text-sm">Prochaine révision :</label>
