@@ -16,8 +16,7 @@ export default function ManageCertifications() {
       if (!toolsRes.ok) throw new Error('tools')
       const toolsData = await toolsRes.json()
       const toolsList = Array.isArray(toolsData.tools) ? toolsData.tools : []
-      const dbTools = toolsList.filter(t => Number.isInteger(t.id))
-      setTools(dbTools)
+      setTools(toolsList)
     } catch (e) {
       setTools([])
     }
