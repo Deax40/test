@@ -60,6 +60,13 @@ model Certification {
   id        String   @id @default(cuid())
   tool      Tool     @relation(fields: [toolId], references: [id])
   toolId    String
+ codex/add-certification-management-system-e8c5ve
   revisionDate DateTime
+
+  file      Bytes
+  fileType  String
+  revisionDate DateTime @default(now())
+  expiresAt DateTime
+ main
   createdAt DateTime @default(now())
 }
