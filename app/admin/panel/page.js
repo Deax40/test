@@ -7,6 +7,7 @@ import EditUserForm from './edit-user'
 import ViewUserButton from './view-user'
 import ManageTools from './manage-tools'
 import ManageCertifications from './manage-certifications'
+import ExpiringCertAlert from './expiring-cert-alert'
 import Nav from '../../../components/nav'
 
 async function getData() {
@@ -66,6 +67,7 @@ export default async function AdminPanelPage() {
   return (
     <div className="space-y-8">
       <Nav active="admin" />
+      <ExpiringCertAlert />
       <details className="card">
         <summary className="text-lg font-semibold cursor-pointer">Journal des scans (du plus ancien au plus récent)</summary>
         <div className="mt-2">
