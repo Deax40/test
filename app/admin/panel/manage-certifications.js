@@ -4,20 +4,24 @@ import { useEffect, useState } from 'react'
 export default function ManageCertifications() {
   const [tools, setTools] = useState([])
   const [certs, setCerts] = useState([])
+  const [category, setCategory] = useState('CARE')
   const [toolId, setToolId] = useState('')
   const [months, setMonths] = useState(12)
   const [file, setFile] = useState(null)
   const [msg, setMsg] = useState('')
 
-  async function load() {
-    const toolsRes = await fetch('/api/tools?category=CARE')
+  async function load(cat = category) {
+    const toolsRes = await fetch(`/api/tools?category=${cat}`)
     const toolsData = await toolsRes.json()
     setTools(toolsData.tools)
     const certRes = await fetch('/api/certifications')
     const certData = await certRes.json()
     setCerts(certData.certifications)
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    setToolId('')
+    load(category)
+  }, [category])
 
   async function addCert(e) {
     e.preventDefault()
@@ -31,7 +35,7 @@ export default function ManageCertifications() {
       setToolId('')
       setMonths(12)
       setFile(null)
-      load()
+      load(category)
     } else {
       setMsg('Erreur lors de l\'ajout')
     }
@@ -40,12 +44,19 @@ export default function ManageCertifications() {
   async function remove(id) {
     if (!confirm('Supprimer ce certificat ?')) return
     await fetch(`/api/certifications/${id}`, { method: 'DELETE' })
-    load()
+    load(category)
   }
 
   return (
     <div>
       <form onSubmit={addCert} className="grid gap-3 md:grid-cols-6 items-end">
+        <div>
+          <label className="label">Catégorie</label>
+          <select className="input" value={category} onChange={e=>setCategory(e.target.value)}>
+            <option value="CARE">Care</option>
+            <option value="COMMUN">Commun</option>
+          </select>
+        </div>
         <div>
           <label className="label">Outil</label>
           <select className="input" value={toolId} onChange={e=>setToolId(e.target.value)} required>
