@@ -16,13 +16,15 @@ export default function ManageCertifications() {
       if (!toolsRes.ok) throw new Error('tools')
       const toolsData = await toolsRes.json()
       setTools(toolsData.tools || [])
-
+    } catch (e) {
+      setTools([])
+    }
+    try {
       const certRes = await fetch('/api/certifications', { cache: 'no-store' })
       if (!certRes.ok) throw new Error('certs')
       const certData = await certRes.json()
       setCerts(certData.certifications || [])
     } catch (e) {
-      setTools([])
       setCerts([])
     }
   }
