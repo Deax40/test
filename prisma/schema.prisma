@@ -53,4 +53,15 @@ model Tool {
   name      String
   category  String
   createdAt DateTime @default(now())
+  certifications Certification[]
+}
+
+model Certification {
+  id        String   @id @default(cuid())
+  tool      Tool     @relation(fields: [toolId], references: [id])
+  toolId    String
+  file      Bytes
+  fileType  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
