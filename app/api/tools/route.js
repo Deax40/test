@@ -27,11 +27,14 @@ const STATIC_COMMUN_TOOLS = [
 export async function GET(req) {
   const { searchParams } = new URL(req.url)
   const category = searchParams.get('category')
+  const normalizedCategory = category?.toUpperCase()
   let tools = await prisma.tool.findMany({
-    where: category ? { category } : {},
+    where: normalizedCategory
+      ? { category: { equals: normalizedCategory, mode: 'insensitive' } }
+      : {},
     orderBy: { name: 'asc' }
   })
-  if (category === 'COMMUN') {
+  if (normalizedCategory === 'COMMUN') {
     tools = [...tools, ...STATIC_COMMUN_TOOLS]
       .sort((a, b) => a.name.localeCompare(b.name))
   }
