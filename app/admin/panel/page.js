@@ -6,7 +6,6 @@ import AddUserForm from './add-user'
 import EditUserForm from './edit-user'
 import ViewUserButton from './view-user'
 import ManageTools from './manage-tools'
-import ManageCertifications from './manage-certifications'
 import ExpiringCertAlert from './expiring-cert-alert'
 import Nav from '../../../components/nav'
 
@@ -170,13 +169,6 @@ export default async function AdminPanelPage() {
         <summary className="text-lg font-semibold cursor-pointer">Gestion des outils</summary>
         <div className="mt-2">
           <ManageTools />
-        </div>
-      </details>
-
-      <details className="card">
-        <summary className="text-lg font-semibold cursor-pointer">Gestion des certifications</summary>
-        <div className="mt-2">
-          <ManageCertifications />
         </div>
       </details>
 
