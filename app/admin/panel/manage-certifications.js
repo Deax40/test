@@ -4,20 +4,16 @@ import { useEffect, useState } from 'react'
 export default function ManageCertifications() {
   const [tools, setTools] = useState([])
   const [certs, setCerts] = useState([])
-  const [category, setCategory] = useState('CARE')
   const [toolId, setToolId] = useState('')
-  const [months, setMonths] = useState(12)
-  const [file, setFile] = useState(null)
+  const [revisionDate, setRevisionDate] = useState(() => new Date().toISOString().split('T')[0])
   const [msg, setMsg] = useState('')
 
-  async function load(cat = category) {
+  async function load() {
     try {
-      const toolsRes = await fetch(`/api/tools?category=${cat}`, { cache: 'no-store' })
+      const toolsRes = await fetch(`/api/tools?category=CARE`, { cache: 'no-store' })
       if (!toolsRes.ok) throw new Error('tools')
       const toolsData = await toolsRes.json()
-      const toolsList = Array.isArray(toolsData.tools)
-        ? toolsData.tools.filter(t => !(t.id || '').startsWith('static'))
-        : []
+      const toolsList = Array.isArray(toolsData.tools) ? toolsData.tools : []
       setTools(toolsList)
     } catch (e) {
       setTools([])
@@ -32,24 +28,22 @@ export default function ManageCertifications() {
     }
   }
   useEffect(() => {
-    setToolId('')
-    load(category)
-  }, [category])
+    load()
+  }, [])
 
   async function addCert(e) {
     e.preventDefault()
     setMsg('')
-    const fd = new FormData()
-    fd.append('toolId', toolId)
-    fd.append('months', months)
-    if (file) fd.append('file', file)
     try {
-      const res = await fetch('/api/certifications', { method: 'POST', body: fd })
+      const res = await fetch('/api/certifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toolId, revisionDate })
+      })
       if (res.ok) {
         setToolId('')
-        setMonths(12)
-        setFile(null)
-        load(category)
+        setRevisionDate(new Date().toISOString().split('T')[0])
+        load()
       } else {
         const err = await res.text()
         setMsg(`Erreur lors de l'ajout: ${err}`)
@@ -62,19 +56,21 @@ export default function ManageCertifications() {
   async function remove(id) {
     if (!confirm('Supprimer ce certificat ?')) return
     await fetch(`/api/certifications/${id}`, { method: 'DELETE' })
-    load(category)
+    load()
   }
 
   return (
     <div>
-      <form onSubmit={addCert} className="grid gap-3 md:grid-cols-6 items-end">
-        <div>
-          <label className="label">Catégorie</label>
-          <select className="input" value={category} onChange={e=>setCategory(e.target.value)}>
-            <option value="CARE">Care</option>
-            <option value="COMMUN">Commun</option>
-          </select>
+      <p className="mb-4 text-sm text-gray-600">
+        Sélectionnez un outil puis indiquez la date de sa prochaine révision. Une alerte rouge
+        apparaîtra si la date de révision est dans moins de trois mois.
+      </p>
+      {certs.some(c => new Date(c.revisionDate) - new Date() < 1000 * 60 * 60 * 24 * 90) && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          Certains certificats arrivent à échéance dans moins de 3 mois.
         </div>
+      )}
+      <form onSubmit={addCert} className="grid gap-3 md:grid-cols-4 items-end">
         <div>
           <label className="label">Outil</label>
           <select
@@ -95,14 +91,16 @@ export default function ManageCertifications() {
           </select>
         </div>
         <div>
-          <label className="label">Durée (mois)</label>
-          <input type="number" min="1" className="input" value={months} onChange={e=>setMonths(e.target.value)} required />
+          <label className="label">Prochaine révision</label>
+          <input
+            type="date"
+            className="input"
+            value={revisionDate}
+            onChange={e => setRevisionDate(e.target.value)}
+            required
+          />
         </div>
-        <div className="md:col-span-2">
-          <label className="label">Fichier</label>
-          <input type="file" className="input" onChange={e=>setFile(e.target.files[0])} required />
-        </div>
-        <button className="btn btn-success">Ajouter</button>
+        <button className="btn btn-success md:col-span-2">Ajouter</button>
       </form>
       {msg && <p className="text-sm mt-2">{msg}</p>}
 
@@ -111,12 +109,11 @@ export default function ManageCertifications() {
           {certs.map(c => (
             <li key={c.id} className="flex items-center justify-between p-3 text-sm">
               <div>
-                {c.tool.name} • expire le {new Date(c.expiresAt).toLocaleDateString('fr-FR')}
+                {c.tool.name} • prochaine révision le {new Date(c.revisionDate).toLocaleDateString('fr-FR')}
               </div>
-              <div className="flex items-center space-x-2">
-                <a className="underline" href={`/api/certifications/${c.id}`} target="_blank">Voir</a>
-                <button className="btn btn-danger px-2 py-1 text-xs" onClick={() => remove(c.id)}>Supprimer</button>
-              </div>
+              <button className="btn btn-danger px-2 py-1 text-xs" onClick={() => remove(c.id)}>
+                Supprimer
+              </button>
             </li>
           ))}
           {certs.length === 0 && (

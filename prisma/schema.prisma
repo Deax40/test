@@ -60,8 +60,6 @@ model Certification {
   id        String   @id @default(cuid())
   tool      Tool     @relation(fields: [toolId], references: [id])
   toolId    String
-  file      Bytes
-  fileType  String
-  expiresAt DateTime
+  revisionDate DateTime
   createdAt DateTime @default(now())
 }

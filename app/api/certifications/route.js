@@ -16,23 +16,20 @@ export async function POST(req) {
     return new Response('Unauthorized', { status: 401 })
   }
   try {
-    const formData = await req.formData()
-    const toolId = formData.get('toolId')
-    const months = parseInt(formData.get('months'))
-    const file = formData.get('file')
-    if (!toolId || !months || !file) {
+    const { toolId, revisionDate: revisionDateStr } = await req.json()
+    if (!toolId || !revisionDateStr) {
       return new Response('Missing fields', { status: 400 })
     }
     const tool = await prisma.tool.findUnique({ where: { id: toolId } })
     if (!tool) {
       return new Response('Invalid tool', { status: 400 })
     }
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const fileType = file.type || 'application/octet-stream'
-    const expiresAt = new Date()
-    expiresAt.setMonth(expiresAt.getMonth() + months)
+    const revisionDate = new Date(revisionDateStr)
+    if (isNaN(revisionDate.getTime())) {
+      return new Response('Invalid revision date', { status: 400 })
+    }
     const certification = await prisma.certification.create({
-      data: { toolId, file: buffer, fileType, expiresAt }
+      data: { toolId, revisionDate }
     })
     return Response.json({ certification })
   } catch (e) {
