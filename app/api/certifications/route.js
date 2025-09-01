@@ -19,8 +19,9 @@ export async function POST(req) {
     const formData = await req.formData()
     const toolId = formData.get('toolId')
     const months = parseInt(formData.get('months'))
+    const revisionDateStr = formData.get('revisionDate')
     const file = formData.get('file')
-    if (!toolId || !months || !file) {
+    if (!toolId || !months || !revisionDateStr || !file) {
       return new Response('Missing fields', { status: 400 })
     }
     const tool = await prisma.tool.findUnique({ where: { id: toolId } })
@@ -29,10 +30,14 @@ export async function POST(req) {
     }
     const buffer = Buffer.from(await file.arrayBuffer())
     const fileType = file.type || 'application/octet-stream'
-    const expiresAt = new Date()
+    const revisionDate = new Date(revisionDateStr)
+    if (isNaN(revisionDate.getTime())) {
+      return new Response('Invalid revision date', { status: 400 })
+    }
+    const expiresAt = new Date(revisionDate)
     expiresAt.setMonth(expiresAt.getMonth() + months)
     const certification = await prisma.certification.create({
-      data: { toolId, file: buffer, fileType, expiresAt }
+      data: { toolId, file: buffer, fileType, revisionDate, expiresAt }
     })
     return Response.json({ certification })
   } catch (e) {

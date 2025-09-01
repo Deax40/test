@@ -4,15 +4,15 @@ import { useEffect, useState } from 'react'
 export default function ManageCertifications() {
   const [tools, setTools] = useState([])
   const [certs, setCerts] = useState([])
-  const [category, setCategory] = useState('CARE')
   const [toolId, setToolId] = useState('')
   const [months, setMonths] = useState(12)
+  const [revisionDate, setRevisionDate] = useState(() => new Date().toISOString().split('T')[0])
   const [file, setFile] = useState(null)
   const [msg, setMsg] = useState('')
 
-  async function load(cat = category) {
+  async function load() {
     try {
-      const toolsRes = await fetch(`/api/tools?category=${cat}`, { cache: 'no-store' })
+      const toolsRes = await fetch(`/api/tools?category=CARE`, { cache: 'no-store' })
       if (!toolsRes.ok) throw new Error('tools')
       const toolsData = await toolsRes.json()
       const toolsList = Array.isArray(toolsData.tools)
@@ -32,9 +32,8 @@ export default function ManageCertifications() {
     }
   }
   useEffect(() => {
-    setToolId('')
-    load(category)
-  }, [category])
+    load()
+  }, [])
 
   async function addCert(e) {
     e.preventDefault()
@@ -42,14 +41,16 @@ export default function ManageCertifications() {
     const fd = new FormData()
     fd.append('toolId', toolId)
     fd.append('months', months)
+    fd.append('revisionDate', revisionDate)
     if (file) fd.append('file', file)
     try {
       const res = await fetch('/api/certifications', { method: 'POST', body: fd })
       if (res.ok) {
         setToolId('')
         setMonths(12)
+        setRevisionDate(new Date().toISOString().split('T')[0])
         setFile(null)
-        load(category)
+        load()
       } else {
         const err = await res.text()
         setMsg(`Erreur lors de l'ajout: ${err}`)
@@ -62,19 +63,17 @@ export default function ManageCertifications() {
   async function remove(id) {
     if (!confirm('Supprimer ce certificat ?')) return
     await fetch(`/api/certifications/${id}`, { method: 'DELETE' })
-    load(category)
+    load()
   }
 
   return (
     <div>
-      <form onSubmit={addCert} className="grid gap-3 md:grid-cols-6 items-end">
-        <div>
-          <label className="label">Catégorie</label>
-          <select className="input" value={category} onChange={e=>setCategory(e.target.value)}>
-            <option value="CARE">Care</option>
-            <option value="COMMUN">Commun</option>
-          </select>
+      {certs.some(c => new Date(c.expiresAt) - new Date() < 1000 * 60 * 60 * 24 * 90) && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          Certains certificats expirent dans moins de 3 mois.
         </div>
+      )}
+      <form onSubmit={addCert} className="grid gap-3 md:grid-cols-6 items-end">
         <div>
           <label className="label">Outil</label>
           <select
@@ -98,6 +97,10 @@ export default function ManageCertifications() {
           <label className="label">Durée (mois)</label>
           <input type="number" min="1" className="input" value={months} onChange={e=>setMonths(e.target.value)} required />
         </div>
+        <div>
+          <label className="label">Date de révision</label>
+          <input type="date" className="input" value={revisionDate} onChange={e=>setRevisionDate(e.target.value)} required />
+        </div>
         <div className="md:col-span-2">
           <label className="label">Fichier</label>
           <input type="file" className="input" onChange={e=>setFile(e.target.files[0])} required />
@@ -111,7 +114,7 @@ export default function ManageCertifications() {
           {certs.map(c => (
             <li key={c.id} className="flex items-center justify-between p-3 text-sm">
               <div>
-                {c.tool.name} • expire le {new Date(c.expiresAt).toLocaleDateString('fr-FR')}
+                {c.tool.name} • révisé le {new Date(c.revisionDate).toLocaleDateString('fr-FR')} • expire le {new Date(c.expiresAt).toLocaleDateString('fr-FR')}
               </div>
               <div className="flex items-center space-x-2">
                 <a className="underline" href={`/api/certifications/${c.id}`} target="_blank">Voir</a>

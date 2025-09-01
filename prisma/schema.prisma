@@ -62,6 +62,7 @@ model Certification {
   toolId    String
   file      Bytes
   fileType  String
+  revisionDate DateTime @default(now())
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
