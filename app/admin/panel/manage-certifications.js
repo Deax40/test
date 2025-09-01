@@ -41,13 +41,18 @@ export default function ManageCertifications() {
     fd.append('toolId', toolId)
     fd.append('months', months)
     if (file) fd.append('file', file)
-    const res = await fetch('/api/certifications', { method: 'POST', body: fd })
-    if (res.ok) {
-      setToolId('')
-      setMonths(12)
-      setFile(null)
-      load(category)
-    } else {
+    try {
+      const res = await fetch('/api/certifications', { method: 'POST', body: fd })
+      if (res.ok) {
+        setToolId('')
+        setMonths(12)
+        setFile(null)
+        load(category)
+      } else {
+        const err = await res.text()
+        setMsg(`Erreur lors de l'ajout: ${err}`)
+      }
+    } catch (e) {
       setMsg('Erreur lors de l\'ajout')
     }
   }

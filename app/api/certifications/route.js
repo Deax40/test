@@ -15,19 +15,24 @@ export async function POST(req) {
   if (!session || session.user?.role !== 'ADMIN') {
     return new Response('Unauthorized', { status: 401 })
   }
-  const formData = await req.formData()
-  const toolId = formData.get('toolId')
-  const months = parseInt(formData.get('months'))
-  const file = formData.get('file')
-  if (!toolId || !months || !file) {
-    return new Response('Missing fields', { status: 400 })
+  try {
+    const formData = await req.formData()
+    const toolId = formData.get('toolId')
+    const months = parseInt(formData.get('months'))
+    const file = formData.get('file')
+    if (!toolId || !months || !file) {
+      return new Response('Missing fields', { status: 400 })
+    }
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const fileType = file.type || 'application/octet-stream'
+    const expiresAt = new Date()
+    expiresAt.setMonth(expiresAt.getMonth() + months)
+    const certification = await prisma.certification.create({
+      data: { toolId, file: buffer, fileType, expiresAt }
+    })
+    return Response.json({ certification })
+  } catch (e) {
+    console.error('Error creating certification', e)
+    return new Response('Server error', { status: 500 })
   }
-  const buffer = Buffer.from(await file.arrayBuffer())
-  const fileType = file.type || 'application/octet-stream'
-  const expiresAt = new Date()
-  expiresAt.setMonth(expiresAt.getMonth() + months)
-  const certification = await prisma.certification.create({
-    data: { toolId, file: buffer, fileType, expiresAt }
-  })
-  return Response.json({ certification })
 }
