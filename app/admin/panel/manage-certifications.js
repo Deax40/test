@@ -59,10 +59,17 @@ export default function ManageCertifications() {
         </div>
         <div>
           <label className="label">Outil</label>
-          <select className="input" value={toolId} onChange={e=>setToolId(e.target.value)} required>
-            <option value="">Sélectionner...</option>
+          <select
+            className="input"
+            value={toolId}
+            onChange={e => setToolId(e.target.value)}
+            required
+          >
+            <option value="" disabled>Sélectionner...</option>
             {tools.map(t => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+              <option key={t.id} value={String(t.id)}>
+                {t.name}
+              </option>
             ))}
           </select>
         </div>
