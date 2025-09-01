@@ -15,10 +15,10 @@
        const toolsRes = await fetch(`/api/tools?category=${cat}`, { cache: 'no-store' })
        if (!toolsRes.ok) throw new Error('tools')
        const toolsData = await toolsRes.json()
-      setTools(toolsData.tools || [])
-      const toolsList = Array.isArray(toolsData.tools) ? toolsData.tools : []
-      const dbTools = toolsList.filter(t => typeof t.id === 'number')
-      setTools(dbTools)
+-      setTools(toolsData.tools || [])
++      const toolsList = Array.isArray(toolsData.tools) ? toolsData.tools : []
++      const dbTools = toolsList.filter(t => Number.isInteger(t.id))
++      setTools(dbTools)
      } catch (e) {
        setTools([])
      }
