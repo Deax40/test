@@ -24,6 +24,24 @@ const STATIC_COMMUN_TOOLS = [
   'testeur isolement Iso-tech Gleizé'
 ].map((name, i) => ({ id: `static-${i}`, name, category: 'COMMUN' }))
 
+const STATIC_CARE_TOOLS = [
+  'Care Capteur pression matière Silicone 43CH002505',
+  'Jeu 1 Care Control Chauffe Paris',
+  'Jeu 1 Care Extension de Colonne Paris',
+  'Jeu 1 Care Four flucke Paris',
+  'Jeu 1 Care Mesure de Pression Paris',
+  'Jeu 2 Care Chauffe Paris',
+  'Jeu 2 Care Mesure de Pression Paris',
+  'Jeu 2 Care Pression matière Paris',
+  'Jeu 3 Care Chauffe Gleizé',
+  'Jeu 3 Care Extension de Colonne Gleizé',
+  'Jeu 3 Care Four flucke Gleizé',
+  'Jeu 3 Care Pression matière Gleizé',
+  'Jeu 4 Care Chauffe Gleizé',
+  'Jeu 4 Care Extension de Colonne Gleizé',
+  'Jeu 4 Care Pression matière Gleizé'
+].map((name, i) => ({ id: `static-care-${i}`, name, category: 'CARE' }))
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url)
   const category = searchParams.get('category')
@@ -36,6 +54,10 @@ export async function GET(req) {
   })
   if (normalizedCategory === 'COMMUN') {
     tools = [...tools, ...STATIC_COMMUN_TOOLS]
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }
+  if (normalizedCategory === 'CARE') {
+    tools = [...tools, ...STATIC_CARE_TOOLS]
       .sort((a, b) => a.name.localeCompare(b.name))
   }
   return Response.json({ tools })
