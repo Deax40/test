@@ -108,21 +108,31 @@ export default function ManageCertifications() {
 
       <div className="mt-6">
         <ul className="divide-y divide-gray-200 rounded-xl border">
-          {certs.map(c => (
-            <li key={c.id} className="flex items-center justify-between p-3 text-sm">
-              <div>
-                {c.tool.name} • prochaine révision le {new Date(c.revisionDate).toLocaleDateString('fr-FR')}
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  className="btn btn-danger px-2 py-1 text-xs"
-                  onClick={() => remove(c.id)}
-                >
-                  Supprimer
-                </button>
-              </div>
-            </li>
-          ))}
+          {certs.map(c => {
+            const isSoon = new Date(c.revisionDate) - new Date() < 1000 * 60 * 60 * 24 * 90
+            return (
+              <li
+                key={c.id}
+                className={`flex items-center justify-between p-3 text-sm ${
+                  isSoon ? 'bg-red-50 text-red-700' : ''
+                }`}
+              >
+                <div>
+                  {c.tool.name} • prochaine révision le{' '}
+                  {new Date(c.revisionDate).toLocaleDateString('fr-FR')}
+                  {isSoon && ' ⚠️'}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    className="btn btn-danger px-2 py-1 text-xs"
+                    onClick={() => remove(c.id)}
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </li>
+            )
+          })}
           {certs.length === 0 && (
             <li className="p-3 text-sm text-gray-500">Aucun certificat</li>
           )}
