@@ -20,12 +20,6 @@ const MACHINE_NAMES = [
   'Jeu 4 Care Pression matière Gleizé'
 ]
 
-const DURATIONS = [
-  { label: '3 mois', value: 3 },
-  { label: '6 mois', value: 6 },
-  { label: '12 mois', value: 12 }
-]
-
 export default function MachinesRevision() {
   const [machines, setMachines] = useState(() =>
     MACHINE_NAMES.map(name => ({ name, nextRevision: null }))
@@ -61,11 +55,13 @@ export default function MachinesRevision() {
     m => m.nextRevision && m.nextRevision - Date.now() <= threeMonthsMs
   )
 
-  const handleChange = (name, months) => {
-    const next = new Date()
-    next.setMonth(next.getMonth() + months)
+  const handleChange = (name, dateStr) => {
     setMachines(machines =>
-      machines.map(m => (m.name === name ? { ...m, nextRevision: next } : m))
+      machines.map(m =>
+        m.name === name
+          ? { ...m, nextRevision: dateStr ? new Date(dateStr) : null }
+          : m
+      )
     )
   }
 
@@ -80,17 +76,17 @@ export default function MachinesRevision() {
         <div key={m.name} className="card space-y-2">
           <h2 className="font-semibold">{m.name}</h2>
           <div className="flex items-center gap-2">
-            <label className="text-sm">Durée avant prochaine révision :</label>
-            <select
+            <label className="text-sm">Prochaine révision :</label>
+            <input
+              type="date"
               className="border rounded p-1 text-sm"
-              defaultValue=""
-              onChange={e => handleChange(m.name, Number(e.target.value))}
-            >
-              <option value="">Sélectionner</option>
-              {DURATIONS.map(d => (
-                <option key={d.value} value={d.value}>{d.label}</option>
-              ))}
-            </select>
+              value={
+                m.nextRevision
+                  ? m.nextRevision.toISOString().split('T')[0]
+                  : ''
+              }
+              onChange={e => handleChange(m.name, e.target.value)}
+            />
           </div>
           {m.nextRevision && (
             <p className="text-sm">
