@@ -11,12 +11,20 @@ export default function ManageCertifications() {
   const [msg, setMsg] = useState('')
 
   async function load(cat = category) {
-    const toolsRes = await fetch(`/api/tools?category=${cat}`)
-    const toolsData = await toolsRes.json()
-    setTools(toolsData.tools)
-    const certRes = await fetch('/api/certifications')
-    const certData = await certRes.json()
-    setCerts(certData.certifications)
+    try {
+      const toolsRes = await fetch(`/api/tools?category=${cat}`, { cache: 'no-store' })
+      if (!toolsRes.ok) throw new Error('tools')
+      const toolsData = await toolsRes.json()
+      setTools(toolsData.tools || [])
+
+      const certRes = await fetch('/api/certifications', { cache: 'no-store' })
+      if (!certRes.ok) throw new Error('certs')
+      const certData = await certRes.json()
+      setCerts(certData.certifications || [])
+    } catch (e) {
+      setTools([])
+      setCerts([])
+    }
   }
   useEffect(() => {
     setToolId('')
@@ -64,8 +72,11 @@ export default function ManageCertifications() {
             value={toolId}
             onChange={e => setToolId(e.target.value)}
             required
+            disabled={tools.length === 0}
           >
-            <option value="" disabled>Sélectionner...</option>
+            <option value="" disabled>
+              {tools.length === 0 ? 'Aucun outil disponible' : 'Sélectionner...'}
+            </option>
             {tools.map(t => (
               <option key={t.id} value={String(t.id)}>
                 {t.name}
