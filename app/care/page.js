@@ -25,7 +25,7 @@ const extraTools = [
 export default function CarePage() {
   const { status } = useSession()
   const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState('')
+  const [selected, setSelected] = useState(null)
   const [tools, setTools] = useState([])
 
   useEffect(() => {
@@ -55,27 +55,25 @@ export default function CarePage() {
           value={query}
           onChange={e => {
             setQuery(e.target.value)
-            setSelected('')
+            setSelected(null)
           }}
         />
-        <select
-          className="input mb-4"
-          value={selected}
-          onChange={e => setSelected(e.target.value)}
-        >
-          <option value="">Sélectionner...</option>
+        <ul className="divide-y">
           {results.map(t => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
+            <li key={t.id}>
+              <button
+                className="w-full p-2 text-left hover:bg-gray-50"
+                onClick={() => setSelected(selected === t.id ? null : t.id)}
+              >
+                {t.name}
+              </button>
+              {selected === t.id && <ToolForm tool={t.name} />}
+            </li>
           ))}
-        </select>
-        {selected && (
-          <ToolForm tool={tools.find(t => t.id === selected)?.name || ''} />
-        )}
-        {results.length === 0 && (
-          <p className="p-2 text-sm text-gray-500">Aucun résultat</p>
-        )}
+          {results.length === 0 && (
+            <li className="p-2 text-sm text-gray-500">Aucun résultat</li>
+          )}
+        </ul>
       </div>
     </div>
   )
