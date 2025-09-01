@@ -35,20 +35,4 @@ export async function POST(req) {
     console.error('Error creating certification', e)
     return new Response('Server error', { status: 500 })
   }
-codex/corriger-l-erreur-d-ajout-de-certification-9noczl
-  const buffer = Buffer.from(await file.arrayBuffer())
-  const fileType = file.type || 'application/octet-stream'
-  const expiresAt = new Date()
-  expiresAt.setMonth(expiresAt.getMonth() + months)
-  try {
-    const certification = await prisma.certification.create({
-      data: { toolId, file: buffer, fileType, expiresAt }
-    })
-    return Response.json({ certification })
-  } catch (e) {
-    console.error('Error creating certification', e)
-    return new Response('Server error', { status: 500 })
-  }
-
- main
 }
