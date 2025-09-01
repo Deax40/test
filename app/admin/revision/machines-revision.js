@@ -26,43 +26,52 @@ export default function MachinesRevision() {
   )
 
   useEffect(() => {
-    const stored = localStorage.getItem('machineRevisions')
-    if (stored) {
+    async function load() {
       try {
-        const parsed = JSON.parse(stored)
+        const res = await fetch('/api/machine-revisions')
+        const data = await res.json()
         setMachines(prev =>
-          prev.map(m => ({
-            ...m,
-            nextRevision: parsed[m.name] ? new Date(parsed[m.name]) : null
-          }))
+          prev.map(m => {
+            const found = data.revisions.find(r => r.name === m.name)
+            return {
+              ...m,
+              nextRevision: found && found.revisionDate ? new Date(found.revisionDate) : null
+            }
+          })
         )
       } catch {
         // ignore
       }
     }
+    load()
   }, [])
-
-  useEffect(() => {
-    const data = machines.reduce((acc, m) => {
-      if (m.nextRevision) acc[m.name] = m.nextRevision.toISOString()
-      return acc
-    }, {})
-    localStorage.setItem('machineRevisions', JSON.stringify(data))
-  }, [machines])
 
   const threeMonthsMs = 1000 * 60 * 60 * 24 * 90
   const approachingMachines = machines.filter(
     m => m.nextRevision && m.nextRevision - Date.now() <= threeMonthsMs
   )
 
-  const handleChange = (name, dateStr) => {
+  const handleChange = async (name, dateStr) => {
+    const date = dateStr ? new Date(dateStr) : null
     setMachines(machines =>
       machines.map(m =>
         m.name === name
-          ? { ...m, nextRevision: dateStr ? new Date(dateStr) : null }
+          ? { ...m, nextRevision: date }
           : m
       )
     )
+    try {
+      await fetch('/api/machine-revisions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          revisionDate: date ? date.toISOString() : null
+        })
+      })
+    } catch {
+      // ignore errors
+    }
   }
 
   return (
