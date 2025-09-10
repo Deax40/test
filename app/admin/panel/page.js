@@ -3,12 +3,10 @@ import { authOptions } from '../../../lib/auth'
 import { prisma } from '../../../lib/prisma'
 import Link from 'next/link'
 import AddUserForm from './add-user'
-import EditUserForm from './edit-user'
-import ViewUserButton from './view-user'
 import ManageTools from './manage-tools'
-import ManageHabilitations from './manage-habilitations'
 import ExpiringCertAlert from './expiring-cert-alert'
 import Nav from '../../../components/nav'
+import UserList from './user-list'
 
 async function getData() {
   const logs = await prisma.log.findMany({
@@ -68,12 +66,6 @@ export default async function AdminPanelPage() {
     <div className="space-y-8">
       <Nav active="admin" />
       <ExpiringCertAlert />
-      <details className="card">
-        <summary className="text-lg font-semibold cursor-pointer">Gestion des habilitations</summary>
-        <div className="mt-2">
-          <ManageHabilitations users={users} />
-        </div>
-      </details>
       <details className="card">
         <summary className="text-lg font-semibold cursor-pointer">Journal des scans (du plus ancien au plus récent)</summary>
         <div className="mt-2">
@@ -187,22 +179,7 @@ export default async function AdminPanelPage() {
 
           <div className="mt-6">
             <h3 className="font-medium mb-2">Utilisateurs existants</h3>
-            <ul className="divide-y divide-gray-200 rounded-xl border">
-              {users.map(u => (
-                <li key={u.id} className="flex items-center justify-between p-3">
-                  <div className="text-sm">
-                    <div className="font-medium">{u.name}</div>
-                    <div className="text-gray-500">
-                      @{u.username} • {u.email || '—'} • {u.role === 'ADMIN' ? 'Admin' : 'Tech'} • créé le {new Date(u.createdAt).toLocaleDateString('fr-FR')}
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <EditUserForm user={u} />
-                    <ViewUserButton user={u} />
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <UserList users={users} />
           </div>
         </div>
       </details>

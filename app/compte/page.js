@@ -24,17 +24,20 @@ export default async function AccountPage() {
   return (
     <div className="space-y-8">
       <Nav active="compte" />
-      <div className="card">
-        <h2 className="text-lg font-semibold mb-2">Informations personnelles</h2>
-        <p><strong>Nom:</strong> {user.name}</p>
-        <p><strong>Nom d'utilisateur:</strong> {user.username}</p>
-        <p><strong>Email:</strong> {user.email || '—'}</p>
+      <h1 className="text-2xl font-bold text-center">Mon compte</h1>
+      <div className="grid gap-8 md:grid-cols-2">
+        <div className="card shadow">
+          <h2 className="text-lg font-semibold mb-2">Informations personnelles</h2>
+          <p><strong>Nom:</strong> {user.name}</p>
+          <p><strong>Nom d'utilisateur:</strong> {user.username}</p>
+          <p><strong>Email:</strong> {user.email || '—'}</p>
+        </div>
+        <div className="card shadow">
+          <h2 className="text-lg font-semibold mb-2">Réinitialiser le mot de passe</h2>
+          <ResetPasswordForm />
+        </div>
       </div>
-      <div className="card">
-        <h2 className="text-lg font-semibold mb-2">Réinitialiser le mot de passe</h2>
-        <ResetPasswordForm />
-      </div>
-      <div className="card">
+      <div className="card shadow">
         <h2 className="text-lg font-semibold mb-2">Mes scans</h2>
         <ul className="divide-y divide-gray-200">
           {user.logs.map(l => (
@@ -46,7 +49,7 @@ export default async function AccountPage() {
           {user.logs.length === 0 && <li className="p-2 text-sm">Aucun scan.</li>}
         </ul>
       </div>
-      <div className="card">
+      <div className="card shadow">
         <h2 className="text-lg font-semibold mb-2">Habilitation personnelle</h2>
         <ul className="divide-y divide-gray-200">
           {user.habilitations.map(h => (
