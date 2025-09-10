@@ -52,12 +52,19 @@ export default async function AccountPage() {
       <div className="card shadow">
         <h2 className="text-lg font-semibold mb-2">Habilitation personnelle</h2>
         <ul className="divide-y divide-gray-200">
-          {user.habilitations.map(h => (
-            <li key={h.id} className="p-2 text-sm flex justify-between">
-              <a className="underline" href={h.filePath} target="_blank" rel="noopener noreferrer">{h.filePath.split('/').pop()}</a>
-              <span>exp. {new Date(h.expiresAt).toLocaleDateString('fr-FR')}</span>
-            </li>
-          ))}
+            {user.habilitations.map(h => (
+              <li key={h.id} className="p-2 text-sm flex justify-between">
+                <a
+                  className="underline"
+                  href={`/api/habilitations/${h.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {h.filePath.split('/').pop()}
+                </a>
+                <span>exp. {new Date(h.expiresAt).toLocaleDateString('fr-FR')}</span>
+              </li>
+            ))}
           {user.habilitations.length === 0 && <li className="p-2 text-sm">Aucune habilitation.</li>}
         </ul>
       </div>
