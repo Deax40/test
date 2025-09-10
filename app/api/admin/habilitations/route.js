@@ -22,8 +22,21 @@ export async function POST(req) {
 
   const buffer = Buffer.from(await file.arrayBuffer())
   const filename = `${Date.now()}-${file.name}`
-  const dir = path.join(process.cwd(), 'public', 'habilitations', userId)
-  await fs.mkdir(dir, { recursive: true })
+
+  // Try to write inside the public directory so that files can be served
+  // statically. When running in serverless environments like Vercel the
+  // project directory is read-only and the "public" folder might not be
+  // available. In that case we fall back to a temporary directory which is
+  // writable at runtime.
+  const publicRoot = path.join(process.cwd(), 'public', 'habilitations')
+  let dir = path.join(publicRoot, userId)
+  try {
+    await fs.mkdir(dir, { recursive: true })
+  } catch (err) {
+    console.warn('Falling back to tmp directory for habilitation files', err)
+    dir = path.join('/tmp', 'habilitations', userId)
+    await fs.mkdir(dir, { recursive: true })
+  }
   const filepath = path.join(dir, filename)
 
   try {
@@ -33,10 +46,14 @@ export async function POST(req) {
     return new Response('Failed to save file', { status: 500 })
   }
 
+  const filePathForDb = dir.startsWith(publicRoot)
+    ? `/habilitations/${userId}/${filename}`
+    : filepath
+
   const hab = await prisma.habilitation.create({
     data: {
       user: { connect: { id: userId } },
-      filePath: `/habilitations/${userId}/${filename}`,
+      filePath: filePathForDb,
       expiresAt
     }
   })
