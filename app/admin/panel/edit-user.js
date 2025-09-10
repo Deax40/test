@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import DeleteButton from './delete-button'
+import UserHabilitations from './user-habilitations'
 
 export default function EditUserForm({ user }) {
   const [editing, setEditing] = useState(false)
@@ -32,36 +33,39 @@ export default function EditUserForm({ user }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-2 mr-2 text-left">
-      <div>
-        <label className="label">Nom</label>
-        <input className="input" value={name} onChange={e=>setName(e.target.value)} required />
-      </div>
-      <div>
-        <label className="label">Nom d'utilisateur</label>
-        <input className="input" value={username} onChange={e=>setUsername(e.target.value)} required />
-      </div>
-      <div>
-        <label className="label">Email</label>
-        <input className="input" type="email" value={email} onChange={e=>setEmail(e.target.value)} />
-      </div>
-      <div>
-        <label className="label">Mot de passe (laisser vide pour ne pas changer)</label>
-        <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-      </div>
-      <div>
-        <label className="label">Rôle</label>
-        <select className="input" value={role} onChange={e=>setRole(e.target.value)}>
-          <option value="TECH">Technicien</option>
-          <option value="ADMIN">Administrateur</option>
-        </select>
-      </div>
-      {msg && <p className="text-sm">{msg}</p>}
-      <div className="flex gap-2">
-        <button className="btn btn-success">Enregistrer</button>
-        <DeleteButton id={user.id} />
-        <button type="button" className="btn" onClick={() => setEditing(false)}>Annuler</button>
-      </div>
-    </form>
+    <div className="space-y-4 mr-2 text-left">
+      <form onSubmit={onSubmit} className="space-y-2">
+        <div>
+          <label className="label">Nom</label>
+          <input className="input" value={name} onChange={e=>setName(e.target.value)} required />
+        </div>
+        <div>
+          <label className="label">Nom d'utilisateur</label>
+          <input className="input" value={username} onChange={e=>setUsername(e.target.value)} required />
+        </div>
+        <div>
+          <label className="label">Email</label>
+          <input className="input" type="email" value={email} onChange={e=>setEmail(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Mot de passe (laisser vide pour ne pas changer)</label>
+          <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Rôle</label>
+          <select className="input" value={role} onChange={e=>setRole(e.target.value)}>
+            <option value="TECH">Technicien</option>
+            <option value="ADMIN">Administrateur</option>
+          </select>
+        </div>
+        {msg && <p className="text-sm">{msg}</p>}
+        <div className="flex gap-2">
+          <button className="btn btn-success">Enregistrer</button>
+          <DeleteButton id={user.id} />
+          <button type="button" className="btn" onClick={() => setEditing(false)}>Annuler</button>
+        </div>
+      </form>
+      <UserHabilitations userId={user.id} />
+    </div>
   )
 }
