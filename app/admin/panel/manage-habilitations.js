@@ -44,15 +44,22 @@ export default function ManageHabilitations({ users }) {
         <button className="btn btn-success">Ajouter</button>
       </form>
       <ul className="divide-y divide-gray-200 rounded-xl border">
-        {habilitations.map(h => (
-          <li key={h.id} className="flex items-center justify-between p-3">
-            <div className="text-sm">
-              <a className="underline" href={h.filePath} target="_blank" rel="noopener noreferrer">{h.filePath.split('/').pop()}</a>
-              <span className="ml-2 text-xs text-gray-500">exp. {new Date(h.expiresAt).toLocaleDateString('fr-FR')}</span>
-            </div>
-            <button className="btn btn-danger" onClick={() => onDelete(h.id)}>Supprimer</button>
-          </li>
-        ))}
+          {habilitations.map(h => (
+            <li key={h.id} className="flex items-center justify-between p-3">
+              <div className="text-sm">
+                <a
+                  className="underline"
+                  href={`/api/habilitations/${h.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {h.filePath.split('/').pop()}
+                </a>
+                <span className="ml-2 text-xs text-gray-500">exp. {new Date(h.expiresAt).toLocaleDateString('fr-FR')}</span>
+              </div>
+              <button className="btn btn-danger" onClick={() => onDelete(h.id)}>Supprimer</button>
+            </li>
+          ))}
         {habilitations.length === 0 && <li className="p-3 text-sm">Aucune habilitation.</li>}
       </ul>
     </div>

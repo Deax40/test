@@ -41,7 +41,14 @@ export default function UserHabilitations({ userId }) {
       <ul className="divide-y divide-gray-200 rounded-xl border">
         {habilitations.map(h => (
           <li key={h.id} className="flex items-center justify-between p-3 text-sm">
-            <a className="underline" href={h.filePath} target="_blank" rel="noopener noreferrer">{h.filePath.split('/').pop()}</a>
+            <a
+              className="underline"
+              href={`/api/habilitations/${h.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {h.filePath.split('/').pop()}
+            </a>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">exp. {new Date(h.expiresAt).toLocaleDateString('fr-FR')}</span>
               <button type="button" className="btn btn-danger" onClick={() => onDelete(h.id)}>Supprimer</button>
