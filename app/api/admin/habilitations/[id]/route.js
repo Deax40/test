@@ -14,7 +14,14 @@ export async function DELETE(req, { params }) {
   if (!hab) return new Response('Not found', { status: 404 })
   await prisma.habilitation.delete({ where: { id } })
   try {
-    await fs.unlink(path.join(process.cwd(), 'public', hab.filePath))
+    // Stored paths are usually relative to the public directory so that files
+    // can be served statically. If an absolute path is stored (e.g. when
+    // falling back to the temporary directory in serverless environments),
+    // use it directly.
+    const fileOnDisk = path.isAbsolute(hab.filePath)
+      ? hab.filePath
+      : path.join(process.cwd(), 'public', hab.filePath)
+    await fs.unlink(fileOnDisk)
   } catch {}
   return Response.json({ ok: true })
 }
