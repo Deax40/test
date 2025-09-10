@@ -6,6 +6,7 @@ import AddUserForm from './add-user'
 import EditUserForm from './edit-user'
 import ViewUserButton from './view-user'
 import ManageTools from './manage-tools'
+import ManageHabilitations from './manage-habilitations'
 import ExpiringCertAlert from './expiring-cert-alert'
 import Nav from '../../../components/nav'
 
@@ -67,6 +68,12 @@ export default async function AdminPanelPage() {
     <div className="space-y-8">
       <Nav active="admin" />
       <ExpiringCertAlert />
+      <details className="card">
+        <summary className="text-lg font-semibold cursor-pointer">Gestion des habilitations</summary>
+        <div className="mt-2">
+          <ManageHabilitations users={users} />
+        </div>
+      </details>
       <details className="card">
         <summary className="text-lg font-semibold cursor-pointer">Journal des scans (du plus ancien au plus récent)</summary>
         <div className="mt-2">
