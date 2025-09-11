@@ -3,6 +3,34 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../lib/auth'
 import nodemailer from 'nodemailer'
 
+const ALLOWED = new Set(
+  [
+    "Camera d'inspection Paris",
+    'Capteur pression Gleize',
+    'Cle Demontage Ecrou injection 195',
+    'Cle Demontage Ecrou injection 215',
+    'Cle Hydraulique',
+    'cle dynamometrique Gleize',
+    'Extracteur a choc',
+    'cle plate diam 70 Gleize',
+    'comparateur interieur pour controle fourreau',
+    'Cricket Hydraulique 4 Tonnes',
+    'douilles visseuse Gleize',
+    'kit changement codeur Baumueller Gleize',
+    'Micrometre 3 touches diam 20-50 Paris',
+    'Micrometre exterieur vis 2',
+    'Micrometre exterieur vis (illisible partiellement)',
+    'Outil Demontage Ecrou Colonne DUO',
+    'Pince a cercler les joints Gleize',
+    'pince a sertir Euromap 67 Gleize',
+    'pince a sertir cosses 10-35',
+    'testeur isolement Iso-tech Gleize',
+    'Verin 30 cm Gleize',
+    'Visseuse pneumatique Gleize',
+    'Visseuse pneumatique Paris'
+  ].map(n => n.toLowerCase())
+)
+
 export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session || session.user?.role !== 'ADMIN') {
@@ -63,7 +91,10 @@ export async function POST(req) {
     return new Response('Unauthorized', { status: 401 })
   }
   const form = await req.formData()
-  const qrData = form.get('qrData')
+  let qrData = form.get('qrData')
+  if (typeof qrData === 'string') {
+    qrData = qrData.trim()
+  }
   const lieu = form.get('lieu')
   const date = form.get('date')
   const actorName = form.get('actorName')
@@ -72,6 +103,9 @@ export async function POST(req) {
   const photo = form.get('photo')
   if (!qrData || !lieu || !date || !actorName || !etat) {
     return new Response('Missing fields', { status: 400 })
+  }
+  if (!ALLOWED.has(qrData.toLowerCase())) {
+    return new Response('QR code inconnu', { status: 400 })
   }
   const tool = await prisma.tool.findFirst({
     where: {
