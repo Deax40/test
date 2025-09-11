@@ -13,6 +13,17 @@ export async function GET(req) {
     return Response.json({ tool })
   }
 
+  const name = searchParams.get('name')
+  if (name) {
+    const tool = await prisma.tool.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' } }
+    })
+    if (!tool) {
+      return new Response('Not found', { status: 404 })
+    }
+    return Response.json({ tool })
+  }
+
   const category = searchParams.get('category')
   const normalizedCategory = category?.toUpperCase()
 

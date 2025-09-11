@@ -73,7 +73,14 @@ export async function POST(req) {
   if (!qrData || !lieu || !date || !actorName || !etat) {
     return new Response('Missing fields', { status: 400 })
   }
-  const tool = await prisma.tool.findUnique({ where: { qrData } })
+  const tool = await prisma.tool.findFirst({
+    where: {
+      OR: [
+        { qrData },
+        { name: { equals: qrData, mode: 'insensitive' } }
+      ]
+    }
+  })
   if (!tool) {
     return new Response('QR code inconnu', { status: 400 })
   }
