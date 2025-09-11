@@ -79,7 +79,7 @@ export default function ScanPage() {
                   : (result?.rawValue || result?.text || String(result))
                 if (text) {
                   const trimmed = text.trim()
-                  fetch(`/api/tools?name=${encodeURIComponent(trimmed)}`)
+                  fetch(`/api/tools?qr=${encodeURIComponent(trimmed)}`)
                     .then(r => {
                       if (r.ok) return r.json()
                       throw new Error('notfound')
