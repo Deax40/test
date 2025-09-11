@@ -5,6 +5,7 @@ export default function ManageTools() {
   const [tools, setTools] = useState([])
   const [name, setName] = useState('')
   const [category, setCategory] = useState('CARE')
+  const [qrData, setQrData] = useState('')
   const [msg, setMsg] = useState('')
 
   async function load() {
@@ -20,10 +21,11 @@ export default function ManageTools() {
     const res = await fetch('/api/tools', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, category })
+      body: JSON.stringify({ name, category, qrData })
     })
     if (res.ok) {
       setName('')
+      setQrData('')
       load()
     } else {
       setMsg('Erreur lors de l\'ajout')
@@ -40,7 +42,7 @@ export default function ManageTools() {
 
   return (
     <div>
-      <form onSubmit={addTool} className="grid gap-3 md:grid-cols-6 items-end">
+      <form onSubmit={addTool} className="grid gap-3 md:grid-cols-8 items-end">
         <div>
           <label className="label">Nom</label>
           <input className="input" value={name} onChange={e=>setName(e.target.value)} required />
@@ -51,6 +53,10 @@ export default function ManageTools() {
             <option value="CARE">Care</option>
             <option value="COMMUN">Commun</option>
           </select>
+        </div>
+        <div>
+          <label className="label">QR Data</label>
+          <input className="input" value={qrData} onChange={e=>setQrData(e.target.value)} required />
         </div>
         <button className="btn btn-success">Ajouter</button>
       </form>
