@@ -8,15 +8,15 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  username     String    @unique
-  name         String
-  email        String?   @unique
-  passwordHash String
-  role         String    @default("TECH") // "TECH" ou "ADMIN" defaut automatiquement en temps que tech
-  createdAt    DateTime  @default(now())
-  logs         Log[]     @relation("UserLogs")
-  toolLogs     ToolLog[]
+  id            String         @id @default(cuid())
+  username      String         @unique
+  name          String
+  email         String?        @unique
+  passwordHash  String
+  role          String         @default("TECH") // "TECH" ou "ADMIN" defaut automatiquement en temps que tech
+  createdAt     DateTime       @default(now())
+  logs          Log[]          @relation("UserLogs")
+  toolLogs      ToolLog[]
   habilitations Habilitation[]
 }
 
@@ -50,10 +50,14 @@ model ToolLog {
 }
 
 model Tool {
-  id        String   @id @default(cuid())
-  name      String
-  category  String
-  createdAt DateTime @default(now())
+  id             String          @id @default(cuid())
+  name           String
+  category       String
+  qrData         String          @unique
+  lastScanAt     DateTime?
+  lastScanUser   String?
+  lastScanLieu   String?
+  createdAt      DateTime        @default(now())
   certifications Certification[]
 }
 
@@ -66,11 +70,11 @@ model Certification {
 }
 
 model MachineRevision {
-  id           String   @id @default(cuid())
-  name         String   @unique
+  id           String    @id @default(cuid())
+  name         String    @unique
   revisionDate DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model Habilitation {

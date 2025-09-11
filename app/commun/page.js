@@ -2,12 +2,10 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Nav from '../../components/nav'
-import ToolForm from '../../components/tool-form'
 
 export default function CommunPage() {
   const { status } = useSession()
   const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState(null)
   const [tools, setTools] = useState([])
 
   useEffect(() => {
@@ -28,22 +26,31 @@ export default function CommunPage() {
       <div className="card">
         <h1 className="text-lg font-semibold mb-4">Find Commun Tool</h1>
         <input className="input mb-4" placeholder="Rechercher..." value={query} onChange={e=>setQuery(e.target.value)} />
-        <ul className="divide-y">
-          {results.map(t => (
-            <li key={t.id}>
-              <button
-                className="w-full p-2 text-left hover:bg-gray-50"
-                onClick={() => setSelected(selected === t.id ? null : t.id)}
-              >
-                {t.name}
-              </button>
-              {selected === t.id && <ToolForm tool={t.name} />}
-            </li>
-          ))}
-          {results.length === 0 && (
-            <li className="p-2 text-sm text-gray-500">Aucun résultat</li>
-          )}
-        </ul>
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr>
+              <th className="text-left p-2">Outil</th>
+              <th className="text-left p-2">Dernier scan</th>
+              <th className="text-left p-2">Utilisateur</th>
+              <th className="text-left p-2">Lieu</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.map(t => (
+              <tr key={t.id} className="border-t">
+                <td className="p-2">{t.name}</td>
+                <td className="p-2">{t.lastScanAt ? new Date(t.lastScanAt).toLocaleString('fr-FR') : '-'}</td>
+                <td className="p-2">{t.lastScanUser || '-'}</td>
+                <td className="p-2">{t.lastScanLieu || '-'}</td>
+              </tr>
+            ))}
+            {results.length === 0 && (
+              <tr>
+                <td colSpan={4} className="p-2 text-sm text-gray-500">Aucun résultat</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   )

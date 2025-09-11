@@ -73,6 +73,10 @@ export async function POST(req) {
   if (!qrData || !lieu || !date || !actorName || !etat) {
     return new Response('Missing fields', { status: 400 })
   }
+  const tool = await prisma.tool.findUnique({ where: { qrData } })
+  if (!tool) {
+    return new Response('QR code inconnu', { status: 400 })
+  }
   let photoBuffer = null
   let photoType = null
   if (etat === 'PROBLEME') {
@@ -96,6 +100,14 @@ export async function POST(req) {
       photo: photoBuffer,
       photoType,
       createdBy: { connect: { username: session.user.username } }
+    }
+  })
+  await prisma.tool.update({
+    where: { id: tool.id },
+    data: {
+      lastScanAt: new Date(date),
+      lastScanUser: actorName,
+      lastScanLieu: lieu
     }
   })
   const count = await prisma.log.count()
