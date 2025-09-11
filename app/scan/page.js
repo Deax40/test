@@ -92,7 +92,7 @@ export default function ScanPage() {
                     .catch(() => {
                       setQrData('')
                       setTool(null)
-                      setMessage('Erreur: QR code inconnu')
+                      setMessage('Scan refusé : QR code non reconnu')
                     })
                 }
               }}
@@ -162,19 +162,19 @@ export default function ScanPage() {
               <label className="label">Qui le fait</label>
               <input className="input bg-gray-100 text-gray-500" value={actorName} readOnly />
             </div>
-            {message && (
-              <p
-                className={`text-sm ${
-                  message.startsWith('Erreur') ? 'text-red-600' : 'text-green-600'
-                }`}
-              >
-                {message}
-              </p>
-            )}
             <button className="btn btn-success w-full">Enregistrer</button>
           </form>
         )}
       </div>
+      {message && (
+        <p
+          className={`mt-4 text-center ${
+            message.includes('Enregistré') ? 'text-green-600' : 'text-red-600'
+          }`}
+        >
+          {message}
+        </p>
+      )}
     </div>
   )
 }
