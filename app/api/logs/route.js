@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../lib/auth'
 import nodemailer from 'nodemailer'
 
-codex/add-qr-code-whitelist-feature-2eb8ol
+// List of tools allowed to log reports
 const ALLOWED = new Set(
   [
     "Camera d'inspection Paris",
@@ -31,33 +31,6 @@ const ALLOWED = new Set(
     'Visseuse pneumatique Paris'
   ].map(n => n.toLowerCase())
 )
-
-const ALLOWED = new Set([
-  "Camera d'inspection Paris",
-  'Capteur pression Gleize',
-  'Cle Demontage Ecrou injection 195',
-  'Cle Demontage Ecrou injection 215',
-  'Cle Hydraulique',
-  'cle dynamometrique Gleize',
-  'Extracteur a choc',
-  'cle plate diam 70 Gleize',
-  'comparateur interieur pour controle fourreau',
-  'Cricket Hydraulique 4 Tonnes',
-  'douilles visseuse Gleize',
-  'kit changement codeur Baumueller Gleize',
-  'Micrometre 3 touches diam 20-50 Paris',
-  'Micrometre exterieur vis 2',
-  'Micrometre exterieur vis (illisible partiellement)',
-  'Outil Demontage Ecrou Colonne DUO',
-  'Pince a cercler les joints Gleize',
-  'pince a sertir Euromap 67 Gleize',
-  'pince a sertir cosses 10-35',
-  'testeur isolement Iso-tech Gleize',
-  'Verin 30 cm Gleize',
-  'Visseuse pneumatique Gleize',
-  'Visseuse pneumatique Paris'
-])
-main
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
@@ -132,11 +105,7 @@ export async function POST(req) {
   if (!qrData || !lieu || !date || !actorName || !etat) {
     return new Response('Missing fields', { status: 400 })
   }
-codex/add-qr-code-whitelist-feature-2eb8ol
   if (!ALLOWED.has(qrData.toLowerCase())) {
-
-  if (!ALLOWED.has(qrData)) {
- main
     return new Response('QR code inconnu', { status: 400 })
   }
   const tool = await prisma.tool.findFirst({
