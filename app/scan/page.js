@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react'
 import { Scanner } from '@yudiel/react-qr-scanner'
 import Nav from '../../components/nav'
 
-const VALID_TOOL_NAMES = [
+const ALLOWED = new Set([
   "Camera d'inspection Paris",
   'Capteur pression Gleize',
   'Cle Demontage Ecrou injection 195',
@@ -28,7 +28,7 @@ const VALID_TOOL_NAMES = [
   'Verin 30 cm Gleize',
   'Visseuse pneumatique Gleize',
   'Visseuse pneumatique Paris'
-]
+])
 
 function getParisDateTime() {
   return new Date()
@@ -105,7 +105,7 @@ export default function ScanPage() {
                   : (result?.rawValue || result?.text || String(result))
                 if (text) {
                   const trimmed = text.trim()
-                  if (!VALID_TOOL_NAMES.includes(trimmed)) {
+                  if (!ALLOWED.has(trimmed)) {
                     setQrData('')
                     setTool(null)
                     setMessage('Scan refusé : QR code non reconnu')
