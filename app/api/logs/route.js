@@ -107,7 +107,8 @@ export async function POST(req) {
     data: {
       lastScanAt: new Date(date),
       lastScanUser: actorName,
-      lastScanLieu: lieu
+      lastScanLieu: lieu,
+      lastScanEtat: etat
     }
   })
   const count = await prisma.log.count()

@@ -15,19 +15,26 @@ export default function CommunPage() {
   }, [status])
 
   useEffect(() => {
-    fetch('/api/tools?category=COMMUN').then(r => r.json()).then(d => setTools(d.tools))
+    fetch('/api/tools?category=COMMUN')
+      .then(r => r.json())
+      .then(d => setTools(d.tools))
   }, [])
 
   const results = tools.filter(t => t.name.toLowerCase().includes(query.toLowerCase()))
-  const format = (v) => (v && String(v).trim() !== '' ? v : '-')
-  const formatDate = (d) => (d ? new Date(d).toLocaleString('fr-FR') : '-')
+  const format = v => (v && String(v).trim() !== '' ? v : '-')
+  const formatDate = d => (d ? new Date(d).toLocaleString('fr-FR') : '-')
 
   return (
     <div>
       <Nav active="commun" />
       <div className="card">
         <h1 className="text-lg font-semibold mb-4">Find Commun Tool</h1>
-        <input className="input mb-4" placeholder="Rechercher..." value={query} onChange={e=>setQuery(e.target.value)} />
+        <input
+          className="input mb-4"
+          placeholder="Rechercher..."
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+        />
         <table className="min-w-full text-sm">
           <thead>
             <tr>
@@ -35,26 +42,22 @@ export default function CommunPage() {
               <th className="text-left p-2">Dernier scan</th>
               <th className="text-left p-2">Utilisateur</th>
               <th className="text-left p-2">Lieu</th>
+              <th className="text-left p-2">État</th>
             </tr>
           </thead>
           <tbody>
             {results.map(t => (
               <tr key={t.id} className="border-t">
                 <td className="p-2">{t.name}</td>
- codex/implement-qr-code-filtering-and-updates-espo3v
                 <td className="p-2">{formatDate(t.lastScanAt)}</td>
                 <td className="p-2">{format(t.lastScanUser)}</td>
                 <td className="p-2">{format(t.lastScanLieu)}</td>
-
-                <td className="p-2">{t.lastScanAt ? new Date(t.lastScanAt).toLocaleString('fr-FR') : '-'}</td>
-                <td className="p-2">{t.lastScanUser || '-'}</td>
-                <td className="p-2">{t.lastScanLieu || '-'}</td>
-main
+                <td className="p-2">{format(t.lastScanEtat)}</td>
               </tr>
             ))}
             {results.length === 0 && (
               <tr>
-                <td colSpan={4} className="p-2 text-sm text-gray-500">Aucun résultat</td>
+                <td colSpan={5} className="p-2 text-sm text-gray-500">Aucun résultat</td>
               </tr>
             )}
           </tbody>

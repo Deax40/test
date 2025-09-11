@@ -57,6 +57,7 @@ model Tool {
   lastScanAt     DateTime?
   lastScanUser   String?
   lastScanLieu   String?
+  lastScanEtat   String?
   createdAt      DateTime        @default(now())
   certifications Certification[]
 }
