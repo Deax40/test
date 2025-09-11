@@ -19,6 +19,8 @@ export default function CommunPage() {
   }, [])
 
   const results = tools.filter(t => t.name.toLowerCase().includes(query.toLowerCase()))
+  const format = (v) => (v && String(v).trim() !== '' ? v : '-')
+  const formatDate = (d) => (d ? new Date(d).toLocaleString('fr-FR') : '-')
 
   return (
     <div>
@@ -39,9 +41,15 @@ export default function CommunPage() {
             {results.map(t => (
               <tr key={t.id} className="border-t">
                 <td className="p-2">{t.name}</td>
+ codex/implement-qr-code-filtering-and-updates-espo3v
+                <td className="p-2">{formatDate(t.lastScanAt)}</td>
+                <td className="p-2">{format(t.lastScanUser)}</td>
+                <td className="p-2">{format(t.lastScanLieu)}</td>
+
                 <td className="p-2">{t.lastScanAt ? new Date(t.lastScanAt).toLocaleString('fr-FR') : '-'}</td>
                 <td className="p-2">{t.lastScanUser || '-'}</td>
                 <td className="p-2">{t.lastScanLieu || '-'}</td>
+main
               </tr>
             ))}
             {results.length === 0 && (
