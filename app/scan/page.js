@@ -4,34 +4,6 @@ import { useSession } from 'next-auth/react'
 import { Scanner } from '@yudiel/react-qr-scanner'
 import Nav from '../../components/nav'
 
-const ALLOWED = new Set(
-  [
-    "Camera d'inspection Paris",
-    'Capteur pression Gleize',
-    'Cle Demontage Ecrou injection 195',
-    'Cle Demontage Ecrou injection 215',
-    'Cle Hydraulique',
-    'cle dynamometrique Gleize',
-    'Extracteur a choc',
-    'cle plate diam 70 Gleize',
-    'comparateur interieur pour controle fourreau',
-    'Cricket Hydraulique 4 Tonnes',
-    'douilles visseuse Gleize',
-    'kit changement codeur Baumueller Gleize',
-    'Micrometre 3 touches diam 20-50 Paris',
-    'Micrometre exterieur vis 2',
-    'Micrometre exterieur vis (illisible partiellement)',
-    'Outil Demontage Ecrou Colonne DUO',
-    'Pince a cercler les joints Gleize',
-    'pince a sertir Euromap 67 Gleize',
-    'pince a sertir cosses 10-35',
-    'testeur isolement Iso-tech Gleize',
-    'Verin 30 cm Gleize',
-    'Visseuse pneumatique Gleize',
-    'Visseuse pneumatique Paris'
-  ].map(n => n.toLowerCase())
-)
-
 function getParisDateTime() {
   return new Date()
     .toLocaleString('sv-SE', { timeZone: 'Europe/Paris' })
@@ -107,12 +79,6 @@ export default function ScanPage() {
                   : (result?.rawValue || result?.text || String(result))
                 if (text) {
                   const trimmed = text.trim()
-                  if (!ALLOWED.has(trimmed.toLowerCase())) {
-                    setQrData('')
-                    setTool(null)
-                    setMessage('Scan refusé : QR code non reconnu')
-                    return
-                  }
                   fetch(`/api/tools?name=${encodeURIComponent(trimmed)}`)
                     .then(r => {
                       if (r.ok) return r.json()
