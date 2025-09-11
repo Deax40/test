@@ -14,6 +14,7 @@ function getParisDateTime() {
 export default function ScanPage() {
   const { status, data: session } = useSession()
   const [qrData, setQrData] = useState('')
+  const [tool, setTool] = useState(null)
   const [lieu, setLieu] = useState('')
   const [date, setDate] = useState(() => getParisDateTime())
   const [actorName, setActorName] = useState('')
@@ -51,6 +52,7 @@ export default function ScanPage() {
     if (res.ok) {
       setMessage('Enregistré ✅')
       setQrData('')
+      setTool(null)
       setLieu('')
       setEtat('RAS')
       setProbleme('')
@@ -76,8 +78,22 @@ export default function ScanPage() {
                   ? (result[0]?.rawValue || result[0]?.text)
                   : (result?.rawValue || result?.text || String(result))
                 if (text) {
-                  setQrData(text)
-                  setDate(getParisDateTime())
+                  fetch(`/api/tools?qr=${encodeURIComponent(text)}`)
+                    .then(r => {
+                      if (r.ok) return r.json()
+                      throw new Error('notfound')
+                    })
+                    .then(data => {
+                      setQrData(text)
+                      setTool(data.tool)
+                      setDate(getParisDateTime())
+                      setMessage('')
+                    })
+                    .catch(() => {
+                      setQrData('')
+                      setTool(null)
+                      setMessage('Erreur: QR code inconnu')
+                    })
                 }
               }}
               onError={(err) => console.error(err)}
@@ -85,19 +101,12 @@ export default function ScanPage() {
           </div>
           <p className="text-xs text-gray-500 mt-2">Autorisez l'accès à la caméra.</p>
         </div>
-        {qrData && (
+        {tool && (
           <form onSubmit={submit} className="card space-y-4">
             <h2 className="text-lg font-semibold">Détails</h2>
             <div>
-              <label className="label">Donnée QR</label>
-              <textarea
-                className="input"
-                rows={3}
-                value={qrData}
-                onChange={e => setQrData(e.target.value)}
-                placeholder="Contenu du QR code"
-                required
-              />
+              <label className="label">Outil</label>
+              <input className="input bg-gray-100 text-gray-500" value={tool.name} readOnly />
             </div>
             <div>
               <label className="label">Lieu</label>
