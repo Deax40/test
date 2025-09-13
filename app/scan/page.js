@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { Scanner } from '@yudiel/react-qr-scanner'
 import Nav from '../../components/nav'
-import { COMMUN_TOOLS } from '@/lib/commun-tools'
 
 function getParisDateTime() {
   return new Date()
@@ -20,11 +19,9 @@ export default function ScanPage() {
   const [date, setDate] = useState(() => getParisDateTime())
   const [actorName, setActorName] = useState('')
   const [etat, setEtat] = useState('RAS')
-  const [probleme, setProbleme] = useState('')
-  const [photo, setPhoto] = useState(null)
   const [message, setMessage] = useState('')
   const [lastScan, setLastScan] = useState('')
-  const allowedQRs = COMMUN_TOOLS
+  const [tools, setTools] = useState([])
 
   async function sha256Hex(str) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
@@ -45,15 +42,13 @@ export default function ScanPage() {
       console.error(e)
     }
     setQrData('')
-    setTool(null)
-    setLieu('')
-    setEtat('RAS')
-    setProbleme('')
-    setPhoto(null)
-    setDate(getParisDateTime())
-    setMessage('')
-    setLastScan('')
-  }, [])
+      setTool(null)
+      setLieu('')
+      setEtat('RAS')
+      setDate(getParisDateTime())
+      setMessage('')
+      setLastScan('')
+    }, [])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -64,6 +59,12 @@ export default function ScanPage() {
     }
   }, [status, session])
 
+  useEffect(() => {
+    fetch('/api/tools?category=COMMUN')
+      .then(r => r.json())
+      .then(d => setTools(d.tools || []))
+  }, [])
+
   async function submit(e) {
     e.preventDefault()
     setMessage('')
@@ -73,10 +74,6 @@ export default function ScanPage() {
     formData.append('date', date)
     formData.append('actorName', actorName)
     formData.append('etat', etat)
-    if (etat === 'PROBLEME') {
-      formData.append('probleme', probleme)
-    }
-    if (photo) formData.append('photo', photo)
     const res = await fetch('/api/logs', {
       method: 'POST',
       body: formData
@@ -87,8 +84,6 @@ export default function ScanPage() {
       setTool(null)
       setLieu('')
       setEtat('RAS')
-      setProbleme('')
-      setPhoto(null)
       setDate(getParisDateTime())
     } else {
       const t = await res.text()
@@ -113,17 +108,15 @@ export default function ScanPage() {
                 const trimmed = text.trim()
                 if (!trimmed) return
                 const lower = trimmed.toLowerCase()
-                let match = allowedQRs.find(
-                  q => q.name === trimmed || q.hash === lower
-                )
+                let match = tools.find(q => q.name === trimmed || q.qrData === lower)
                 if (!match) {
                   const hashed = await sha256Hex(trimmed)
-                  match = allowedQRs.find(q => q.hash === hashed)
+                  match = tools.find(q => q.qrData === hashed)
                 }
                 if (match) {
-                  if (match.hash === lastScan) return
-                  setLastScan(match.hash)
-                  setQrData(match.hash)
+                  if (match.qrData === lastScan) return
+                  setLastScan(match.qrData)
+                  setQrData(match.qrData)
                   setTool({ name: match.name })
                   setDate(getParisDateTime())
                   setMessage('')
@@ -156,7 +149,7 @@ export default function ScanPage() {
               />
             </div>
             <div>
-              <label className="label">État</label>
+              <label className="label">État de la boîte</label>
               <select className="input" value={etat} onChange={e => setEtat(e.target.value)}>
                 <option value="RAS">RAS</option>
                 <option value="PROBLEME">Problème</option>
@@ -171,30 +164,6 @@ export default function ScanPage() {
                 readOnly
               />
             </div>
-            {etat === 'PROBLEME' && (
-              <>
-                <div>
-                  <label className="label">Description du problème</label>
-                  <textarea
-                    className="input"
-                    rows={3}
-                    value={probleme}
-                    onChange={e => setProbleme(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="label">Photo</label>
-                  <input
-                    className="input"
-                    type="file"
-                    accept="image/*"
-                    onChange={e => setPhoto(e.target.files[0] || null)}
-                    required
-                  />
-                </div>
-              </>
-            )}
             <div>
               <label className="label">Qui le fait</label>
               <input className="input bg-gray-100 text-gray-500" value={actorName} readOnly />
