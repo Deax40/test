@@ -22,6 +22,47 @@ export default function ScanPage() {
   const [probleme, setProbleme] = useState('')
   const [photo, setPhoto] = useState(null)
   const [message, setMessage] = useState('')
+  const [lastScan, setLastScan] = useState('')
+
+  const allowedQRs = [
+    {
+      text: "Camera d'inspection Gleize",
+      hash: '28e21791f8ad1d677a8dd01ec66bad490897748e0471fad7a9e2da08aa6d5116'
+    },
+    {
+      text: "Camera d'inspection Paris",
+      hash: 'f65f52f425d18e0ebb765bcadf0b8848a87c55a573e70e9413768ff5bf483d62'
+    }
+  ]
+
+  async function sha256Hex(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  useEffect(() => {
+    // reset any stored data at load
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+        if (window.indexedDB?.databases) {
+          window.indexedDB.databases().then(dbs => dbs.forEach(db => db.name && indexedDB.deleteDatabase(db.name)))
+        }
+      }
+    } catch (e) {
+      console.error(e)
+    }
+    setQrData('')
+    setTool(null)
+    setLieu('')
+    setEtat('RAS')
+    setProbleme('')
+    setPhoto(null)
+    setDate(getParisDateTime())
+    setMessage('')
+    setLastScan('')
+  }, [])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -72,32 +113,33 @@ export default function ScanPage() {
           <h2 className="text-lg font-semibold mb-4">Scanner un QR code</h2>
           <div className="rounded-xl overflow-hidden bg-gray-100">
             <Scanner
-              onScan={(result) => {
+              onScan={async (result) => {
                 if (!result) return
                 const text = Array.isArray(result)
                   ? (result[0]?.rawValue || result[0]?.text)
                   : (result?.rawValue || result?.text || String(result))
-                if (text) {
-                  const trimmed = text.trim()
-                  fetch(`/api/tools?qr=${encodeURIComponent(trimmed)}`)
-                    .then(r => {
-                      if (r.ok) return r.json()
-                      throw new Error('notfound')
-                    })
-                    .then(data => {
-                      setQrData(trimmed)
-                      setTool(data.tool)
-                      setDate(getParisDateTime())
-                      setMessage('')
-                    })
-                    .catch(() => {
-                      setQrData('')
-                      setTool(null)
-                      setMessage('Scan refusé : QR code non reconnu')
-                    })
+                if (!text) return
+                const trimmed = text.trim()
+                if (!trimmed || trimmed === lastScan) return
+                setLastScan(trimmed)
+                const lower = trimmed.toLowerCase()
+                let match = allowedQRs.find(q => q.text === trimmed || q.hash === lower)
+                if (!match) {
+                  const hashed = await sha256Hex(trimmed)
+                  match = allowedQRs.find(q => q.hash === hashed)
+                }
+                if (match) {
+                  setQrData(trimmed)
+                  setTool({ name: match.text })
+                  setDate(getParisDateTime())
+                  setMessage('')
+                } else {
+                  setQrData('')
+                  setTool(null)
+                  setMessage('QR code invalide')
                 }
               }}
-              onError={(err) => console.error(err)}
+              onError={(err) => setMessage('Erreur caméra : ' + (err?.message || err))}
             />
           </div>
           <p className="text-xs text-gray-500 mt-2">Autorisez l'accès à la caméra.</p>
@@ -106,7 +148,7 @@ export default function ScanPage() {
           <form onSubmit={submit} className="card space-y-4">
             <h2 className="text-lg font-semibold">Détails</h2>
             <div>
-              <label className="label">Outil</label>
+              <label className="label">Équipement</label>
               <input className="input bg-gray-100 text-gray-500" value={tool.name} readOnly />
             </div>
             <div>
