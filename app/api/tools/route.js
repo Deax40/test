@@ -6,7 +6,19 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url)
   const qr = searchParams.get('qr')
   if (qr) {
-    const tool = await prisma.tool.findUnique({ where: { qrData: qr } })
+    let tool = await prisma.tool.findUnique({ where: { qrData: qr } })
+
+    if (!tool && qr.toLowerCase().includes("camera d'inspection gleize")) {
+      tool = await prisma.tool.findFirst({
+        where: {
+          OR: [
+            { qrData: { contains: "Camera d'inspection Gleize", mode: 'insensitive' } },
+            { name: { contains: "Camera d'inspection Gleize", mode: 'insensitive' } }
+          ]
+        }
+      })
+    }
+
     if (!tool) {
       return new Response('Not found', { status: 404 })
     }
