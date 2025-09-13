@@ -1,13 +1,16 @@
 import { PrismaClient } from '@prisma/client'
+import { COMMUN_TOOLS } from '../lib/commun-tools.js'
 
 const prisma = new PrismaClient()
 
 async function main() {
+  const sample = COMMUN_TOOLS.find(t => t.name === 'Visseuse pneumatique Paris')
+  if (!sample) throw new Error('Tool not found in list')
   const tool = await prisma.tool.create({
     data: {
-      name: 'Visseuse pneumatique Paris',
+      name: sample.name,
       category: 'COMMUN',
-      qrData: 'Visseuse pneumatique Paris'
+      qrData: sample.hash
     }
   })
   console.log('Tool inserted:', tool)

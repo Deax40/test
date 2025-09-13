@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { Scanner } from '@yudiel/react-qr-scanner'
 import Nav from '../../components/nav'
+import { COMMUN_TOOLS } from '@/lib/commun-tools'
 
 function getParisDateTime() {
   return new Date()
@@ -23,17 +24,7 @@ export default function ScanPage() {
   const [photo, setPhoto] = useState(null)
   const [message, setMessage] = useState('')
   const [lastScan, setLastScan] = useState('')
-
-  const allowedQRs = [
-    {
-      text: "Camera d'inspection Gleize",
-      hash: '28e21791f8ad1d677a8dd01ec66bad490897748e0471fad7a9e2da08aa6d5116'
-    },
-    {
-      text: "Camera d'inspection Paris",
-      hash: 'f65f52f425d18e0ebb765bcadf0b8848a87c55a573e70e9413768ff5bf483d62'
-    }
-  ]
+  const allowedQRs = COMMUN_TOOLS
 
   async function sha256Hex(str) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
@@ -120,17 +111,20 @@ export default function ScanPage() {
                   : (result?.rawValue || result?.text || String(result))
                 if (!text) return
                 const trimmed = text.trim()
-                if (!trimmed || trimmed === lastScan) return
-                setLastScan(trimmed)
+                if (!trimmed) return
                 const lower = trimmed.toLowerCase()
-                let match = allowedQRs.find(q => q.text === trimmed || q.hash === lower)
+                let match = allowedQRs.find(
+                  q => q.name === trimmed || q.hash === lower
+                )
                 if (!match) {
                   const hashed = await sha256Hex(trimmed)
                   match = allowedQRs.find(q => q.hash === hashed)
                 }
                 if (match) {
-                  setQrData(trimmed)
-                  setTool({ name: match.text })
+                  if (match.hash === lastScan) return
+                  setLastScan(match.hash)
+                  setQrData(match.hash)
+                  setTool({ name: match.name })
                   setDate(getParisDateTime())
                   setMessage('')
                 } else {

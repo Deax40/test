@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { COMMUN_TOOLS } from '../lib/commun-tools.js'
 
 const prisma = new PrismaClient()
 
@@ -46,59 +47,12 @@ async function main() {
     'Jeu 4 Care Pression matière Gleizé'
   ]
 
-  const communTools = [
-    'testeur isolement Iso-tech Gleize',
-    'Vernis 30 cm Gleize',
-    'Visseuse electronique a choc Gleize',
-    'Visseuse pneumatique Gleize',
-    'Visseuse pneumatique Paris',
-    'pince a sertir Europam 67 Gleize',
-    'pince a sertir cosses 10-35',
-    'Pompe Enerpac',
-    'Rallonge micrometre interieur controle fourreau',
-    'Regle de niveau jeu 1 Gleize',
-    'Regle de niveau jeu 2 Gleize',
-    'Micrometre exterieur vis',
-    'Micrometre interieur controle fourreau (diam 90-100)',
-    'Niveau a cadre Gleize',
-    'Outil Demontage Ecrou Colonne D10',
-    'Pince a cercler les joints Gleize',
-    'Pince a cercler les joints Paris',
-    'Kit changement codeur Baumuller Gleize',
-    'Kit change accu',
-    'Kit de reparation standard',
-    'Kit harnais + casque Gleize',
-    'Micrometre 3 touches diam 20-50 Paris',
-    'Micrometre exterieur vis 2',
-    'Douilles visseuse Gleize',
-    'Extracteur Hydraulique Paris',
-    'Jeu de Tournevix (Outil de demontage joint) Paris',
-    'Jeu de cle a ergots',
-    'jeux demontage vis a billes Gleize',
-    'jeux demontage vis a billes Paris',
-    'Cle hydraulique',
-    'cle dynamometrique Gleize',
-    'Extracteur a choc',
-    'cle plate diam 70 Gleize',
-    'comparateur interieur pour controle fourreau',
-    'Crichet hydraulique 4 Tonnes',
-    'Cle Demontage Ecrou injection 199',
-    'Cle Demontage Ecrou injection 213',
-    'Cle Demontage Ecrou injection 271',
-    'Cle Demontage Ecrou injection 320',
-    'Cle Demontage Ecrou injection 360',
-    "Camera d'inspection Gleize",
-    "Camera d'inspection Paris",
-    'Capteur pression Gleize',
-    'clef serre tube Gleize',
-    'Cle Demontage Ecrou injection 155',
-    'Cle Demontage Ecrou injection 180'
-  ]
+  const communTools = COMMUN_TOOLS
 
   await prisma.tool.createMany({
     data: [
       ...careTools.map(name => ({ name, category: 'CARE', qrData: name })),
-      ...communTools.map(name => ({ name, category: 'COMMUN', qrData: name }))
+      ...communTools.map(t => ({ name: t.name, category: 'COMMUN', qrData: t.hash }))
     ]
   })
 
