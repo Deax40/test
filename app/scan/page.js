@@ -6,22 +6,11 @@ import Nav from '@/components/nav'
 
 const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(m => m.Scanner), { ssr: false })
 
-function buildDiff(before, after) {
-  const diff = {}
-  for (const key of ['site', 'status', 'holder', 'notes']) {
-    if ((after[key] ?? '') !== (before?.[key] ?? '')) {
-      diff[key] = [before?.[key] ?? '', after[key] ?? '']
-    }
-  }
-  return diff
-}
-
 export default function ScanPage() {
-  const [hash, setHash] = useState('')
+  const [token, setToken] = useState(null)
   const [tool, setTool] = useState(null)
-  const [form, setForm] = useState({ site: '', status: '', holder: '', notes: '' })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [form, setForm] = useState({ name: '', location: '', state: '', user: '', weight: '', imoNumber: '' })
+  const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [user, setUser] = useState(null)
 
@@ -42,80 +31,76 @@ export default function ScanPage() {
     loadSession()
   }, [])
 
-  async function fetchTool(h) {
-    setLoading(true)
-    setError(null)
-    setMessage('')
-    try {
-      const res = await fetch(`/api/tools/${h}`)
-      if (res.status === 404) {
-        setTool(null)
-        setError('Outil introuvable pour ce hash')
-        return
-      }
-      if (!res.ok) throw new Error(`GET tools failed: ${res.status}`)
-      const data = await res.json()
-      setTool(data)
-      setForm({
-        site: data.site || '',
-        status: data.status || '',
-        holder: data.holder || '',
-        notes: data.notes || ''
-      })
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   function handleScan(result) {
     if (!result) return
     const text = Array.isArray(result)
       ? result[0]?.rawValue || result[0]?.text
       : result?.rawValue || result?.text || String(result)
     if (!text) return
-    const h = text.trim()
-    setHash(h)
-    fetchTool(h)
+    startScan(text.trim())
   }
 
-  async function onSave() {
-    if (!tool) return
-    const diff = buildDiff(tool, form)
-    const patchBody = {}
-    Object.keys(diff).forEach(k => {
-      patchBody[k] = diff[k][1]
-    })
+  async function startScan(hash) {
+    setError('')
+    setMessage('')
+    setToken(null)
     try {
-      if (Object.keys(patchBody).length) {
-        const p = await fetch(`/api/tools/${tool.hash}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(patchBody)
-        })
-        if (!p.ok) throw new Error(`PATCH failed: ${p.status}`)
-        const updated = await p.json()
-        setTool(updated)
-      }
-      await fetch(`/api/scans`, {
+      const res = await fetch('/api/scan/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          hash: tool.hash,
-          name: tool.name,
-          scannedBy: user?.email || '',
-          changes: Object.keys(diff).length ? diff : undefined,
-          scannedAt: new Date().toISOString()
-        })
+        body: JSON.stringify({ hash, scannedBy: user?.email || '' }),
       })
-      setMessage('Scan enregistré (COMMUN mis à jour).')
+      if (res.status === 404) {
+        setTool(null)
+        setError('Outil introuvable')
+        return
+      }
+      if (!res.ok) throw new Error('Scan failed')
+      const data = await res.json()
+      setTool(data.tool)
+      setForm({
+        name: data.tool.name || '',
+        location: data.tool.location || '',
+        state: data.tool.state || '',
+        user: data.tool.lastScanBy || '',
+        weight: data.tool.weight || '',
+        imoNumber: data.tool.imoNumber || '',
+      })
+      setToken(data.editSessionToken)
     } catch (e) {
       setError(e.message)
     }
   }
 
-  const canEdit = ['TECH', 'ADMIN'].includes(user?.role)
+  async function save() {
+    if (!token || !tool) return
+    setError('')
+    setMessage('')
+    try {
+      const res = await fetch(`/api/tools/${tool.hash}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(form),
+      })
+      if (res.status === 403) {
+        setError('Session expirée — veuillez rescanner.')
+        setToken(null)
+        return
+      }
+      if (!res.ok) throw new Error('Sauvegarde échouée')
+      const data = await res.json()
+      setTool(data.tool)
+      setToken(data.editSessionToken)
+      setMessage('Mise à jour enregistrée.')
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  const disabled = !token
 
   return (
     <div>
@@ -126,81 +111,45 @@ export default function ScanPage() {
           <div className="rounded-xl overflow-hidden bg-gray-100">
             <Scanner onScan={handleScan} onError={err => setError('Erreur caméra : ' + (err?.message || err))} />
           </div>
-          <div className="mt-2 flex gap-2">
-            <input
-              className="input flex-1"
-              placeholder="Hash de l'outil"
-              value={hash}
-              onChange={e => setHash(e.target.value)}
-            />
-            <button
-              className="btn"
-              onClick={() => {
-                if (hash) {
-                  fetchTool(hash)
-                }
-              }}
-            >
-              Charger
-            </button>
-          </div>
         </div>
         <div className="card space-y-4">
-          {loading && <p>Chargement...</p>}
           {error && <p className="text-red-600">{error}</p>}
-          {tool && !loading && !error && (
+          {tool && (
             <>
               <h2 className="text-lg font-semibold">{tool.name}</h2>
-              <p className="text-sm text-gray-600">{user?.name} ({user?.email})</p>
               <div>
-                <label className="label">Site</label>
-                <input
-                  className="input"
-                  value={form.site}
-                  onChange={e => setForm({ ...form, site: e.target.value })}
-                  readOnly={!canEdit}
-                />
+                <label className="label">Nom</label>
+                <input className="input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} readOnly={disabled} />
               </div>
               <div>
-                <label className="label">Statut</label>
-                <input
-                  className="input"
-                  value={form.status}
-                  onChange={e => setForm({ ...form, status: e.target.value })}
-                  readOnly={!canEdit}
-                />
+                <label className="label">Lieu</label>
+                <input className="input" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} readOnly={disabled} />
               </div>
               <div>
-                <label className="label">Détenteur</label>
-                <input
-                  className="input"
-                  value={form.holder}
-                  onChange={e => setForm({ ...form, holder: e.target.value })}
-                  readOnly={!canEdit}
-                />
+                <label className="label">État</label>
+                <input className="input" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} readOnly={disabled} />
               </div>
               <div>
-                <label className="label">Notes</label>
-                <textarea
-                  className="input"
-                  value={form.notes}
-                  onChange={e => setForm({ ...form, notes: e.target.value })}
-                  readOnly={!canEdit}
-                />
+                <label className="label">Dernier scan</label>
+                <p>{tool.lastScanAt || '-'}</p>
               </div>
-              <p className="text-sm text-gray-500">
-                Dernière mise à jour: {tool.updatedAt}
-              </p>
-              <button
-                className="btn btn-success w-full"
-                onClick={onSave}
-                disabled={!canEdit}
-              >
-                Enregistrer
-              </button>
+              <div>
+                <label className="label">Utilisateur</label>
+                <input className="input" value={form.user} onChange={e => setForm({ ...form, user: e.target.value })} readOnly={disabled} />
+              </div>
+              <div>
+                <label className="label">Poids</label>
+                <input className="input" value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })} readOnly={disabled} />
+              </div>
+              <div>
+                <label className="label">Numéro IMO</label>
+                <input className="input" value={form.imoNumber} onChange={e => setForm({ ...form, imoNumber: e.target.value })} readOnly={disabled} />
+              </div>
+              <button className="btn btn-success w-full" onClick={save} disabled={disabled}>Enregistrer</button>
               {message && <p className="text-green-600">{message}</p>}
             </>
           )}
+          {!tool && <p>Aucun outil chargé.</p>}
         </div>
       </div>
     </div>
