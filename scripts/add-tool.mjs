@@ -10,6 +10,7 @@ async function main() {
     data: {
       name: sample.name,
       category: 'COMMUN',
+      hash: sample.hash,
       qrData: sample.hash
     }
   })

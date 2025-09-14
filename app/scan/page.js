@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
-import { Scanner } from '@yudiel/react-qr-scanner'
+import dynamic from 'next/dynamic'
 import Nav from '@/components/nav'
-import { HASH_TO_NAME, NAME_TO_HASH } from '@/lib/toolHashes'
+
+const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(m => m.Scanner), { ssr: false })
 
 function buildDiff(before, after) {
   const diff = {}
@@ -17,20 +17,30 @@ function buildDiff(before, after) {
 }
 
 export default function ScanPage() {
-  const { data: session, status } = useSession()
   const [hash, setHash] = useState('')
   const [tool, setTool] = useState(null)
   const [form, setForm] = useState({ site: '', status: '', holder: '', notes: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [message, setMessage] = useState('')
-  const [query, setQuery] = useState('')
+  const [user, setUser] = useState(null)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      window.location.href = '/'
+    async function loadSession() {
+      try {
+        const res = await fetch('/api/session')
+        if (res.status === 401) {
+          window.location.href = '/'
+          return
+        }
+        const data = await res.json()
+        setUser(data.user)
+      } catch (e) {
+        setError(e.message)
+      }
     }
-  }, [status])
+    loadSession()
+  }, [])
 
   async function fetchTool(h) {
     setLoading(true)
@@ -65,14 +75,9 @@ export default function ScanPage() {
       ? result[0]?.rawValue || result[0]?.text
       : result?.rawValue || result?.text || String(result)
     if (!text) return
-    const trimmed = text.trim()
-    const h = HASH_TO_NAME[trimmed] ? trimmed : NAME_TO_HASH[trimmed]
-    if (h) {
-      setHash(h)
-      fetchTool(h)
-    } else {
-      setError('QR ou nom inconnu')
-    }
+    const h = text.trim()
+    setHash(h)
+    fetchTool(h)
   }
 
   async function onSave() {
@@ -99,7 +104,7 @@ export default function ScanPage() {
         body: JSON.stringify({
           hash: tool.hash,
           name: tool.name,
-          scannedBy: session?.user?.email || '',
+          scannedBy: user?.email || '',
           changes: Object.keys(diff).length ? diff : undefined,
           scannedAt: new Date().toISOString()
         })
@@ -110,7 +115,7 @@ export default function ScanPage() {
     }
   }
 
-  const canEdit = ['TECH', 'ADMIN'].includes(session?.user?.role)
+  const canEdit = ['TECH', 'ADMIN'].includes(user?.role)
 
   return (
     <div>
@@ -124,23 +129,19 @@ export default function ScanPage() {
           <div className="mt-2 flex gap-2">
             <input
               className="input flex-1"
-              placeholder="Nom de l'outil"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
+              placeholder="Hash de l'outil"
+              value={hash}
+              onChange={e => setHash(e.target.value)}
             />
             <button
               className="btn"
               onClick={() => {
-                const h = NAME_TO_HASH[query] || query
-                if (h) {
-                  setHash(h)
-                  fetchTool(h)
-                } else {
-                  setError('Outil inconnu')
+                if (hash) {
+                  fetchTool(hash)
                 }
               }}
             >
-              Chercher
+              Charger
             </button>
           </div>
         </div>
@@ -150,6 +151,7 @@ export default function ScanPage() {
           {tool && !loading && !error && (
             <>
               <h2 className="text-lg font-semibold">{tool.name}</h2>
+              <p className="text-sm text-gray-600">{user?.name} ({user?.email})</p>
               <div>
                 <label className="label">Site</label>
                 <input

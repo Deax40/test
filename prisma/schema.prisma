@@ -53,6 +53,7 @@ model Tool {
   id             String          @id @default(cuid())
   name           String
   category       String
+  hash           String          @unique
   qrData         String          @unique
   lastScanAt     DateTime?
   lastScanUser   String?

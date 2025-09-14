@@ -17,7 +17,7 @@ Application **Next.js** pour ENGEL permettant aux **techniciens** de scanner des
 
 - Next.js 14 (App Router)
 - NextAuth (Credentials, sessions JWT)
-- Prisma (+ SQLite pour dev)
+- Prisma (PostgreSQL)
 - TailwindCSS
 - @yudiel/react-qr-scanner
 
@@ -32,9 +32,10 @@ npm install
 cp .env.example .env
 ```
 
-2. (Optionnel) **Modifier** `.env` : définissez `NEXTAUTH_SECRET` à une valeur aléatoire forte.
+2. **Modifier** `.env` : renseignez `DATABASE_URL` avec l'URL de votre base Postgres et définissez `NEXTAUTH_SECRET` à une valeur aléatoire forte.
 
 3. **Init DB Prisma** et **seed** (créera 1 admin et 1 technicien de démo) :
+   > Assurez-vous que `DATABASE_URL` pointe vers une base Postgres accessible.
 
 ```bash
 npm run prisma:dev
@@ -70,7 +71,7 @@ npm run dev
 
    > Si vous utilisez Postgres en prod, **modifiez `prisma/schema.prisma`** : `provider = "postgresql"` puis executez une migration locale et **push** les changements, ou lancez `prisma migrate deploy` pendant le build.
 
-3. Dans **Build Command**, laissez par défaut (Next.js). Les scripts `prisma generate` sont déjà lancés via `npm run build`.
+3. Dans **Build Command**, laissez par défaut (Next.js). `npm run build` génère le client Prisma puis compile l'application.
 
 4. Après déploiement, exécutez (si Postgres) `npm run prisma:deploy` via un job ou un shell (ou activez les migrations Prisma automatiques).
 
