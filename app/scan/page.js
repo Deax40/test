@@ -1,15 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
- codex/fix-update-issue-for-tool-in-commun-rp4pps
 import dynamic from 'next/dynamic'
 import Nav from '@/components/nav'
 
 const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(m => m.Scanner), { ssr: false })
-
-import { Scanner } from '@yudiel/react-qr-scanner'
-import Nav from '@/components/nav'
- main
 
 function buildDiff(before, after) {
   const diff = {}
