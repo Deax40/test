@@ -8,10 +8,11 @@ export async function POST(req) {
     return new Response('Invalid JSON', { status: 400 })
   }
   const { hash, scannedBy } = body
-  if (!hash || !scannedBy) {
+  if (!hash?.trim() || !scannedBy?.trim()) {
     return new Response('Missing fields', { status: 422 })
   }
-  const result = startScan(hash.trim(), scannedBy.trim())
+  console.log('Received scan hash:', hash)
+  const result = startScan(hash, scannedBy)
   if (!result) {
     return new Response('Not found', { status: 404 })
   }
