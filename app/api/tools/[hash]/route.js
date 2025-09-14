@@ -41,6 +41,8 @@ export async function PATCH(req, { params }) {
   if (!updated) {
     return Response.json({ error: 'tool_not_found' }, { status: 404 })
   }
+  // Log the update to help verify persistence on the server side
+  console.log('Tool updated', { hash, patch, userId })
   const response = { tool: updated }
   if (userId) {
     response.editSessionToken = createToken(hash, userId)
