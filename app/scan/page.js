@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { Scanner } from '@yudiel/react-qr-scanner'
 import Nav from '../../components/nav'
+import { HASH_TO_NAME } from '@/lib/toolHashes'
 
 function getParisDateTime() {
   return new Date()
@@ -21,7 +22,6 @@ export default function ScanPage() {
   const [etat, setEtat] = useState('RAS')
   const [message, setMessage] = useState('')
   const [lastScan, setLastScan] = useState('')
-  const [tools, setTools] = useState([])
 
   async function sha256Hex(str) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
@@ -59,12 +59,6 @@ export default function ScanPage() {
     }
   }, [status, session])
 
-  useEffect(() => {
-    fetch('/api/tools?category=COMMUN')
-      .then(r => r.json())
-      .then(d => setTools(d.tools || []))
-  }, [])
-
   async function submit(e) {
     e.preventDefault()
     setMessage('')
@@ -85,6 +79,7 @@ export default function ScanPage() {
       setLieu('')
       setEtat('RAS')
       setDate(getParisDateTime())
+      setLastScan('')
     } else {
       const t = await res.text()
       setMessage('Erreur: ' + t)
@@ -107,17 +102,31 @@ export default function ScanPage() {
                 if (!text) return
                 const trimmed = text.trim()
                 if (!trimmed) return
-                const lower = trimmed.toLowerCase()
-                let match = tools.find(q => q.name === trimmed || q.qrData === lower)
-                if (!match) {
-                  const hashed = await sha256Hex(trimmed)
-                  match = tools.find(q => q.qrData === hashed)
-                }
-                if (match) {
-                  if (match.qrData === lastScan) return
-                  setLastScan(match.qrData)
-                  setQrData(match.qrData)
-                  setTool({ name: match.name })
+
+                let hash = HASH_TO_NAME[trimmed] ? trimmed : await sha256Hex(trimmed)
+                const name = HASH_TO_NAME[hash]
+
+                if (name) {
+                  if (hash === lastScan) return
+                  setLastScan(hash)
+                  setQrData(hash)
+                  try {
+                    const res = await fetch(`/api/tools?qr=${hash}`)
+                    if (res.ok) {
+                      const { tool: t } = await res.json()
+                      setTool(t)
+                      setLieu(t.lastScanLieu || '')
+                      setEtat(t.lastScanEtat || 'RAS')
+                    } else {
+                      setTool({ name })
+                      setLieu('')
+                      setEtat('RAS')
+                    }
+                  } catch (e) {
+                    setTool({ name })
+                    setLieu('')
+                    setEtat('RAS')
+                  }
                   setDate(getParisDateTime())
                   setMessage('')
                 } else {
@@ -134,6 +143,12 @@ export default function ScanPage() {
         {tool && (
           <form onSubmit={submit} className="card space-y-4">
             <h2 className="text-lg font-semibold">Détails</h2>
+            {tool.lastScanAt && (
+              <p className="text-sm text-gray-500">
+                Dernier scan: {new Date(tool.lastScanAt).toLocaleString('fr-FR')} par {tool.lastScanUser || '-'} ({tool.lastScanLieu || '-'})
+                {tool.lastScanEtat ? ` – ${tool.lastScanEtat}` : ''}
+              </p>
+            )}
             <div>
               <label className="label">Équipement</label>
               <input className="input bg-gray-100 text-gray-500" value={tool.name} readOnly />
