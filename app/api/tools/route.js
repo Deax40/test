@@ -54,10 +54,14 @@ export async function POST(req) {
   if (!session || session.user?.role !== 'ADMIN') {
     return new Response('Unauthorized', { status: 401 })
   }
-  const { name, category, qrData } = await req.json()
-  if (!name || !category || !qrData) {
+  const { name, category, hash, qrData } = await req.json()
+  if (!name || !category || !hash) {
     return new Response('Missing fields', { status: 400 })
   }
-  const tool = await prisma.tool.create({ data: { name, category, qrData } })
+  const tool = await prisma.tool.create({ data: { name, category, hash, qrData: qrData || hash } })
   return Response.json({ tool })
+}
+
+export async function PATCH() {
+  return new Response('Hash required', { status: 422 })
 }

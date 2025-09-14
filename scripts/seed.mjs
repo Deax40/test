@@ -51,8 +51,8 @@ async function main() {
 
   await prisma.tool.createMany({
     data: [
-      ...careTools.map(name => ({ name, category: 'CARE', qrData: name })),
-      ...communTools.map(t => ({ name: t.name, category: 'COMMUN', qrData: t.hash }))
+      ...careTools.map(name => ({ name, category: 'CARE', hash: name, qrData: name })),
+      ...communTools.map(t => ({ name: t.name, category: 'COMMUN', hash: t.hash, qrData: t.hash }))
     ]
   })
 
