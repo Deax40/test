@@ -1,20 +1,40 @@
 import { startScan } from '@/lib/commun-data'
 
 export async function POST(req) {
-  let body
-  try {
-    body = await req.json()
-  } catch {
-    return new Response('Invalid JSON', { status: 400 })
+  const contentType = req.headers.get('content-type') || ''
+  let hash, name, scannedBy = '', raw = ''
+  if (contentType.includes('application/json')) {
+    try {
+      const body = await req.json()
+      hash = body.hash
+      name = body.name
+      scannedBy = body.scannedBy || ''
+    } catch {
+      return Response.json(
+        { error: 'bad_request', hint: 'expecting hash|name|raw' },
+        { status: 400 }
+      )
+    }
+  } else {
+    raw = await req.text()
   }
-  const { hash, scannedBy } = body
-  if (!hash?.trim() || !scannedBy?.trim()) {
-    return new Response('Missing fields', { status: 422 })
+  if (!hash && !name && raw) {
+    const candidate = raw.trim()
+    if (/^[a-fA-F0-9]{64}$/.test(candidate)) {
+      hash = candidate.toLowerCase()
+    } else {
+      name = candidate
+    }
   }
-  console.log('Received scan hash:', hash)
-  const result = startScan(hash, scannedBy)
+  if (!hash && !name) {
+    return Response.json(
+      { error: 'bad_request', hint: 'expecting hash|name|raw' },
+      { status: 400 }
+    )
+  }
+  const result = startScan({ hash, name, scannedBy })
   if (!result) {
-    return new Response('Not found', { status: 404 })
+    return Response.json({ error: 'tool_not_found' }, { status: 404 })
   }
   return Response.json({ editSessionToken: result.token, tool: result.tool })
 }

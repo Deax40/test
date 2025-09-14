@@ -37,19 +37,19 @@ export default function ScanPage() {
       ? result[0]?.rawValue || result[0]?.text
       : result?.rawValue || result?.text || String(result)
     if (!text) return
-    startScan(text.trim().toLowerCase())
+    startScan(text)
   }
 
-  async function startScan(hash) {
-    hash = hash.trim().toLowerCase()
+  async function startScan(raw) {
+    const payload = String(raw)
     setError('')
     setMessage('')
     setToken(null)
     try {
       const res = await fetch('/api/scan/start', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hash, scannedBy: (user?.email || '').trim() }),
+        headers: { 'Content-Type': 'text/plain' },
+        body: payload,
       })
       if (res.status === 404) {
         setTool(null)
