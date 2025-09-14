@@ -10,7 +10,9 @@ export default function CommunPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch('/api/commons')
+        // Disable fetch caching to ensure the list reflects the latest
+        // data after an update from the scan page.
+        const res = await fetch('/api/commons', { cache: 'no-store' })
         const data = await res.json()
         setTools(data.tools || [])
       } catch (e) {
