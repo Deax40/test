@@ -1,24 +1,24 @@
 import { getTool, patchTool, consumeToken, createToken } from '@/lib/commun-data'
 
 export async function GET(req, { params }) {
-  const { hash } = params
+  const hash = String(params.hash || '').trim().toLowerCase()
   const tool = getTool(hash)
   if (!tool) {
-    return new Response('Not found', { status: 404 })
+    return Response.json({ error: 'tool_not_found' }, { status: 404 })
   }
   return Response.json(tool)
 }
 
 export async function PATCH(req, { params }) {
-  const { hash } = params
+  const hash = String(params.hash || '').trim().toLowerCase()
   const auth = req.headers.get('authorization') || ''
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
-  if (!token) {
-    return new Response('Forbidden', { status: 403 })
-  }
-  const userId = consumeToken(token, hash)
-  if (!userId) {
-    return new Response('Forbidden', { status: 403 })
+  let userId = null
+  if (token) {
+    userId = consumeToken(token, hash)
+    if (!userId) {
+      return new Response('Forbidden', { status: 403 })
+    }
   }
   let data
   try {
@@ -26,26 +26,24 @@ export async function PATCH(req, { params }) {
   } catch {
     data = {}
   }
-  const allowed = ['name', 'location', 'state', 'user', 'weight', 'imoNumber']
-  for (const k of Object.keys(data)) {
-    if (!allowed.includes(k)) {
-      return new Response('Invalid field', { status: 422 })
-    }
-    if (typeof data[k] === 'string') {
-      data[k] = data[k].trim()
-    }
+  if (typeof data !== 'object' || data === null) {
+    data = {}
   }
   const patch = {}
-  if (data.name !== undefined) patch.name = data.name
-  if (data.location !== undefined) patch.location = data.location
-  if (data.state !== undefined) patch.state = data.state
-  if (data.weight !== undefined) patch.weight = data.weight
-  if (data.imoNumber !== undefined) patch.imoNumber = data.imoNumber
-  if (data.user !== undefined) patch.lastScanBy = data.user
-  const updated = patchTool(hash, patch, userId)
+  if (typeof data.name === 'string') patch.name = data.name.trim()
+  if (typeof data.location === 'string') patch.location = data.location.trim()
+  if (typeof data.state === 'string') patch.state = data.state.trim()
+  if (typeof data.weight === 'string') patch.weight = data.weight.trim()
+  if (typeof data.imoNumber === 'string') patch.imoNumber = data.imoNumber.trim()
+  if (typeof data.user === 'string') patch.lastScanBy = data.user.trim()
+  if (typeof data.lastScanBy === 'string') patch.lastScanBy = data.lastScanBy.trim()
+  const updated = patchTool(hash, patch, userId || '')
   if (!updated) {
-    return new Response('Not found', { status: 404 })
+    return Response.json({ error: 'tool_not_found' }, { status: 404 })
   }
-  const newToken = createToken(hash, userId)
-  return Response.json({ tool: updated, editSessionToken: newToken })
+  const response = { tool: updated }
+  if (userId) {
+    response.editSessionToken = createToken(hash, userId)
+  }
+  return Response.json(response)
 }
