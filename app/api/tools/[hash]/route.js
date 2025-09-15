@@ -31,12 +31,12 @@ export async function PATCH(req, { params }) {
   }
   const patch = {}
   if (typeof data.name === 'string') patch.name = data.name.trim()
-  if (typeof data.location === 'string') patch.location = data.location.trim()
-  if (typeof data.state === 'string') patch.state = data.state.trim()
+  if (typeof data.contact === 'string') patch.contact = data.contact.trim()
   if (typeof data.weight === 'string') patch.weight = data.weight.trim()
-  if (typeof data.imoNumber === 'string') patch.imoNumber = data.imoNumber.trim()
-  if (typeof data.user === 'string') patch.lastScanBy = data.user.trim()
-  if (typeof data.lastScanBy === 'string') patch.lastScanBy = data.lastScanBy.trim()
+  if (typeof data.date === 'string') patch.date = data.date.trim()
+  if (typeof data.lastUser === 'string') patch.lastUser = data.lastUser.trim()
+  if (typeof data.dimensions === 'string') patch.dimensions = data.dimensions.trim()
+  if (typeof data.user === 'string' && !patch.lastUser) patch.lastUser = data.user.trim()
   const updated = patchTool(hash, patch, userId || '')
   if (!updated) {
     return Response.json({ error: 'tool_not_found' }, { status: 404 })

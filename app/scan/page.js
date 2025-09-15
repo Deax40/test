@@ -9,7 +9,13 @@ const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(m => m.Sca
 export default function ScanPage() {
   const [token, setToken] = useState(null)
   const [tool, setTool] = useState(null)
-  const [form, setForm] = useState({ name: '', location: '', state: '', user: '', weight: '', imoNumber: '' })
+  const [form, setForm] = useState({
+    contact: '',
+    weight: '',
+    date: '',
+    lastUser: '',
+    dimensions: '',
+  })
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [user, setUser] = useState(null)
@@ -31,6 +37,11 @@ export default function ScanPage() {
     loadSession()
   }, [])
 
+  useEffect(() => {
+    if (!user?.name || !tool) return
+    setForm(prev => (prev.lastUser ? prev : { ...prev, lastUser: user.name }))
+  }, [user, tool])
+
   function handleScan(result) {
     if (!result) return
     const text = Array.isArray(result)
@@ -41,15 +52,25 @@ export default function ScanPage() {
   }
 
   async function startScan(raw) {
-    const payload = String(raw)
+    const payload = String(raw).trim()
+    if (!payload) return
     setError('')
     setMessage('')
     setToken(null)
     try {
+      const body = {}
+      if (/^[a-fA-F0-9]{64}$/.test(payload)) {
+        body.hash = payload.toLowerCase()
+      } else {
+        body.name = payload
+      }
+      if (user?.name) {
+        body.scannedBy = user.name
+      }
       const res = await fetch('/api/scan/start', {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: payload,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       })
       if (res.status === 404) {
         setTool(null)
@@ -60,12 +81,11 @@ export default function ScanPage() {
       const data = await res.json()
       setTool(data.tool)
       setForm({
-        name: data.tool.name || '',
-        location: data.tool.location || '',
-        state: data.tool.state || '',
-        user: data.tool.lastScanBy || '',
+        contact: data.tool.contact || '',
         weight: data.tool.weight || '',
-        imoNumber: data.tool.imoNumber || '',
+        date: data.tool.date || '',
+        lastUser: data.tool.lastUser || user?.name || '',
+        dimensions: data.tool.dimensions || '',
       })
       setToken(data.editSessionToken)
     } catch (e) {
@@ -94,8 +114,15 @@ export default function ScanPage() {
       if (!res.ok) throw new Error('Sauvegarde échouée')
       const data = await res.json()
       setTool(data.tool)
+      setForm({
+        contact: data.tool.contact || '',
+        weight: data.tool.weight || '',
+        date: data.tool.date || '',
+        lastUser: data.tool.lastUser || '',
+        dimensions: data.tool.dimensions || '',
+      })
       setToken(data.editSessionToken)
-      setMessage('Mise à jour enregistrée.')
+      setMessage('Modifications enregistrées.')
     } catch (e) {
       setError(e.message)
     }
@@ -119,34 +146,51 @@ export default function ScanPage() {
             <>
               <h2 className="text-lg font-semibold">{tool.name}</h2>
               <div>
-                <label className="label">Nom</label>
-                <input className="input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} readOnly={disabled} />
-              </div>
-              <div>
-                <label className="label">Lieu</label>
-                <input className="input" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} readOnly={disabled} />
-              </div>
-              <div>
-                <label className="label">État</label>
-                <input className="input" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} readOnly={disabled} />
-              </div>
-              <div>
-                <label className="label">Dernier scan</label>
-                <p>{tool.lastScanAt || '-'}</p>
-              </div>
-              <div>
-                <label className="label">Utilisateur</label>
-                <input className="input" value={form.user} onChange={e => setForm({ ...form, user: e.target.value })} readOnly={disabled} />
+                <label className="label">Numéro ou e-mail</label>
+                <input
+                  className="input"
+                  value={form.contact}
+                  onChange={e => setForm({ ...form, contact: e.target.value })}
+                  readOnly={disabled}
+                />
               </div>
               <div>
                 <label className="label">Poids</label>
-                <input className="input" value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })} readOnly={disabled} />
+                <input
+                  className="input"
+                  value={form.weight}
+                  onChange={e => setForm({ ...form, weight: e.target.value })}
+                  readOnly={disabled}
+                />
               </div>
               <div>
-                <label className="label">Numéro IMO</label>
-                <input className="input" value={form.imoNumber} onChange={e => setForm({ ...form, imoNumber: e.target.value })} readOnly={disabled} />
+                <label className="label">Date</label>
+                <input
+                  className="input"
+                  value={form.date}
+                  onChange={e => setForm({ ...form, date: e.target.value })}
+                  readOnly={disabled}
+                />
               </div>
-              <button className="btn btn-success w-full" onClick={save} disabled={disabled}>Enregistrer</button>
+              <div>
+                <label className="label">Dernière personne</label>
+                <input
+                  className="input"
+                  value={form.lastUser}
+                  onChange={e => setForm({ ...form, lastUser: e.target.value })}
+                  readOnly={disabled}
+                />
+              </div>
+              <div>
+                <label className="label">Dimensions</label>
+                <textarea
+                  className="input min-h-[6rem]"
+                  value={form.dimensions}
+                  onChange={e => setForm({ ...form, dimensions: e.target.value })}
+                  readOnly={disabled}
+                />
+              </div>
+              <button className="btn btn-success w-full" onClick={save} disabled={disabled}>Valider</button>
               {message && <p className="text-green-600">{message}</p>}
             </>
           )}
