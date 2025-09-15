@@ -13,9 +13,9 @@ npm install
 cp .env.example .env
 # édite .env et renseigne DATABASE_URL
 ```
-3) Initialise Prisma (crée le schéma et le client) :
+3) Initialise Prisma (applique la migration incluse et génère le client) :
 ```bash
-npx prisma migrate dev --name init
+npx prisma migrate dev
 ```
 4) Lance le serveur de dev :
 ```bash
@@ -49,8 +49,11 @@ git push -u origin main
 
 4) **Build & Runtime** : rien de spécial à faire, Vercel détecte Next.js.
 Le script `postinstall` exécute `prisma generate` automatiquement.
-Pour les migrations de prod, préfère les lancer manuellement depuis ta machine
-ou via un workflow (exécute `npx prisma migrate deploy`).
+Juste après la création de ta base (ou avant chaque déploiement contenant des changements Prisma), exécute :
+```bash
+npx prisma migrate deploy
+```
+Cela applique la migration `0001_init` présente dans le dépôt et crée la table `User` attendue par l'application.
 
 5) **Test en prod** : une fois le déploiement terminé, va sur `/api/health/db` pour vérifier la connexion.
 
