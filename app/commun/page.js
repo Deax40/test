@@ -26,34 +26,34 @@ export default function CommunPage() {
     <div>
       <Nav active="commun" />
       <div className="card">
-        <h1 className="text-lg font-semibold mb-4">Outils Commun</h1>
+        <h1 className="text-lg font-semibold mb-4">Outils communs</h1>
         {error && <p className="text-red-600">{error}</p>}
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left">
-              <th className="p-2">Nom</th>
-              <th className="p-2">Lieu</th>
-              <th className="p-2">État</th>
-              <th className="p-2">Dernier scan</th>
-              <th className="p-2">Utilisateur</th>
-              <th className="p-2">Poids</th>
-              <th className="p-2">Numéro IMO</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tools.map(t => (
-              <tr key={t.hash} className="border-t">
-                <td className="p-2">{t.name}</td>
-                <td className="p-2">{t.location || '-'}</td>
-                <td className="p-2">{t.state || '-'}</td>
-                <td className="p-2">{t.lastScanAt || '-'}</td>
-                <td className="p-2">{t.lastScanBy || '-'}</td>
-                <td className="p-2">{t.weight || '-'}</td>
-                <td className="p-2">{t.imoNumber || '-'}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left">
+                <th className="p-2">Nom</th>
+                <th className="p-2">Numéro / e-mail</th>
+                <th className="p-2">Poids</th>
+                <th className="p-2">Date</th>
+                <th className="p-2">Dernière personne</th>
+                <th className="p-2">Dimensions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {tools.map(t => (
+                <tr key={t.hash} className="border-t">
+                  <td className="p-2">{t.name}</td>
+                  <td className="p-2 whitespace-pre-wrap break-words">{t.contact || '-'}</td>
+                  <td className="p-2">{t.weight || '-'}</td>
+                  <td className="p-2">{t.date || '-'}</td>
+                  <td className="p-2">{t.lastUser || '-'}</td>
+                  <td className="p-2 whitespace-pre-wrap break-words">{t.dimensions || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
