@@ -14,3 +14,37 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Scan {
+  id           Int       @id @default(autoincrement())
+  toolName     String
+  serialNumber String?
+  status       String?
+  location     String?
+  operator     String?
+  note         String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  commonRecord Common?   @relation("ScanToCommon")
+
+  @@map("SCAN")
+}
+
+model Common {
+  id           Int      @id @default(autoincrement())
+  toolName     String   @unique
+  serialNumber String?
+  status       String?
+  location     String?
+  operator     String?
+  note         String?
+  lastScanAt   DateTime @default(now())
+  lastScanId   Int      @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  lastScan Scan @relation("ScanToCommon", fields: [lastScanId], references: [id])
+
+  @@map("COMMON")
+}
