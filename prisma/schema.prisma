@@ -87,3 +87,18 @@ model Habilitation {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+model CommonTool {
+  hash       String   @id
+  name       String
+  contact    String   @default("")
+  weight     String   @default("")
+  date       String   @default("")
+  lastUser   String   @default("")
+  dimensions String   @default("")
+  lastScanAt String?
+  lastScanBy String   @default("")
+  updatedAt  String?
+  updatedBy  String   @default("")
+  createdAt  DateTime @default(now())
+}

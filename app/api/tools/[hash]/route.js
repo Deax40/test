@@ -2,7 +2,7 @@ import { getTool, patchTool, consumeToken, createToken } from '@/lib/commun-data
 
 export async function GET(req, { params }) {
   const hash = String(params.hash || '').trim().toLowerCase()
-  const tool = getTool(hash)
+  const tool = await getTool(hash)
   if (!tool) {
     return Response.json({ error: 'tool_not_found' }, { status: 404 })
   }
@@ -37,7 +37,7 @@ export async function PATCH(req, { params }) {
   if (typeof data.lastUser === 'string') patch.lastUser = data.lastUser.trim()
   if (typeof data.dimensions === 'string') patch.dimensions = data.dimensions.trim()
   if (typeof data.user === 'string' && !patch.lastUser) patch.lastUser = data.user.trim()
-  const updated = patchTool(hash, patch, userId || '')
+  const updated = await patchTool(hash, patch, userId || '')
   if (!updated) {
     return Response.json({ error: 'tool_not_found' }, { status: 404 })
   }
