@@ -63,11 +63,18 @@ ou via un workflow (exécute `npx prisma migrate deploy`).
 
 ## 🧩 Structure
 ```
-src/app/page.jsx           → page d'accueil minimale
+src/app/page.jsx           → page d'accueil avec scanner QR stabilisé
 src/app/api/health/db      → route API pour tester la DB
 lib/db.js                  → client Prisma (singleton)
 prisma/schema.prisma       → schéma de la base
 ```
+
+## 📸 Scanner QR code intégré
+
+La page d'accueil met à disposition un scanner de QR code utilisant l'API
+`BarcodeDetector`. L'aperçu caméra reste désormais stable pendant la lecture
+du flux vidéo pour éviter les coupures observées auparavant. Un bouton permet
+de relancer facilement un scan si nécessaire.
 
 ## 📝 Notes
 - Par défaut : **PostgreSQL**. Pour SQLite en local, remplace `provider = "postgresql"` par `provider = "sqlite"` et `DATABASE_URL="file:./dev.db"` puis relance `migrate`.
