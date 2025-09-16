@@ -32,7 +32,7 @@ export async function POST(req) {
       { status: 400 }
     )
   }
-  const result = startScan({ hash, name, scannedBy })
+  const result = await startScan({ hash, name, scannedBy })
   if (!result) {
     return Response.json({ error: 'tool_not_found' }, { status: 404 })
   }
