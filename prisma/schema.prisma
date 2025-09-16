@@ -14,3 +14,17 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Tool {
+  id            String   @id @default(cuid())
+  name          String
+  hash          String   @unique
+  contact       String?
+  weight        String?
+  referenceDate DateTime?
+  lastUser      String?
+  dimensions    String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
