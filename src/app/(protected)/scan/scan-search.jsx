@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { normalizeHash } from '@/lib/hash';
 
 export default function ScanSearch({ initialHash }) {
   const formRef = useRef(null);
@@ -59,7 +60,8 @@ export default function ScanSearch({ initialHash }) {
         return;
       }
 
-      const sanitized = value.trim();
+      const sanitized = normalizeHash(value);
+
       if (!sanitized) {
         return;
       }

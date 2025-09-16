@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { revalidatePath } from 'next/cache';
+import { normalizeHash } from './hash';
 
 const toolsFile = path.join(process.cwd(), 'data', 'tools.json');
 
@@ -18,13 +19,21 @@ export async function getAllTools() {
 }
 
 export async function getToolByHash(hash) {
+  const normalizedHash = normalizeHash(hash);
+
+  if (!normalizedHash) {
+    return null;
+  }
+
   const tools = await readToolsFile();
-  return tools.find((tool) => tool.hash === hash) ?? null;
+  return tools.find((tool) => normalizeHash(tool.hash) === normalizedHash) ?? null;
 }
 
 export async function updateTool(hash, updates) {
+  const normalizedHash = normalizeHash(hash);
+
   const tools = await readToolsFile();
-  const index = tools.findIndex((tool) => tool.hash === hash);
+  const index = tools.findIndex((tool) => normalizeHash(tool.hash) === normalizedHash);
 
   if (index === -1) {
     throw new Error(`Outil introuvable pour le hash ${hash}`);

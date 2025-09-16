@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getToolByHash, updateTool } from '@/lib/tools';
 import { requireRole } from '@/lib/auth';
+import { normalizeHash } from '@/lib/hash';
 import ScanSearch from './scan-search';
 
 export const dynamic = 'force-dynamic';
@@ -11,8 +12,9 @@ async function saveToolAction(formData) {
   requireRole(['tech', 'admin']);
 
   const hash = formData.get('hash')?.toString();
+  const normalizedHash = normalizeHash(hash);
 
-  if (!hash) {
+  if (!normalizedHash) {
     redirect('/scan?error=missing-hash');
   }
 
@@ -24,14 +26,16 @@ async function saveToolAction(formData) {
     dimensions: formData.get('dimensions')?.toString().trim() ?? '',
   };
 
-  await updateTool(hash, updates);
+  await updateTool(normalizedHash, updates);
 
-  const params = new URLSearchParams({ hash, saved: '1' });
+  const params = new URLSearchParams({ hash: normalizedHash, saved: '1' });
   redirect(`/scan?${params.toString()}`);
 }
 
 export default async function ScanPage({ searchParams }) {
-  const hash = typeof searchParams?.hash === 'string' ? searchParams.hash : '';
+  const rawHash = typeof searchParams?.hash === 'string' ? searchParams.hash : '';
+  const hash = normalizeHash(rawHash);
+  const hasHashQuery = rawHash.trim().length > 0;
   const saved = searchParams?.saved === '1';
   const error = searchParams?.error === 'missing-hash';
   const tool = hash ? await getToolByHash(hash) : null;
@@ -57,7 +61,7 @@ export default async function ScanPage({ searchParams }) {
         </p>
       )}
 
-      {hash && !tool && (
+      {hasHashQuery && !tool && (
         <p style={{ color: '#b91c1c', background: '#fee2e2', padding: '8px 12px', borderRadius: 8, marginTop: 16 }}>
           Aucun outil ne correspond à ce hash. Vérifiez le QR code.
         </p>
