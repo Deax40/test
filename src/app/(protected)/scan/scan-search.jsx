@@ -122,11 +122,6 @@ export default function ScanSearch({ initialHash }) {
 
       streamRef.current = stream;
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
       if (!detectorRef.current && typeof window !== 'undefined' && 'BarcodeDetector' in window) {
         detectorRef.current = new window.BarcodeDetector({ formats: ['qr_code'] });
       }
@@ -141,6 +136,30 @@ export default function ScanSearch({ initialHash }) {
   }, [cameraSupported, detectorSupported, scanFrame, stopScanning]);
 
   useEffect(() => () => stopScanning(), [stopScanning]);
+
+  useEffect(() => {
+    if (!scanning) {
+      return;
+    }
+
+    const videoElement = videoRef.current;
+    const stream = streamRef.current;
+
+    if (!videoElement || !stream) {
+      return;
+    }
+
+    videoElement.srcObject = stream;
+    videoElement.setAttribute('playsinline', 'true');
+    videoElement.setAttribute('muted', 'true');
+
+    const playPromise = videoElement.play();
+    if (playPromise?.catch) {
+      playPromise.catch((error) => {
+        console.error('Lecture de la vidéo refusée', error);
+      });
+    }
+  }, [scanning]);
 
   return (
     <section style={{ marginTop: 24, display: 'flex', flexWrap: 'wrap', gap: 24 }}>
