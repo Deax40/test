@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getToolByHash, updateTool } from '@/lib/tools';
 import { requireRole } from '@/lib/auth';
+import ScanSearch from './scan-search';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,34 +43,7 @@ export default async function ScanPage({ searchParams }) {
         Scannez ou saisissez le QR code d'un outil pour afficher et mettre à jour ses informations.
       </p>
 
-      <form method="get" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 24 }}>
-        <label style={{ flex: '1 1 280px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <span style={{ fontWeight: 600 }}>Hash du QR code</span>
-          <input
-            type="text"
-            name="hash"
-            defaultValue={hash}
-            placeholder="Collez ici le hash scanné"
-            style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #d1d5db' }}
-            required
-          />
-        </label>
-        <button
-          type="submit"
-          style={{
-            alignSelf: 'flex-end',
-            background: '#2563eb',
-            color: '#fff',
-            padding: '12px 18px',
-            borderRadius: 8,
-            border: 'none',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          Rechercher
-        </button>
-      </form>
+      <ScanSearch initialHash={hash} />
 
       {error && (
         <p style={{ color: '#c00', marginTop: 16 }}>
