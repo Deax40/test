@@ -8,24 +8,19 @@ export default function Nav({ active }) {
   return (
     <nav className="mb-6 flex flex-col gap-2 p-3 rounded-xl header-bar sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-wrap gap-2">
-        <Link href="/scan" className={`btn ${active === 'scan' ? 'btn-primary' : ''}`}>SCAN</Link>
-        <Link href="/care" className={`btn ${active === 'care' ? 'btn-primary' : ''}`}>CARE</Link>
-        <Link href="/commun" className={`btn ${active === 'commun' ? 'btn-primary' : ''}`}>COMMUN</Link>
+        <Link href="/scan" className={`btn ${active === 'scan' ? 'btn-primary' : ''}`}>
+          SCAN
+        </Link>
+        <Link href="/commun" className={`btn ${active === 'commun' ? 'btn-primary' : ''}`}>
+          COMMUN
+        </Link>
         {session?.user?.role === 'ADMIN' && (
-          <>
-            <Link
-              href="/admin/panel"
-              className={`btn ${active === 'admin' ? 'btn-primary' : ''}`}
-            >
-              ADMIN
-            </Link>
-            <Link
-              href="/admin/revision"
-              className={`btn ${active === 'revision' ? 'btn-primary' : ''}`}
-            >
-              RÉVISION
-            </Link>
-          </>
+          <Link
+            href="/admin"
+            className={`btn ${active === 'admin' ? 'btn-primary' : ''}`}
+          >
+            ADMINISTRATION
+          </Link>
         )}
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

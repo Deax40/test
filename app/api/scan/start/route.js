@@ -1,38 +1,48 @@
+import { getServerSession } from 'next-auth'
+import { z } from 'zod'
 import { startScan } from '@/lib/commun-data'
+import { authOptions } from '@/lib/auth'
+
+const PayloadSchema = z.object({
+  hash: z.string().regex(/^[a-f0-9]{64}$/i, 'hash invalide'),
+  scannedBy: z.string().trim().max(191).optional(),
+})
 
 export async function POST(req) {
-  const contentType = req.headers.get('content-type') || ''
-  let hash, name, scannedBy = '', raw = ''
-  if (contentType.includes('application/json')) {
-    try {
-      const body = await req.json()
-      hash = body.hash
-      name = body.name
-      scannedBy = body.scannedBy || ''
-    } catch {
-      return Response.json(
-        { error: 'bad_request', hint: 'expecting hash|name|raw' },
-        { status: 400 }
-      )
-    }
-  } else {
-    raw = await req.text()
+  const session = await getServerSession(authOptions)
+  if (!session) {
+    return Response.json({ error: 'unauthorized' }, { status: 401 })
   }
-  if (!hash && !name && raw) {
-    const candidate = raw.trim()
-    if (/^[a-fA-F0-9]{64}$/.test(candidate)) {
-      hash = candidate.toLowerCase()
-    } else {
-      name = candidate
-    }
+  const role = session.user?.role
+  if (role !== 'TECH' && role !== 'ADMIN') {
+    return Response.json({ error: 'forbidden' }, { status: 403 })
   }
-  if (!hash && !name) {
+
+  let body
+  try {
+    body = await req.json()
+  } catch {
+    return Response.json({ error: 'bad_request' }, { status: 400 })
+  }
+
+  const payload = PayloadSchema.safeParse(body)
+  if (!payload.success) {
     return Response.json(
-      { error: 'bad_request', hint: 'expecting hash|name|raw' },
+      { error: 'bad_request', details: payload.error.flatten() },
       { status: 400 }
     )
   }
-  const result = await startScan({ hash, name, scannedBy })
+
+  const username = session.user?.username || session.user?.email || session.user?.name || 'user'
+  const displayName = payload.data.scannedBy?.trim() || session.user?.name || session.user?.username || ''
+  const result = await startScan({
+    hash: payload.data.hash.toLowerCase(),
+    scannedBy: displayName,
+    tokenOwner: {
+      id: username,
+      displayName: displayName || username,
+    },
+  })
   if (!result) {
     return Response.json({ error: 'tool_not_found' }, { status: 404 })
   }
