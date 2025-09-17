@@ -6,8 +6,24 @@ export const metadata = {
 
 export default async function LoggingPage({ searchParams }) {
   const resolvedSearchParams = await searchParams;
-  const callbackUrl =
-    typeof resolvedSearchParams?.callbackUrl === 'string' ? resolvedSearchParams.callbackUrl : '/';
+
+  let callbackUrl = '/';
+  if (resolvedSearchParams) {
+    if (typeof resolvedSearchParams.get === 'function') {
+      const paramValue = resolvedSearchParams.get('callbackUrl');
+      if (typeof paramValue === 'string' && paramValue.length > 0) {
+        callbackUrl = paramValue;
+      }
+    } else if (typeof resolvedSearchParams.callbackUrl === 'string' && resolvedSearchParams.callbackUrl.length > 0) {
+      callbackUrl = resolvedSearchParams.callbackUrl;
+    } else if (
+      Array.isArray(resolvedSearchParams.callbackUrl) &&
+      resolvedSearchParams.callbackUrl.length > 0 &&
+      typeof resolvedSearchParams.callbackUrl[0] === 'string'
+    ) {
+      callbackUrl = resolvedSearchParams.callbackUrl[0];
+    }
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
