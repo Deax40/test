@@ -1,12 +1,19 @@
 'use client'
-import { signIn } from 'next-auth/react'
-import { useState } from 'react'
+import { signIn, useSession } from 'next-auth/react'
+import { useEffect, useState } from 'react'
 import Logo from '../components/logo'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const { status } = useSession()
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      window.location.href = '/scan'
+    }
+  }, [status])
 
   async function onSubmit(e) {
     e.preventDefault()

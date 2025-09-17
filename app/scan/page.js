@@ -19,6 +19,7 @@ export default function ScanPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [user, setUser] = useState(null)
+  const [scanning, setScanning] = useState(false)
 
   useEffect(() => {
     async function loadSession() {
@@ -54,15 +55,17 @@ export default function ScanPage() {
   async function startScan(raw) {
     const payload = String(raw).trim()
     if (!payload) return
+    if (!/^[a-f0-9]{64}$/i.test(payload)) {
+      setError('QR code non reconnu')
+      return
+    }
     setError('')
     setMessage('')
     setToken(null)
     try {
-      const body = {}
-      if (/^[a-fA-F0-9]{64}$/.test(payload)) {
-        body.hash = payload.toLowerCase()
-      } else {
-        body.name = payload
+      setScanning(true)
+      const body = {
+        hash: payload.toLowerCase(),
       }
       if (user?.name) {
         body.scannedBy = user.name
@@ -72,9 +75,13 @@ export default function ScanPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
+      if (res.status === 401) {
+        window.location.href = '/'
+        return
+      }
       if (res.status === 404) {
         setTool(null)
-        setError('Outil introuvable')
+        setError('QR code non reconnu')
         return
       }
       if (!res.ok) throw new Error('Scan failed')
@@ -90,6 +97,8 @@ export default function ScanPage() {
       setToken(data.editSessionToken)
     } catch (e) {
       setError(e.message)
+    } finally {
+      setScanning(false)
     }
   }
 
@@ -128,7 +137,8 @@ export default function ScanPage() {
     }
   }
 
-  const disabled = !token
+  const canEdit = user?.role === 'TECH' || user?.role === 'ADMIN'
+  const disabled = !token || !canEdit
 
   return (
     <div>
@@ -139,6 +149,7 @@ export default function ScanPage() {
           <div className="rounded-xl overflow-hidden bg-gray-100">
             <Scanner onScan={handleScan} onError={err => setError('Erreur caméra : ' + (err?.message || err))} />
           </div>
+          {scanning && <p className="mt-2 text-sm text-gray-500">Validation du QR code…</p>}
         </div>
         <div className="card space-y-4">
           {error && <p className="text-red-600">{error}</p>}

@@ -13,6 +13,14 @@ export default function CommunPage() {
         // Disable fetch caching to ensure the list reflects the latest
         // data after an update from the scan page.
         const res = await fetch('/api/commons', { cache: 'no-store' })
+        if (res.status === 401) {
+          window.location.href = '/'
+          return
+        }
+        if (res.status === 403) {
+          setError('Accès refusé.')
+          return
+        }
         const data = await res.json()
         setTools(data.tools || [])
       } catch (e) {
