@@ -1,19 +1,41 @@
 import Link from 'next/link';
 
 import { saveScanAction } from '@/app/actions/scans.js';
+import { prisma } from '@/lib/db.js';
+import { requireUser } from '@/lib/auth.js';
+
+import ScanClient from './ScanClient.jsx';
 
 export const dynamic = 'force-dynamic';
 
-export default function ScanPage({ searchParams }) {
-  const hasError = searchParams?.error === 'missing-tool';
+function getErrorMessage(code) {
+  switch (code) {
+    case 'missing-tool':
+      return 'Aucun outil n\'a été détecté. Veuillez scanner un QR code valide.';
+    case 'unknown-tool':
+      return 'Ce QR code est inconnu. Vérifiez qu\'il a bien été enregistré dans la base.';
+    default:
+      return null;
+  }
+}
+
+export default async function ScanPage({ searchParams }) {
+  await requireUser();
+
+  const errorMessage = getErrorMessage(searchParams?.error);
+  const isSuccess = searchParams?.status === 'success';
+  const toolId = Number(searchParams?.toolId);
+  const successTool = isSuccess && !Number.isNaN(toolId)
+    ? await prisma.tool.findUnique({ where: { id: toolId }, select: { name: true } })
+    : null;
 
   return (
-    <main style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <main style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <header style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <h1 style={{ margin: 0 }}>Enregistrer un scan</h1>
+        <h1 style={{ margin: 0 }}>Scanner un outil</h1>
         <p style={{ margin: 0, color: '#555' }}>
-          Les informations saisies via ce formulaire sont enregistrées dans la table <strong>SCAN</strong> puis
-          synchronisées automatiquement dans la table <strong>COMMON</strong>.
+          Scannez un QR code pour retrouver automatiquement l&apos;outil associé. Les informations sont enregistrées dans la
+          table <strong>SCAN</strong> et synchronisées avec <strong>COMMON</strong>.
         </p>
         <nav style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <Link href="/" style={{ color: '#2563eb' }}>Accueil</Link>
@@ -21,108 +43,19 @@ export default function ScanPage({ searchParams }) {
         </nav>
       </header>
 
-      {hasError && (
-        <p style={{ margin: 0, padding: '12px 16px', background: '#fee2e2', color: '#b91c1c', borderRadius: 8 }}>
-          Le nom de l&apos;outil est obligatoire pour enregistrer un scan.
-        </p>
+      {isSuccess && (
+        <div style={{ padding: '12px 16px', borderRadius: 12, background: '#dcfce7', color: '#166534', border: '1px solid #86efac' }}>
+          Les informations ont été enregistrées pour l&apos;outil <strong>{successTool?.name ?? 'sélectionné'}</strong>.
+        </div>
       )}
 
-      <form
-        action={saveScanAction}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-          padding: 24,
-          borderRadius: 12,
-          border: '1px solid #e5e7eb',
-          background: '#fff',
-          boxShadow: '0 10px 25px rgba(15, 23, 42, 0.08)',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label htmlFor="toolName" style={{ fontWeight: 600 }}>
-            Nom de l&apos;outil (issu du QR code)
-          </label>
-          <input
-            id="toolName"
-            name="toolName"
-            required
-            placeholder="Caméra d'inspection GLEIZE"
-            style={inputStyle}
-            autoComplete="off"
-          />
+      {errorMessage && (
+        <div style={{ padding: '12px 16px', borderRadius: 12, background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5' }}>
+          {errorMessage}
         </div>
+      )}
 
-        <div style={groupStyle}>
-          <div style={{ ...groupColumnStyle }}>
-            <label htmlFor="serialNumber" style={{ fontWeight: 600 }}>Numéro de série</label>
-            <input id="serialNumber" name="serialNumber" style={inputStyle} placeholder="SN-001234" />
-          </div>
-          <div style={{ ...groupColumnStyle }}>
-            <label htmlFor="status" style={{ fontWeight: 600 }}>Statut</label>
-            <input id="status" name="status" style={inputStyle} placeholder="Disponible, En réparation…" />
-          </div>
-        </div>
-
-        <div style={groupStyle}>
-          <div style={{ ...groupColumnStyle }}>
-            <label htmlFor="location" style={{ fontWeight: 600 }}>Localisation</label>
-            <input id="location" name="location" style={inputStyle} placeholder="Atelier Lyon" />
-          </div>
-          <div style={{ ...groupColumnStyle }}>
-            <label htmlFor="operator" style={{ fontWeight: 600 }}>Opérateur</label>
-            <input id="operator" name="operator" style={inputStyle} placeholder="Nom du technicien" />
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label htmlFor="note" style={{ fontWeight: 600 }}>Commentaire</label>
-          <textarea
-            id="note"
-            name="note"
-            rows={3}
-            style={{ ...inputStyle, resize: 'vertical' }}
-            placeholder="Observation relevée lors du contrôle"
-          />
-        </div>
-
-        <button
-          type="submit"
-          style={{
-            alignSelf: 'flex-start',
-            background: '#2563eb',
-            color: 'white',
-            border: 'none',
-            borderRadius: 8,
-            padding: '10px 18px',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          Valider et synchroniser
-        </button>
-      </form>
+      <ScanClient saveAction={saveScanAction} />
     </main>
   );
 }
-
-const inputStyle = {
-  borderRadius: 8,
-  border: '1px solid #cbd5f5',
-  padding: '10px 12px',
-  fontSize: '1rem',
-};
-
-const groupStyle = {
-  display: 'grid',
-  gap: 16,
-  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-};
-
-const groupColumnStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 6,
-  flex: 1,
-};

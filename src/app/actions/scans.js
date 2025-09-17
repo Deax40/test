@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { prisma } from '@/lib/db.js';
+import { requireUser } from '@/lib/auth.js';
 
 function cleanInput(value) {
   if (typeof value !== 'string') {
@@ -15,9 +16,17 @@ function cleanInput(value) {
 }
 
 export async function saveScanAction(formData) {
-  const toolName = cleanInput(formData.get('toolName'));
-  if (!toolName) {
+  const user = await requireUser();
+
+  const rawToolId = formData.get('toolId');
+  const toolId = Number(rawToolId);
+  if (!rawToolId || Number.isNaN(toolId)) {
     redirect('/scan?error=missing-tool');
+  }
+
+  const tool = await prisma.tool.findUnique({ where: { id: toolId } });
+  if (!tool) {
+    redirect('/scan?error=unknown-tool');
   }
 
   const serialNumber = cleanInput(formData.get('serialNumber'));
@@ -28,7 +37,8 @@ export async function saveScanAction(formData) {
 
   const scan = await prisma.scan.create({
     data: {
-      toolName,
+      toolId,
+      userId: user.id,
       serialNumber,
       status,
       location,
@@ -38,7 +48,7 @@ export async function saveScanAction(formData) {
   });
 
   await prisma.common.upsert({
-    where: { toolName },
+    where: { toolId },
     update: {
       serialNumber,
       status,
@@ -49,7 +59,7 @@ export async function saveScanAction(formData) {
       lastScanId: scan.id,
     },
     create: {
-      toolName,
+      toolId,
       serialNumber,
       status,
       location,
@@ -62,5 +72,7 @@ export async function saveScanAction(formData) {
 
   revalidatePath('/common');
   revalidatePath('/scan');
-  redirect('/common');
+
+  const params = new URLSearchParams({ status: 'success', toolId: String(toolId) });
+  redirect(`/scan?${params.toString()}`);
 }

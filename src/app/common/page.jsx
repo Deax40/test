@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { requireUser } from '@/lib/auth.js';
 import { prisma } from '@/lib/db.js';
 
 export const dynamic = 'force-dynamic';
@@ -27,12 +28,17 @@ function formatValue(value) {
 }
 
 export default async function CommonPage() {
+  await requireUser();
+
   const entries = await prisma.common.findMany({
-    orderBy: [{ toolName: 'asc' }],
+    orderBy: [{ tool: { name: 'asc' } }],
+    include: {
+      tool: true,
+    },
   });
 
   return (
-    <main style={{ maxWidth: 960, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <main style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <header style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <h1 style={{ margin: 0 }}>Table COMMON</h1>
         <p style={{ margin: 0, color: '#555' }}>
@@ -51,10 +57,11 @@ export default async function CommonPage() {
         </p>
       ) : (
         <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #e5e7eb', background: 'white', boxShadow: '0 10px 25px rgba(15, 23, 42, 0.06)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 820 }}>
             <thead>
               <tr style={{ background: '#f8fafc', textAlign: 'left' }}>
                 <th style={thStyle}>Outil</th>
+                <th style={thStyle}>Hash QR</th>
                 <th style={thStyle}>Statut</th>
                 <th style={thStyle}>Localisation</th>
                 <th style={thStyle}>Opérateur</th>
@@ -66,7 +73,10 @@ export default async function CommonPage() {
             <tbody>
               {entries.map((entry) => (
                 <tr key={entry.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={tdStyle}>{entry.toolName}</td>
+                  <td style={tdStyle}>{entry.tool?.name ?? '—'}</td>
+                  <td style={{ ...tdStyle, fontFamily: 'monospace', fontSize: '0.8rem', color: '#1e3a8a' }}>
+                    {entry.tool?.hash ?? '—'}
+                  </td>
                   <td style={tdStyle}>{formatValue(entry.status)}</td>
                   <td style={tdStyle}>{formatValue(entry.location)}</td>
                   <td style={tdStyle}>{formatValue(entry.operator)}</td>

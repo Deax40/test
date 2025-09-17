@@ -7,17 +7,48 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  TECH
+  ADMIN
+}
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String?
+  passwordHash String
+  role         Role      @default(TECH)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions Session[]
+  scans    Scan[]
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  userId     String
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Tool {
+  id        Int      @id @default(autoincrement())
+  name      String
+  hash      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  scans  Scan[]
+  common Common?
 }
 
 model Scan {
   id           Int       @id @default(autoincrement())
-  toolName     String
+  toolId       Int
   serialNumber String?
   status       String?
   location     String?
@@ -25,7 +56,10 @@ model Scan {
   note         String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  userId       String?
 
+  tool         Tool      @relation(fields: [toolId], references: [id])
+  user         User?     @relation(fields: [userId], references: [id])
   commonRecord Common?   @relation("ScanToCommon")
 
   @@map("SCAN")
@@ -33,7 +67,7 @@ model Scan {
 
 model Common {
   id           Int      @id @default(autoincrement())
-  toolName     String   @unique
+  toolId       Int      @unique
   serialNumber String?
   status       String?
   location     String?
@@ -44,6 +78,7 @@ model Common {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  tool     Tool @relation(fields: [toolId], references: [id])
   lastScan Scan @relation("ScanToCommon", fields: [lastScanId], references: [id])
 
   @@map("COMMON")
