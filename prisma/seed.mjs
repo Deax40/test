@@ -1,5 +1,6 @@
-import { prisma } from '../lib/db.js';
 import { randomBytes, scryptSync } from 'crypto';
+
+import { prisma } from '../src/lib/db.js';
 
 function hashPassword(password) {
   const salt = randomBytes(16);
@@ -106,8 +107,10 @@ async function main() {
 }
 
 main()
-  .then(() => process.exit(0))
   .catch((e) => {
     console.error(e);
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
