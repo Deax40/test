@@ -39,7 +39,7 @@ export async function loginAction(_prevState, formData) {
     email: user.email,
   });
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const expires = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000);
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
@@ -57,7 +57,7 @@ export async function loginAction(_prevState, formData) {
 }
 
 export async function logoutAction() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, '', {
     httpOnly: true,
     sameSite: 'lax',

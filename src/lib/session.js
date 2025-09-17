@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db.js';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/tokens.js';
 
 export async function getSession() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!token) {
     return null;

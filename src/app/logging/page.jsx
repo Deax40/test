@@ -4,8 +4,10 @@ export const metadata = {
   title: 'Connexion',
 };
 
-export default function LoggingPage({ searchParams }) {
-  const callbackUrl = typeof searchParams?.callbackUrl === 'string' ? searchParams.callbackUrl : '/';
+export default async function LoggingPage({ searchParams }) {
+  const resolvedSearchParams = await searchParams;
+  const callbackUrl =
+    typeof resolvedSearchParams?.callbackUrl === 'string' ? resolvedSearchParams.callbackUrl : '/';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
