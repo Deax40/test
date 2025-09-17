@@ -45,8 +45,11 @@ function getErrorMessage(code) {
 
 export default async function AccountPage({ searchParams }) {
   const user = await requireUser();
-  const status = getStatusMessage(searchParams?.status);
-  const error = getErrorMessage(searchParams?.error);
+  const resolvedSearchParams = ((await searchParams) ?? {});
+  const rawStatus = resolvedSearchParams.status;
+  const rawError = resolvedSearchParams.error;
+  const status = getStatusMessage(Array.isArray(rawStatus) ? rawStatus[0] : rawStatus);
+  const error = getErrorMessage(Array.isArray(rawError) ? rawError[0] : rawError);
 
   return (
     <main style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>

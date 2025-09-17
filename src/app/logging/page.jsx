@@ -23,8 +23,12 @@ export default async function LoggingPage({ searchParams }) {
     redirect('/');
   }
 
-  const error = getErrorMessage(searchParams?.error);
-  const redirectTo = typeof searchParams?.redirectTo === 'string' ? searchParams.redirectTo : '/';
+  const resolvedSearchParams = ((await searchParams) ?? {});
+  const rawError = resolvedSearchParams.error;
+  const rawRedirectTo = resolvedSearchParams.redirectTo;
+  const error = getErrorMessage(Array.isArray(rawError) ? rawError[0] : rawError);
+  const redirectToCandidate = Array.isArray(rawRedirectTo) ? rawRedirectTo[0] : rawRedirectTo;
+  const redirectTo = typeof redirectToCandidate === 'string' ? redirectToCandidate : '/';
 
   return (
     <main style={{ maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>

@@ -22,9 +22,15 @@ function getErrorMessage(code) {
 export default async function ScanPage({ searchParams }) {
   await requireUser();
 
-  const errorMessage = getErrorMessage(searchParams?.error);
-  const isSuccess = searchParams?.status === 'success';
-  const toolId = Number(searchParams?.toolId);
+  const resolvedSearchParams = ((await searchParams) ?? {});
+  const rawError = resolvedSearchParams.error;
+  const rawStatus = resolvedSearchParams.status;
+  const rawToolId = resolvedSearchParams.toolId;
+  const errorMessage = getErrorMessage(Array.isArray(rawError) ? rawError[0] : rawError);
+  const statusValue = Array.isArray(rawStatus) ? rawStatus[0] : rawStatus;
+  const toolIdValue = Array.isArray(rawToolId) ? rawToolId[0] : rawToolId;
+  const isSuccess = statusValue === 'success';
+  const toolId = Number(toolIdValue);
   const successTool = isSuccess && !Number.isNaN(toolId)
     ? await prisma.tool.findUnique({ where: { id: toolId }, select: { name: true } })
     : null;
