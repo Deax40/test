@@ -1,76 +1,63 @@
-# nextjs-starter-vercel-db
+# Gestion d'outillage par QR code
 
-Starter Next.js ultra-minimal **prêt pour Vercel** avec **Prisma** pour se connecter à une base de données (PostgreSQL par défaut).
+Application Next.js (App Router) avec authentification et contrôle d'accès par rôles. Elle permet de :
 
-## 🚀 Démarrage en local
+- Se connecter en tant que **Technicien** ou **Administrateur**.
+- Scanner des QR codes (caméra ou saisie manuelle) et récupérer les informations associées à l'outil.
+- Mettre à jour les caractéristiques de l'outil (statut, localisation, opérateur, note...).
+- Consulter l'inventaire complet synchronisé en temps réel.
+- Gérer son mot de passe et préparer un espace d'administration.
 
-1) Installe les dépendances :
+## Démarrage en local
+
 ```bash
 npm install
-```
-2) Copie le fichier d'exemple et configure ta base :
-```bash
 cp .env.example .env
-# édite .env et renseigne DATABASE_URL
-```
-3) Initialise Prisma (crée le schéma et le client) :
-```bash
-npx prisma migrate dev --name init
-```
-4) Lance le serveur de dev :
-```bash
+# Renseigner DATABASE_URL (PostgreSQL ou SQLite) et AUTH_SECRET
+npx prisma migrate dev --name init-rbac
 npm run dev
 ```
-5) Teste l'API de santé BD : ouvre http://localhost:3000/api/health/db
 
-## 🗃️ Schéma Prisma (PostgreSQL)
+### Comptes de test (seed)
 
-Le modèle inclus est simple (`User`). Tu peux l'éditer dans `prisma/schema.prisma` puis régénérer:
-```bash
-npx prisma migrate dev --name change
+Le script `npm run seed` crée :
+
+- `admin@example.com` / `Admin123!` (rôle ADMIN)
+- `tech@example.com` / `Tech123!` (rôle TECH)
+
+Ainsi que la liste officielle des outils avec leur hash QR.
+
+## Architecture
+
+```
+prisma/schema.prisma        # Schéma (users, tools, tool_history)
+prisma/seed.mjs             # Initialisation utilisateurs + outils
+src/lib/db.js               # Client Prisma partagé
+src/lib/passwords.js        # Hash/validation des mots de passe (scrypt)
+src/lib/tokens.js           # Génération/validation des jetons de session HMAC
+middleware.js               # RBAC (pages + API)
 ```
 
-## 🌐 Déploiement sur Vercel (avec GitHub)
+### Pages principales
 
-1) **Crée un dépôt GitHub** et pousse ce dossier :
-```bash
-git init
-git add .
-git commit -m "init"
-git branch -M main
-git remote add origin <URL_DU_DEPOT>
-git push -u origin main
-```
+- `/logging` : page de connexion sécurisée.
+- `/scan` : lecteur QR + formulaire d'édition (Tech/Admin).
+- `/common` : vue consolidée des outils.
+- `/profile` : informations du compte + changement de mot de passe.
+- `/admin` : espace réservé aux administrateurs.
 
-2) **Sur Vercel** : "Add New..." → "Project" → importe ton repo GitHub.
+### API
 
-3) **Variables d’environnement** : dans *Settings → Environment Variables*, ajoute :
-- `DATABASE_URL` : l’URL de ta base (ex : Render, Neon, Supabase, Railway...).
+- `GET /api/tools/:hash` : récupère l'outil correspondant (Tech/Admin).
+- `PATCH /api/tools/:hash` : met à jour l'outil et journalise l'action.
 
-4) **Build & Runtime** : rien de spécial à faire, Vercel détecte Next.js.
-Le script `postinstall` exécute `prisma generate` automatiquement.
-Pour les migrations de prod, préfère les lancer manuellement depuis ta machine
-ou via un workflow (exécute `npx prisma migrate deploy`).
+## Sécurité
 
-5) **Test en prod** : une fois le déploiement terminé, va sur `/api/health/db` pour vérifier la connexion.
+- Jetons de session signés (HMAC) stockés dans un cookie `app_session` (8h).
+- Middleware RBAC appliqué aux pages et routes API sensibles.
+- Politique de mot de passe forte (min 8 caractères + chiffre + caractère spécial).
+- Journal `ToolHistory` des modifications (avant/après + opérateur).
 
-## ✅ Vérifier la connexion BD (local & Vercel)
-- Route : `GET /api/health/db`
-- Réponse attendue :
-```json
-{"ok":true,"provider":"postgresql","users":0}
-```
+## Audit de la base
 
-## 🧩 Structure
-```
-src/app/page.jsx           → page d'accueil minimale
-src/app/api/health/db      → route API pour tester la DB
-lib/db.js                  → client Prisma (singleton)
-prisma/schema.prisma       → schéma de la base
-```
-
-## 📝 Notes
-- Par défaut : **PostgreSQL**. Pour SQLite en local, remplace `provider = "postgresql"` par `provider = "sqlite"` et `DATABASE_URL="file:./dev.db"` puis relance `migrate`.
-- TypeScript n'est **pas** activé pour rester minimal. Tu peux l'ajouter ensuite (`npx tsc --init`).
-
-Bon dev 👾
+Le document [`docs/DB_AUDIT.md`](docs/DB_AUDIT.md) détaille les problèmes du schéma initial et les corrections apportées.

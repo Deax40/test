@@ -7,44 +7,56 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  TECH
+}
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String?
+  passwordHash String
+  role         Role          @default(TECH)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  toolsUpdated ToolHistory[] @relation("UserToolHistory")
+  toolsScanned Tool[]        @relation("UserLastScan")
+
+  @@map("users")
 }
 
-model Scan {
-  id           Int       @id @default(autoincrement())
-  toolName     String
-  serialNumber String?
-  status       String?
-  location     String?
-  operator     String?
-  note         String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+model Tool {
+  id              String        @id @default(cuid())
+  hash            String        @unique
+  name            String
+  description     String?
+  status          String?
+  location        String?
+  operator        String?
+  note            String?
+  lastScannedAt   DateTime?
+  lastScannedById String?
+  lastScannedBy   User?         @relation("UserLastScan", fields: [lastScannedById], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  commonRecord Common?   @relation("ScanToCommon")
+  histories       ToolHistory[]
 
-  @@map("SCAN")
+  @@map("tools")
+  @@index([name])
 }
 
-model Common {
-  id           Int      @id @default(autoincrement())
-  toolName     String   @unique
-  serialNumber String?
-  status       String?
-  location     String?
-  operator     String?
-  note         String?
-  lastScanAt   DateTime @default(now())
-  lastScanId   Int      @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+model ToolHistory {
+  id            String   @id @default(cuid())
+  toolId        String
+  tool          Tool     @relation(fields: [toolId], references: [id])
+  performedById String?
+  performedBy   User?    @relation("UserToolHistory", fields: [performedById], references: [id])
+  changes       Json
+  createdAt     DateTime @default(now())
 
-  lastScan Scan @relation("ScanToCommon", fields: [lastScanId], references: [id])
-
-  @@map("COMMON")
+  @@map("tool_history")
+  @@index([toolId])
 }
