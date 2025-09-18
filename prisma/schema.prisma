@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // <-- base de donnée VERCEL
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  username      String         @unique
+  name          String
+  email         String?        @unique
+  passwordHash  String
+  role          String         @default("TECH") // "TECH" ou "ADMIN" defaut automatiquement en temps que tech
+  createdAt     DateTime       @default(now())
+  logs          Log[]          @relation("UserLogs")
+  toolLogs      ToolLog[]
+  habilitations Habilitation[]
+}
+
+model Log {
+  id          String   @id @default(cuid())
+  qrData      String
+  lieu        String
+  date        DateTime
+  actorName   String
+  etat        String   @default("RAS")
+  probleme    String?
+  photo       Bytes?
+  photoType   String?
+  createdAt   DateTime @default(now())
+  createdById String?
+  createdBy   User?    @relation("UserLogs", fields: [createdById], references: [id])
+}
+
+model ToolLog {
+  id           String   @id @default(cuid())
+  tool         String
+  status       String
+  lieu         String?
+  client       String?
+  etat         String?
+  transporteur String?
+  tracking     String?
+  createdAt    DateTime @default(now())
+  createdById  String?
+  createdBy    User?    @relation(fields: [createdById], references: [id])
+}
+
+model Tool {
+  id             String          @id @default(cuid())
+  name           String
+  category       String
+  hash           String          @unique
+  qrData         String          @unique
+  lastScanAt     DateTime?
+  lastScanUser   String?
+  lastScanLieu   String?
+  lastScanEtat   String?
+  createdAt      DateTime        @default(now())
+  certifications Certification[]
+}
+
+model Certification {
+  id           String   @id @default(cuid())
+  tool         Tool     @relation(fields: [toolId], references: [id])
+  toolId       String
+  revisionDate DateTime @default(now())
+  createdAt    DateTime @default(now())
+}
+
+model MachineRevision {
+  id           String    @id @default(cuid())
+  name         String    @unique
+  revisionDate DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Habilitation {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  filePath  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
