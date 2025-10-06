@@ -4,11 +4,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 *.log
+pnpm-debug.log*
+lerna-debug.log*
 
 # Next.js
 .next/
 out/
 .vercel/
+build/
+dist/
 
 # Env / secrets
 .env
@@ -20,7 +24,39 @@ out/
 # SQLite local (dev)
 prisma/dev.db
 *.db
+*.db-journal
+
+# Uploads and user-generated content
+uploads/
+public/uploads/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.pdf
+*.bs
+!public/logo.png
+!public/*.svg
+
+# Care and Commun Tools directories
+Care Tools/
+Commun Tools/
 
 # OS
 .DS_Store
 Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+nul

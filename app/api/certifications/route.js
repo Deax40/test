@@ -1,13 +1,35 @@
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { getTool } from '@/lib/care-data'
+import { promises as fs } from 'fs'
+import path from 'path'
 
-export async function GET() {
-  const certifications = await prisma.certification.findMany({
-    include: { tool: true },
-    orderBy: { createdAt: 'desc' }
-  })
-  return Response.json({ certifications })
+export async function GET(req) {
+  const { searchParams } = new URL(req.url)
+  const toolId = searchParams.get('toolId')
+
+  if (toolId) {
+    // Récupérer les certificats pour un outil spécifique (par toolId ou toolHash)
+    const certifications = await prisma.certification.findMany({
+      where: {
+        OR: [
+          { toolId: toolId },
+          { toolHash: toolId }
+        ]
+      },
+      include: { tool: true },
+      orderBy: { createdAt: 'desc' }
+    })
+    return Response.json({ certifications })
+  } else {
+    // Récupérer tous les certificats
+    const certifications = await prisma.certification.findMany({
+      include: { tool: true },
+      orderBy: { createdAt: 'desc' }
+    })
+    return Response.json({ certifications })
+  }
 }
 
 export async function POST(req) {
@@ -16,16 +38,70 @@ export async function POST(req) {
     return new Response('Unauthorized', { status: 401 })
   }
   try {
-    const { toolId, revisionDate: revisionDateStr } = await req.json()
-    if (!toolId || !revisionDateStr) {
+    const formData = await req.formData()
+    const toolId = formData.get('toolId')
+    const revisionDateStr = formData.get('revisionDate')
+    const toolName = formData.get('toolName')
+    const toolCategory = formData.get('toolCategory')
+    const pdfFile = formData.get('pdfFile')
+
+    if (!toolId || !revisionDateStr || !toolName || !toolCategory) {
       return new Response('Missing fields', { status: 400 })
     }
+
     const revisionDate = new Date(revisionDateStr)
     if (isNaN(revisionDate.getTime())) {
       return new Response('Invalid revision date', { status: 400 })
     }
+
+    // Déterminer si c'est un outil CARE (avec toolId) ou COMMUN (avec toolHash)
+    const certData = {
+      toolName,
+      toolCategory,
+      revisionDate
+    }
+
+    if (toolCategory === 'CARE') {
+      // Pour les outils CARE, vérifier que l'outil existe dans le système de fichiers
+      const careTool = getTool(toolId)
+      if (careTool) {
+        certData.toolHash = toolId // Utiliser le hash pour les outils CARE aussi
+      } else {
+        return new Response('Care tool not found', { status: 404 })
+      }
+    } else if (toolCategory === 'COMMUN') {
+      // Pour les outils COMMUN, utiliser le hash
+      certData.toolHash = toolId
+    }
+
+    // Gérer l'upload du PDF si présent
+    if (pdfFile && pdfFile.size > 0) {
+      // Valider que c'est un PDF
+      if (pdfFile.type !== 'application/pdf') {
+        return new Response('Only PDF files are allowed', { status: 400 })
+      }
+
+      // Créer le répertoire d'upload si nécessaire
+      const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'certifications')
+      await fs.mkdir(uploadsDir, { recursive: true })
+
+      // Générer un nom de fichier unique
+      const timestamp = Date.now()
+      const sanitizedToolName = toolName.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+      const filename = `cert_${sanitizedToolName}_${timestamp}.pdf`
+      const filePath = path.join(uploadsDir, filename)
+      const relativePath = `/uploads/certifications/${filename}`
+
+      // Sauvegarder le fichier
+      const buffer = await pdfFile.arrayBuffer()
+      await fs.writeFile(filePath, Buffer.from(buffer))
+
+      certData.pdfPath = relativePath
+    }
+
     const certification = await prisma.certification.create({
-      data: { toolId, revisionDate }
+      data: certData,
+      include: { tool: true }
     })
     return Response.json({ certification })
   } catch (e) {

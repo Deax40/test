@@ -1,4 +1,4 @@
-import { startScan } from '@/lib/commun-data'
+import { startScan } from '@/lib/unified-scan'
 
 export async function POST(req) {
   const contentType = req.headers.get('content-type') || ''
@@ -20,8 +20,14 @@ export async function POST(req) {
   }
   if (!hash && !name && raw) {
     const candidate = raw.trim()
-    if (/^[a-fA-F0-9]{64}$/.test(candidate)) {
+    // Check for CARE_ prefix
+    if (candidate.startsWith('CARE_')) {
+      hash = candidate
+    } else if (/^[a-fA-F0-9]{64}$/.test(candidate)) {
       hash = candidate.toLowerCase()
+    } else if (/^[a-fA-F0-9]{8}$/.test(candidate.toUpperCase())) {
+      // Care tool hash format
+      hash = candidate.toUpperCase()
     } else {
       name = candidate
     }
@@ -36,5 +42,9 @@ export async function POST(req) {
   if (!result) {
     return Response.json({ error: 'tool_not_found' }, { status: 404 })
   }
-  return Response.json({ editSessionToken: result.token, tool: result.tool })
+  return Response.json({
+    editSessionToken: result.token,
+    tool: result.tool,
+    source: result.source
+  })
 }

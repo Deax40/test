@@ -1,1 +1,0 @@
-ALTER TABLE "ToolLog" DROP COLUMN IF EXISTS "probleme";

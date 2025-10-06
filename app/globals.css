@@ -3,12 +3,15 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f8fafc;
+  --bg: #f1f5f9;
   --card: #ffffff;
-  --text: #0b1220;
-  --muted: #6b7280;
-  --brand: #0b1220;
-  --accent: #10b981;
+  --text: #1e293b;
+  --muted: #64748b;
+  --brand: #1e40af;
+  --accent: #3b82f6;
+  --engel-blue: #1e40af;
+  --engel-blue-dark: #1e3a8a;
+  --engel-blue-light: #3b82f6;
 }
 
 .dark {

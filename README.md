@@ -1,25 +1,182 @@
-# ENGEL – QR Logs (Next.js)
+# 🔧 Engel QR Admin - Système de Gestion des Outils
 
-> Thème ENGEL inclus (couleurs, logo, header).
+Un système complet de gestion et de traçabilité des outils basé sur les codes QR, développé avec Next.js et Tailwind CSS.
 
-Application **Next.js** pour ENGEL permettant aux **techniciens** de scanner des QR codes et d'enregistrer un log (lieu, date, qui le fait), et un **panneau d'administration** (connexion admin, liste des logs, ajout/suppression d'admins).
+## 🖥️ Fonctionnalités Générales
 
-## Fonctions
+### 🔐 Authentification et Rôles
+- **Système d'authentification** avec NextAuth.js
+- **Rôles utilisateurs** : TECH (techniciens) et ADMIN (administrateurs)
+- **Accès sécurisé** aux différentes sections selon les droits
 
-- Login (page d'accueil `/`)
-- Page **Scan** `/scan` avec lecteur de QR (mobile/desktop)
-- Persistance des logs en base (Prisma)
-- **Admin Panel** `/admin/panel` : liste des logs (du plus ancien au plus récent), ajout et suppression d’administrateurs
-- **RBAC** : seules les personnes Admin peuvent gérer les admins et voir les logs
-- **UI épurée** avec TailwindCSS
+### 🛠️ Gestion des Outils
+- **Deux types d'outils** : Care Tools et Commun Tools
+- **Scan QR code** pour identification rapide
+- **Traçabilité complète** de tous les mouvements
+- **États multiples** : RAS, Abîmé, En maintenance, Hors service
+- **Localisation en temps réel** avec dernier lieu scanné
 
-## Stack
+### 📊 Logging et Traçabilité
+- **Historique automatique** de toutes les actions
+- **Limite de 7 logs** par outil (suppression automatique des plus anciens)
+- **Types de logs** : SCAN, MODIFY, CREATE
+- **Horodatage** automatique avec fuseau horaire Paris
+
+## Stack Technique
 
 - Next.js 14 (App Router)
 - NextAuth (Credentials, sessions JWT)
-- Prisma (PostgreSQL)
+- Prisma (SQLite/PostgreSQL)
 - TailwindCSS
 - @yudiel/react-qr-scanner
+
+---
+
+## 📋 Page Care
+
+### 🖼️ Présentation
+- **Interface moderne** avec cartes visuelles pour chaque outil
+- **Design responsive** et intuitive
+- **Recherche en temps réel** par nom d'outil
+- **Actualisation automatique** des données
+
+### ⚙️ Fonctionnalités
+
+#### **Modification d'un Outil**
+- **Menu déroulant d'actions** accessible via le bouton "Actions"
+- Options disponibles :
+  - 📤 **Envoi** : Marque l'outil comme envoyé
+  - 📥 **Réception** : Marque l'outil comme reçu
+  - ✅ **État: RAS** : Mise à jour rapide de l'état
+  - ⚠️ **État: Abîmé** : Signalement de dommage avec modal
+
+#### **Gestion des Outils Abîmés**
+- **Modal de signalement** automatique
+- **Upload de photo** obligatoire
+- **Description détaillée** du problème
+- **Transfert automatique** vers la section Admin
+
+#### **Informations Visibles**
+- **Dernier lieu scanné** (toujours affiché en haut)
+- **Localisation actuelle** de l'appareil
+- **Informations de traçabilité** complètes
+- **Bouton "Voir suivi"** pour les détails (affiche tracking si en transport)
+
+#### **Mise à Jour Temps Réel**
+- Synchronisation automatique avec la base de données
+- Actualisation des états et locations
+- Persistance des modifications
+
+---
+
+## 📡 Page Scan
+
+### 🔍 Scanner QR Code
+- **Interface caméra** intégrée pour scanner les codes QR
+- **Compatible** avec les outils Care et Commun
+- **Détection automatique** du type d'outil
+
+### ⚙️ Fonctionnalités de Scan
+
+#### **Choix du Statut**
+Menu déroulant avec options :
+
+1. **📤 Envoi matériel**
+   - Lieu d'envoi (obligatoire)
+   - Client (obligatoire)
+   - Transporteur (obligatoire)
+   - Tracking number (obligatoire)
+
+2. **📥 Réception matériel / Dépôt**
+   - **Dépôt bureau Paris/Gleizé** :
+     - État (RAS/Abîmé)
+     - Heure (auto, non modifiable, grisée)
+     - Responsable (auto, non modifiable, grisé)
+
+3. **🚪 Sortie bureau Paris/Gleizé**
+   - Lieu (obligatoire)
+   - Nom du client (obligatoire)
+   - État (RAS/Abîmé)
+   - Heure (auto, grisée)
+   - Responsable (auto, grisé)
+
+4. **📍 Autres / Chez client**
+   - Lieu (obligatoire)
+   - Nom du client (obligatoire)
+   - État (RAS/Abîmé)
+   - Heure (auto, grisée)
+   - Responsable (auto, grisé)
+
+#### **Gestion des Outils Cassés**
+- **Détection automatique** des outils déclarés abîmés
+- **Photo obligatoire** avec description
+- **Transfert automatique** vers la page Admin
+- **Notification** de l'envoi des données
+
+### 📝 Enregistrement des Données
+- **Toutes les actions** sont enregistrées sur la page Care
+- **Horodatage automatique** avec fuseau horaire Paris
+- **Utilisateur tracé** automatiquement
+
+---
+
+## 🔧 Page Admin
+
+### 🛡️ Accès Sécurisé
+- **Réservé aux administrateurs** (rôle ADMIN)
+- **Contrôle d'accès** strict avec vérification de session
+
+### 📊 Séparations des Données
+
+#### **📋 Section Logs**
+- **Logs individuels** pour chaque outil
+- **Filtrage par outil** avec recherche
+- **Affichage des 7 derniers logs** maximum par outil
+- **Types d'actions** : SCAN, MODIFY, CREATE
+- **Détails des modifications** (ancienne → nouvelle valeur)
+
+#### **🔍 Section Scans**
+- **Historique complet** de tous les scans
+- **Table triable** avec pagination
+- **Informations** : Outil, Lieu, État, Utilisateur, Date
+- **Filtres** par date, utilisateur, état
+
+#### **⚠️ Section Outils Abîmés**
+- **Vue dédiée** aux outils endommagés
+- **Photos et descriptions** des problèmes
+- **Informations complètes** de localisation
+- **Statut en temps réel** de chaque outil
+- **Gestion des réparations** et suivi
+
+### 🗃️ Gestion des Données
+- **Suppression automatique** des logs au-delà du 7e
+- **Archivage intelligent** des données anciennes
+
+---
+
+## 🔒 Fonctionnalités Techniques
+
+### 🗄️ Base de Données
+- **SQLite** pour stockage local
+- **Prisma ORM** pour gestion des données
+- **Modèles** : User, Tool, ToolLog, CareLog, Certification, etc.
+
+### 🛡️ Sécurité
+- **Heure et Responsable** automatiques (non modifiables)
+- **Tokens de session** pour modification sécurisée
+- **Validation** des permissions utilisateur
+- **Chiffrement** des données sensibles
+
+### 📱 Interface Utilisateur
+- **Responsive design** pour mobile et desktop
+- **Tailwind CSS** pour styling moderne
+- **React hooks** pour gestion d'état
+- **Modals et dropdowns** interactifs
+
+### 🔄 Synchronisation
+- **Mise à jour temps réel** entre toutes les pages
+- **Persistance** automatique des modifications
+- **Gestion des conflits** et états incohérents
 
 ---
 
