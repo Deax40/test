@@ -19,6 +19,7 @@
     "start": "next start",
     "seed": "node scripts/seed.mjs",
     "backfill:hash": "node scripts/backfill-hash.mjs",
+    "fix:hashes": "node deploy-hash-fixes-to-vercel.js",
     "prisma:dev": "prisma migrate dev --name init",
     "prisma:deploy": "prisma migrate deploy",
     "postinstall": "prisma generate"
