@@ -1,13 +1,20 @@
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import { refreshToolsFromFiles } from '@/lib/care-data'
 
-const prisma = new PrismaClient()
+const CARE_CATEGORY_KEYWORDS = ['care']
 
 export async function GET() {
   // Prefer database (works on Vercel); fallback to file-based if empty
   try {
     const dbTools = await prisma.tool.findMany({
-      where: { category: 'CARE' },
+      where: {
+        OR: CARE_CATEGORY_KEYWORDS.map(keyword => ({
+          category: {
+            contains: keyword,
+            mode: 'insensitive'
+          }
+        }))
+      },
       orderBy: { name: 'asc' }
     })
 
@@ -16,9 +23,17 @@ export async function GET() {
       return Response.json({ tools: dbTools })
     }
   } catch (e) {
-    // Ignore and fallback
+    console.error('[CARE] Error fetching tools from Prisma:', e)
+    if (process.env.VERCEL) {
+      return Response.json({ error: 'Database error', tools: [] }, { status: 500 })
+    }
   }
 
-  const tools = refreshToolsFromFiles()
-  return Response.json({ tools })
+  // On development environments we keep the legacy filesystem fallback
+  if (!process.env.VERCEL) {
+    const tools = refreshToolsFromFiles()
+    return Response.json({ tools })
+  }
+
+  return Response.json({ tools: [] })
 }

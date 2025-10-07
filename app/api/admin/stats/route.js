@@ -3,6 +3,47 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+const CARE_CATEGORIES = new Set([
+  'CARE',
+  'CARE TOOLS',
+  'CARE_TOOLS',
+  'CARETOOLS',
+  'CARE TOOL',
+  'CARE-TOOLS',
+  'CARE EQUIPMENT',
+  'CARE EQUIPMENTS'
+])
+
+const COMMUN_CATEGORIES = new Set([
+  'COMMUN',
+  'COMMON',
+  'COMMUN TOOLS',
+  'COMMUN_TOOLS',
+  'COMMUNTOOLS',
+  'COMMUN TOOL',
+  'COMMON TOOLS',
+  'COMMUN EQUIPMENT',
+  'COMMUN EQUIPMENTS',
+  'COMMUNS',
+  'COMMUNS TOOLS',
+  'COMMUNS_TOOLS'
+])
+
+function normalizeCategory(category) {
+  return String(category || '')
+    .trim()
+    .toUpperCase()
+}
+
+function normalizeHash(hash) {
+  return String(hash || '')
+    .trim()
+    .toUpperCase()
+    .replace(/^CARE_/, '')
+    .replace(/^COMMON_/, '')
+    .replace(/^COMMUN_/, '')
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -18,24 +59,15 @@ export async function GET() {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
-    // Compter tous les outils depuis Prisma ET depuis le système commun
-    const totalToolsPrisma = await prisma.tool.count()
+    // Charger tous les outils une fois pour éviter les requêtes HTTP internes
+    const allTools = await prisma.tool.findMany({
+      orderBy: { name: 'asc' }
+    })
 
-    // Ajouter les outils du système commun
-    let communToolsCount = 0
-    try {
-      const communRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/commons`, {
-        cache: 'no-store'
-      })
-      if (communRes.ok) {
-        const communData = await communRes.json()
-        communToolsCount = (communData.tools || []).length
-      }
-    } catch (e) {
-      console.error('Error fetching commun tools:', e)
-    }
+    const totalTools = allTools.length
 
-    const totalTools = totalToolsPrisma + communToolsCount
+    const careTools = allTools.filter(tool => CARE_CATEGORIES.has(normalizeCategory(tool.category)))
+    const communTools = allTools.filter(tool => COMMUN_CATEGORIES.has(normalizeCategory(tool.category)))
 
     // Compter les scans d'aujourd'hui
     const today = new Date()
@@ -93,68 +125,49 @@ export async function GET() {
     })
 
     // Récupérer tous les outils Care et Commun pour pouvoir faire le mapping hash -> nom
-    let careToolsMap = {}
-    let communToolsMap = {}
-    let careToolsWithProblems = []
-    let communToolsWithProblems = []
+    const careToolsMap = {}
+    const communToolsMap = {}
 
-    try {
-      const careRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/care`, {
-        cache: 'no-store'
-      })
-      if (careRes.ok) {
-        const careData = await careRes.json()
-        const careTools = careData.tools || []
-
-        // Créer un map hash -> nom pour les outils Care
-        careTools.forEach(tool => {
-          careToolsMap[tool.hash] = tool.name
-        })
-
-        // Filtrer les outils avec problèmes
-        careToolsWithProblems = careTools.filter(tool =>
-          tool.lastScanEtat &&
-          tool.lastScanEtat !== 'RAS' &&
-          tool.lastScanEtat !== '' &&
-          (tool.lastScanEtat === 'Abîmé' ||
-           tool.lastScanEtat === 'Problème' ||
-           tool.lastScanEtat === 'En maintenance' ||
-           tool.lastScanEtat === 'Hors service')
-        )
+    careTools.forEach(tool => {
+      if (tool.hash) {
+        const hash = normalizeHash(tool.hash)
+        careToolsMap[hash] = tool.name
       }
-    } catch (e) {
-      console.error('Error fetching care tools:', e)
-    }
-
-    try {
-      const communRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/commons`, {
-        cache: 'no-store'
-      })
-      if (communRes.ok) {
-        const communData = await communRes.json()
-        const communTools = communData.tools || []
-
-        // Créer un map hash -> nom pour les outils Commun
-        communTools.forEach(tool => {
-          communToolsMap[tool.hash] = tool.name
-        })
-
-        // Filtrer les outils avec problèmes
-        communToolsWithProblems = communTools.filter(tool =>
-          (tool.lastScanEtat && tool.lastScanEtat !== 'RAS') ||
-          (tool.state && tool.state !== 'RAS' && tool.state !== '')
-        )
+      if (tool.qrData) {
+        const hash = normalizeHash(tool.qrData)
+        careToolsMap[hash] = tool.name
       }
-    } catch (e) {
-      console.error('Error fetching commun tools:', e)
-    }
+    })
+
+    communTools.forEach(tool => {
+      if (tool.hash) {
+        const hash = normalizeHash(tool.hash)
+        communToolsMap[hash] = tool.name
+      }
+      if (tool.qrData) {
+        const hash = normalizeHash(tool.qrData)
+        communToolsMap[hash] = tool.name
+      }
+    })
+
+    const careToolsWithProblems = careTools.filter(tool => {
+      const state = tool.lastScanEtat || ''
+      if (!state || state === 'RAS') return false
+      return ['ABÎMÉ', 'PROBLÈME', 'PROBLEME', 'EN MAINTENANCE', 'HORS SERVICE'].includes(state.toUpperCase())
+    })
+
+    const communToolsWithProblems = communTools.filter(tool => {
+      const state = tool.lastScanEtat || tool.state || ''
+      if (!state || state === 'RAS') return false
+      return true
+    })
 
     const problems = problemLogs.length + careToolsWithProblems.length + communToolsWithProblems.length
     const problemToolsDetails = [
       ...problemLogs.map(log => {
         // Essayer de trouver le nom de l'outil à partir du hash dans qrData
-        const toolHash = log.qrData
-        const toolName = careToolsMap[toolHash] || communToolsMap[toolHash] || toolHash || 'Outil inconnu'
+        const toolHash = normalizeHash(log.qrData)
+        const toolName = careToolsMap[toolHash] || communToolsMap[toolHash] || log.qrData || 'Outil inconnu'
 
         return {
           name: toolName,
@@ -178,7 +191,7 @@ export async function GET() {
         name: tool.name,
         lastScanLieu: tool.lastScanLieu,
         lastScanAt: tool.lastScanAt,
-        lastScanUser: tool.lastScanBy,
+        lastScanUser: tool.lastScanUser,
         lastScanEtat: tool.lastScanEtat || tool.state,
         problemDescription: tool.problemDescription
       }))
@@ -188,10 +201,12 @@ export async function GET() {
       totalTools,
       todayScans,
       problems,
+      careToolsCount: careTools.length,
+      communToolsCount: communTools.length,
       todayScansDetails: todayScansDetails.map(scan => {
         // Essayer de trouver le nom de l'outil à partir du hash dans qrData
-        const toolHash = scan.qrData
-        const toolName = careToolsMap[toolHash] || communToolsMap[toolHash] || toolHash || 'Outil inconnu'
+        const toolHash = normalizeHash(scan.qrData)
+        const toolName = careToolsMap[toolHash] || communToolsMap[toolHash] || scan.qrData || 'Outil inconnu'
 
         return {
           toolName: toolName,

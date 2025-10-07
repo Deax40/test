@@ -6,8 +6,8 @@ export async function GET() {
     const tools = await prisma.tool.findMany({
       where: {
         OR: [
-          { category: 'Commun Tools' },
-          { category: 'COMMUN' }
+          { category: { contains: 'commun', mode: 'insensitive' } },
+          { category: { contains: 'common', mode: 'insensitive' } }
         ]
       },
       orderBy: { name: 'asc' }

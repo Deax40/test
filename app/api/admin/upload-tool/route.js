@@ -2,11 +2,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
-import { PrismaClient } from '@prisma/client'
 import crypto from 'crypto'
 import { refreshToolsFromFiles } from '@/lib/care-data'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export async function POST(req) {
   const session = await getServerSession(authOptions)
@@ -127,8 +125,10 @@ export async function POST(req) {
         }
       })
 
-      // Rafraîchir les outils Care depuis les fichiers pour mettre à jour le cache
-      refreshToolsFromFiles()
+      // Rafraîchir les outils Care depuis les fichiers pour mettre à jour le cache (dev only)
+      if (!process.env.VERCEL) {
+        refreshToolsFromFiles()
+      }
     } else {
       // Pour COMMUN, créer aussi dans la table Tool avec les champs appropriés
       await prisma.tool.create({
