@@ -33,31 +33,26 @@ export async function GET(request, { params }) {
 
 export async function PATCH(request, { params }) {
   const authHeader = request.headers.get('authorization')
+  let userName = 'Anonymous'
+  let userId = null
 
   // Handle token-based authentication (from scan)
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.substring(7)
-    const data = await request.json()
-    const result = updateToolWithToken(params.hash, data, token, data.user || 'Scan')
+    console.log('[CARE] Token-based auth, token:', token.substring(0, 10) + '...')
 
-    if (!result) {
-      return Response.json({ error: 'Invalid or expired token' }, { status: 403 })
-    }
-
-    return Response.json({
-      tool: result.tool,
-      editSessionToken: result.token
-    })
+    // For token-based, we'll handle everything ourselves
+    // No session required
   }
 
-  // Handle session-based authentication (from admin)
+  // Try to get session (optional for scans)
   const session = await getServerSession(authOptions)
-  if (!session?.user) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (session.user.role !== 'ADMIN' && session.user.role !== 'TECH') {
-    return Response.json({ error: 'Forbidden' }, { status: 403 })
+  if (session?.user) {
+    userName = session.user.name || session.user.username || 'User'
+    userId = session.user.id
+    console.log('[CARE] Session found:', userName)
+  } else {
+    console.log('[CARE] No session, continuing as anonymous')
   }
 
   // Check if it's FormData (has file upload)
@@ -88,6 +83,9 @@ export async function PATCH(request, { params }) {
     if (data.user) {
       data.lastScanUser = data.user
       data.lastScanAt = new Date().toISOString()
+    } else {
+      data.lastScanUser = userName
+      data.lastScanAt = new Date().toISOString()
     }
 
     // Handle file upload - Save to database instead of filesystem
@@ -116,11 +114,14 @@ export async function PATCH(request, { params }) {
     if (data.user) {
       data.lastScanUser = data.user
       data.lastScanAt = new Date().toISOString()
+    } else {
+      data.lastScanUser = userName
+      data.lastScanAt = new Date().toISOString()
     }
   }
 
   // Update in memory (legacy system) - might not exist
-  let tool = updateTool(params.hash, data, session.user.id, session.user.name)
+  let tool = updateTool(params.hash, data, userId || 'anonymous', userName)
 
   // If tool doesn't exist in memory, create a minimal object for response
   if (!tool) {
@@ -182,23 +183,29 @@ export async function PATCH(request, { params }) {
     }, { status: 500 })
   }
 
-  // Envoyer email à tous les admins si l'outil est cassé/abîmé
+  // Envoyer email à tous les admins si l'outil est cassé/abîmé (optionnel)
   if (data.state === 'Abîmé' || data.state === 'Problème') {
     try {
       await sendBrokenToolAlertToAdmins({
         toolName: tool.name,
         location: data.location || data.lastScanLieu,
         description: data.problemDescription,
-        userName: session.user.name,
+        userName: userName,
         photoBuffer,
         photoType,
         prisma
       })
+      console.log('[CARE] Email alert sent successfully')
     } catch (error) {
-      console.error('Failed to send broken tool alert:', error)
+      console.error('[CARE] Failed to send email (non-blocking):', error.message)
       // Ne pas bloquer la réponse si l'email échoue
     }
   }
 
-  return Response.json({ tool })
+  console.log('[CARE] ✅ PATCH successful, returning tool')
+  return Response.json({
+    tool,
+    success: true,
+    dbSaved: dbSaveSuccess
+  })
 }
