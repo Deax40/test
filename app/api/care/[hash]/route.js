@@ -71,28 +71,17 @@ export async function PATCH(request, { params }) {
       data.lastScanAt = new Date().toISOString()
     }
 
-    // Handle file upload
+    // Handle file upload - Save to database instead of filesystem
     const problemPhoto = formData.get('problemPhoto')
     if (problemPhoto && problemPhoto.size > 0) {
-      // Save the photo and store the path
-      const { writeFile, mkdir } = await import('fs/promises')
-      const path = await import('path')
-
-      const uploadsDir = path.join(process.cwd(), 'uploads', 'care-photos')
-      await mkdir(uploadsDir, { recursive: true })
-
-      const fileName = `${Date.now()}_${params.hash}_${problemPhoto.name}`
-      const filePath = path.join(uploadsDir, fileName)
-
       const bytes = await problemPhoto.arrayBuffer()
       const buffer = Buffer.from(bytes)
-      await writeFile(filePath, buffer)
 
-      data.problemPhoto = `uploads/care-photos/${fileName}`
-
-      // Conserver pour email
+      // Store photo in database
       photoBuffer = buffer
       photoType = problemPhoto.type
+      data.problemPhotoBuffer = buffer
+      data.problemPhotoType = problemPhoto.type
     }
   } else {
     // Handle regular JSON
@@ -111,10 +100,43 @@ export async function PATCH(request, { params }) {
     }
   }
 
+  // Update in memory (legacy system)
   const tool = updateTool(params.hash, data, session.user.id, session.user.name)
 
   if (!tool) {
     return Response.json({ error: 'Tool not found' }, { status: 404 })
+  }
+
+  // Also update in Prisma database for Vercel persistence
+  try {
+    const updateData = {
+      lastScanAt: data.lastScanAt ? new Date(data.lastScanAt) : undefined,
+      lastScanUser: data.lastScanUser,
+      lastScanLieu: data.lastScanLieu,
+      lastScanEtat: data.lastScanEtat,
+      problemDescription: data.problemDescription,
+    }
+
+    // Add photo to database if present
+    if (data.problemPhotoBuffer) {
+      updateData.problemPhotoBuffer = data.problemPhotoBuffer
+      updateData.problemPhotoType = data.problemPhotoType
+    }
+
+    await prisma.tool.upsert({
+      where: { hash: params.hash },
+      update: updateData,
+      create: {
+        hash: params.hash,
+        name: tool.name,
+        category: tool.category,
+        qrData: tool.qrData || `CARE_${params.hash}`,
+        ...updateData,
+      },
+    })
+  } catch (dbError) {
+    console.error('Failed to persist to database:', dbError)
+    // Continue even if database update fails
   }
 
   // Envoyer email à tous les admins si l'outil est cassé/abîmé

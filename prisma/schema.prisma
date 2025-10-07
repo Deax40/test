@@ -69,7 +69,9 @@ model Tool {
   dimensionWidth  String?        // Largeur en cm
   dimensionHeight String?        // Hauteur en cm
   dimensionType   String?        // "piece" ou "colis"
-  problemPhotoPath String?       // Chemin vers la photo du problème
+  problemPhotoPath String?       // Chemin vers la photo du problème (legacy)
+  problemPhotoBuffer Bytes?      // Photo stockée en base de données
+  problemPhotoType String?       // Type MIME de la photo
   problemDescription String?     // Description du problème
   complementaryInfo String?      // Informations complémentaires (admin only)
   tracking       String?         // Numéro de tracking (en transit)

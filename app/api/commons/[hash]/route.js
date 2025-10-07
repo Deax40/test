@@ -31,23 +31,15 @@ export async function PATCH(req, { params }) {
       const formData = await req.formData()
       body = {}
 
-      // Handle problem photo upload
+      // Handle problem photo upload - Store in database instead of filesystem
       const problemPhoto = formData.get('problemPhoto')
       if (problemPhoto && problemPhoto.size > 0) {
-        const { writeFile, mkdir } = await import('fs/promises')
-        const path = await import('path')
-
-        const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'problem-photos')
-        await mkdir(uploadsDir, { recursive: true })
-
-        const fileName = `${Date.now()}_${params.hash}_${problemPhoto.name}`
-        const filePath = path.join(uploadsDir, fileName)
-
         const bytes = await problemPhoto.arrayBuffer()
         const buffer = Buffer.from(bytes)
-        await writeFile(filePath, buffer)
 
-        problemPhotoPath = `/uploads/problem-photos/${fileName}`
+        // Store photo data in body for database storage
+        body.problemPhotoBuffer = buffer
+        body.problemPhotoType = problemPhoto.type
       }
 
       for (const [key, value] of formData.entries()) {
@@ -59,7 +51,7 @@ export async function PATCH(req, { params }) {
       body = await req.json()
     }
 
-    const { name, location, state, weight, imoNumber, user, problemDescription, complementaryInfo, ...otherFields } = body
+    const { name, location, state, weight, imoNumber, user, problemDescription, complementaryInfo, problemPhotoBuffer, problemPhotoType, ...otherFields } = body
 
     const updateData = {}
     if (name !== undefined) updateData.name = name
@@ -70,11 +62,6 @@ export async function PATCH(req, { params }) {
     if (problemDescription !== undefined) updateData.problemDescription = problemDescription
     if (complementaryInfo !== undefined) updateData.complementaryInfo = complementaryInfo
 
-    // Add problem photo path if uploaded
-    if (problemPhotoPath) {
-      updateData.problemPhotoPath = problemPhotoPath
-    }
-
     // Track user who made the modification
     if (user !== undefined) {
       updateData.lastScanUser = user
@@ -83,10 +70,33 @@ export async function PATCH(req, { params }) {
 
     Object.assign(updateData, otherFields)
 
+    // Update in memory (legacy system)
     const tool = updateTool(params.hash, updateData, session.user.name || 'user')
 
     if (!tool) {
       return new Response('Tool not found', { status: 404 })
+    }
+
+    // Save to Prisma database for persistence
+    try {
+      const { prisma } = await import('@/lib/prisma')
+
+      // Create or update a log entry for Commun tools
+      await prisma.log.create({
+        data: {
+          qrData: params.hash,
+          lieu: location || 'Non spécifié',
+          date: new Date(),
+          actorName: user || session.user.name || 'user',
+          etat: state || 'RAS',
+          probleme: problemDescription || null,
+          photo: problemPhotoBuffer || null,
+          photoType: problemPhotoType || null,
+        },
+      })
+    } catch (dbError) {
+      console.error('Failed to persist to database:', dbError)
+      // Continue even if database update fails
     }
 
     return Response.json({ tool })
