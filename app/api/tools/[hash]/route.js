@@ -1,29 +1,35 @@
-import { getTool, patchTool, consumeToken, createToken } from '@/lib/commun-data'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { sendProblemNotification, sendBrokenToolAlertToAdmins } from '@/lib/email'
 
 export async function GET(req, { params }) {
-  const hash = String(params.hash || '').trim().toLowerCase()
-  const tool = getTool(hash)
-  if (!tool) {
-    return Response.json({ error: 'tool_not_found' }, { status: 404 })
+  // SKIP MEMORY - Read directly from Prisma
+  console.log('[TOOLS] GET request for hash:', params.hash)
+
+  try {
+    const normalized = String(params.hash || '').trim().toUpperCase()
+
+    const tool = await prisma.tool.findUnique({
+      where: { hash: normalized }
+    })
+
+    if (!tool) {
+      console.log('[TOOLS] ⚠️ Tool not found in database')
+      return Response.json({ error: 'tool_not_found' }, { status: 404 })
+    }
+
+    console.log('[TOOLS] ✅ Tool found:', tool.name)
+    return Response.json(tool)
+  } catch (error) {
+    console.error('[TOOLS] ❌ Error:', error.message)
+    return Response.json({ error: 'Server error' }, { status: 500 })
   }
-  return Response.json(tool)
 }
 
 export async function PATCH(req, { params }) {
-  const hash = String(params.hash || '').trim().toLowerCase()
-  const auth = req.headers.get('authorization') || ''
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
-  let userId = null
-  if (token) {
-    userId = consumeToken(token, hash)
-    if (!userId) {
-      return new Response('Forbidden', { status: 403 })
-    }
-  }
+  console.log('=== [TOOLS] PATCH REQUEST START ===')
+  console.log('[TOOLS] Hash:', params.hash)
 
   const session = await getServerSession(authOptions)
   if (!session) {
@@ -75,42 +81,72 @@ export async function PATCH(req, { params }) {
     data = {}
   }
 
-  const patch = {}
-  if (typeof data.name === 'string') patch.name = data.name.trim()
-  if (typeof data.location === 'string') {
-    patch.location = data.location.trim()
-    patch.lastScanLieu = data.location.trim()
-  }
-  if (typeof data.state === 'string') {
-    patch.state = data.state.trim()
-    patch.lastScanEtat = data.state.trim()
-  }
-  if (typeof data.weight === 'string') patch.weight = data.weight.trim()
-  if (typeof data.imoNumber === 'string') patch.imoNumber = data.imoNumber.trim()
-  if (typeof data.user === 'string') {
-    patch.lastScanBy = data.user.trim()
-    patch.lastScanAt = new Date().toISOString()
-  }
-  if (typeof data.lastScanBy === 'string') {
-    patch.lastScanBy = data.lastScanBy.trim()
-    patch.lastScanAt = new Date().toISOString()
-  }
-  if (typeof data.client === 'string') patch.client = data.client.trim()
-  if (typeof data.transporteur === 'string') patch.transporteur = data.transporteur.trim()
-  if (typeof data.tracking === 'string') patch.tracking = data.tracking.trim()
-  if (typeof data.problemDescription === 'string') patch.problemDescription = data.problemDescription.trim()
-  if (problemPhotoPath) patch.problemPhotoPath = problemPhotoPath
+  const normalized = String(params.hash || '').trim().toUpperCase()
+  const userName = data.user || session.user.name || session.user.username || 'user'
 
-  const updated = patchTool(hash, patch, userId || '')
-  if (!updated) {
-    return Response.json({ error: 'tool_not_found' }, { status: 404 })
+  console.log('[TOOLS] Saving directly to Prisma database:', normalized)
+
+  // Build update data
+  const updateData = {
+    lastScanAt: new Date(),
+    lastScanUser: userName,
+    lastScanLieu: (data.location || '').trim() || null,
+    lastScanEtat: (data.state || 'RAS').trim(),
+    problemDescription: (data.problemDescription || '').trim() || null,
   }
 
-  // Create a log entry for the scan
+  // Admin-only fields
+  if (typeof data.name === 'string' && data.name.trim()) updateData.name = data.name.trim()
+  if (typeof data.weight === 'string') updateData.weight = data.weight.trim() || null
+  if (typeof data.imoNumber === 'string') updateData.imoNumber = data.imoNumber.trim() || null
+  if (typeof data.client === 'string') updateData.client = data.client.trim() || null
+  if (typeof data.transporteur === 'string') updateData.transporteur = data.transporteur.trim() || null
+  if (typeof data.tracking === 'string') updateData.tracking = data.tracking.trim() || null
+
+  // Photo
+  if (problemPhoto) {
+    updateData.problemPhotoBuffer = problemPhoto.data
+    updateData.problemPhotoType = problemPhoto.type
+    console.log('[TOOLS] Photo included, size:', problemPhoto.data.length)
+  }
+
+  console.log('[TOOLS] Update data:', {
+    hash: normalized,
+    user: updateData.lastScanUser,
+    lieu: updateData.lastScanLieu,
+    etat: updateData.lastScanEtat
+  })
+
+  let updated
   try {
-    console.log('[COMMUN] Attempting to save log, session user:', session.user?.name || session.user?.username)
+    // UPSERT: Create if doesn't exist, update if exists
+    console.log('[TOOLS] Executing upsert...')
+    updated = await prisma.tool.upsert({
+      where: { hash: normalized },
+      update: updateData,
+      create: {
+        hash: normalized,
+        name: data.name || `Tool ${normalized}`,
+        category: 'Commun Tools',
+        qrData: `TOOL_${normalized}`,
+        ...updateData,
+      },
+    })
 
-    // Find user by name or username or email
+    console.log('[TOOLS] ✅ Database save SUCCESS:', updated.id, updated.name)
+  } catch (dbError) {
+    console.error('[TOOLS] ❌ Database save FAILED:', dbError.message)
+    return Response.json({
+      error: 'Database save failed',
+      details: dbError.message
+    }, { status: 500 })
+  }
+
+  // Create a log entry
+  try {
+    console.log('[TOOLS] Creating log entry...')
+
+    // Find user
     const user = await prisma.user.findFirst({
       where: {
         OR: [
@@ -122,11 +158,11 @@ export async function PATCH(req, { params }) {
     })
 
     if (user) {
-      console.log('[COMMUN] User found:', user.id, user.name)
-      const logResult = await prisma.log.create({
+      console.log('[TOOLS] User found:', user.id, user.name)
+      await prisma.log.create({
         data: {
-          qrData: hash,
-          lieu: data.location || '',
+          qrData: normalized,
+          lieu: data.location || 'Non spécifié',
           date: new Date(),
           actorName: user.name,
           etat: data.state || 'RAS',
@@ -136,7 +172,7 @@ export async function PATCH(req, { params }) {
           createdById: user.id
         }
       })
-      console.log('[COMMUN] Log created successfully:', logResult.id)
+      console.log('[TOOLS] ✅ Log created')
 
       // Create tool log for shipping status
       if (data.shippingStatus) {
@@ -152,23 +188,11 @@ export async function PATCH(req, { params }) {
             createdById: user.id
           }
         })
+        console.log('[TOOLS] ✅ Tool log created')
       }
 
-      // Send email if there's a problem
-      if (data.state === 'Problème') {
-        await sendProblemNotification({
-          toolName: updated.name,
-          location: data.location,
-          description: data.problemDescription,
-          userName: user.name,
-          userEmail: user.email,
-          photoBuffer: problemPhoto?.data,
-          photoType: problemPhoto?.type
-        })
-      }
-
-      // Envoyer email à tous les admins si l'outil est cassé/abîmé
-      if (data.state === 'Abîmé' || data.state === 'Problème') {
+      // Send emails if needed (non-blocking)
+      if (data.state === 'Problème' || data.state === 'Abîmé') {
         try {
           await sendBrokenToolAlertToAdmins({
             toolName: updated.name,
@@ -179,29 +203,29 @@ export async function PATCH(req, { params }) {
             photoType: problemPhoto?.type,
             prisma
           })
+          console.log('[TOOLS] ✅ Email sent')
         } catch (error) {
-          console.error('Failed to send broken tool alert to admins:', error)
+          console.error('[TOOLS] ⚠️ Email failed (non-blocking):', error.message)
         }
       }
     } else {
-      console.error('[COMMUN] User not found in database for session:', session.user)
+      console.error('[TOOLS] ⚠️ User not found in database')
     }
   } catch (e) {
-    console.error('[COMMUN] Error creating log entry:', e.message)
-    console.error('[COMMUN] Full error:', e)
-    // Return error so user knows
-    return Response.json({
-      error: 'Failed to save changes',
-      details: e.message,
-      tool: updated
-    }, { status: 500 })
+    console.error('[TOOLS] ⚠️ Error creating log (non-blocking):', e.message)
+    // Don't fail the request if log creation fails
   }
 
-  console.log('Tool updated', { hash, patch, userId })
-  const response = { tool: updated }
-  if (userId) {
-    response.editSessionToken = createToken(hash, userId)
-  }
-  return Response.json(response)
+  console.log('[TOOLS] ✅ PATCH successful, returning tool')
+
+  return Response.json({
+    tool: {
+      ...updated,
+      lastScanAt: updated.lastScanAt?.toISOString() || null,
+      createdAt: updated.createdAt?.toISOString() || null
+    },
+    success: true,
+    saved: true
+  })
 }
 

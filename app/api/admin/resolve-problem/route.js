@@ -45,36 +45,40 @@ export async function POST(request) {
       console.error('[RESOLVE] Error updating logs:', error)
     }
 
-    // 2. Mettre à jour l'outil dans Prisma Tool (Care tools)
+    // 2. Mettre à jour l'outil dans Prisma Tool
     try {
-      // Chercher l'outil par nom
+      // Chercher l'outil par nom, hash ou qrData
       const tool = await prisma.tool.findFirst({
         where: {
-          name: {
-            contains: toolName,
-            mode: 'insensitive'
-          }
+          OR: [
+            { name: { contains: toolName, mode: 'insensitive' } },
+            { hash: { contains: toolName, mode: 'insensitive' } },
+            { qrData: { contains: toolName, mode: 'insensitive' } }
+          ]
         }
       })
 
       if (tool) {
-        await prisma.tool.update({
+        const updatedTool = await prisma.tool.update({
           where: { id: tool.id },
           data: {
             lastScanEtat: 'RAS',
             lastScanAt: new Date(),
             lastScanUser: session.user.name,
+            lastScanLieu: tool.lastScanLieu, // Keep existing location
             problemDescription: null,
             problemPhotoBuffer: null,
             problemPhotoType: null
           }
         })
 
-        console.log('[RESOLVE] Updated Care tool:', tool.name)
+        console.log('[RESOLVE] ✅ Updated tool:', updatedTool.name, 'to state:', updatedTool.lastScanEtat)
         success = true
+      } else {
+        console.log('[RESOLVE] ⚠️ Tool not found in database:', toolName)
       }
     } catch (error) {
-      console.error('[RESOLVE] Error updating Care tool:', error)
+      console.error('[RESOLVE] ❌ Error updating tool:', error.message)
     }
 
     // 3. Créer un log de résolution
