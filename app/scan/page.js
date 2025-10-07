@@ -209,26 +209,6 @@ export default function ScanPage() {
             )}
 
             {error && <p className="text-red-600 mt-4">{error}</p>}
-
-            {/* Saisie manuelle - toujours disponible */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">Ou saisie manuelle</h2>
-              <form onSubmit={handleManualSubmit} className="flex gap-2 max-w-md mx-auto">
-                <input
-                  type="text"
-                  value={manualInput}
-                  onChange={(e) => setManualInput(e.target.value)}
-                  placeholder="Entrez le code QR ou nom de l'outil"
-                  className="input flex-1"
-                />
-                <button type="submit" className="btn btn-primary">
-                  Rechercher
-                </button>
-              </form>
-              <p className="text-sm text-gray-500 mt-2">
-                Entrez le hash (ex: CARE_ABC123) ou le nom de l'outil
-              </p>
-            </div>
           </div>
         </div>
       ) : (

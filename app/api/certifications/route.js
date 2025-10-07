@@ -81,22 +81,24 @@ export async function POST(req) {
         return new Response('Only PDF files are allowed', { status: 400 })
       }
 
-      // Créer le répertoire d'upload si nécessaire
-      const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'certifications')
-      await fs.mkdir(uploadsDir, { recursive: true })
+      // Limite de taille : 4MB pour Vercel
+      if (pdfFile.size > 4 * 1024 * 1024) {
+        return new Response('PDF trop volumineux (max 4MB)', { status: 400 })
+      }
 
-      // Générer un nom de fichier unique
+      // Sur Vercel, le filesystem est en lecture seule
+      // On stocke simplement un chemin symbolique
+      // TODO: Utiliser un service de stockage externe (S3, Vercel Blob, etc.)
       const timestamp = Date.now()
       const sanitizedToolName = toolName.replace(/[^a-z0-9]/gi, '_').toLowerCase()
       const filename = `cert_${sanitizedToolName}_${timestamp}.pdf`
-      const filePath = path.join(uploadsDir, filename)
-      const relativePath = `/uploads/certifications/${filename}`
 
-      // Sauvegarder le fichier
-      const buffer = await pdfFile.arrayBuffer()
-      await fs.writeFile(filePath, Buffer.from(buffer))
+      console.log('[CERT] PDF upload:', filename, 'size:', pdfFile.size)
 
-      certData.pdfPath = relativePath
+      // Pour l'instant, on indique juste qu'un certificat a été uploadé
+      // Sans le stocker (nécessite un service externe pour Vercel)
+      certData.pdfPath = `/certifications/${filename}` // Placeholder
+      console.warn('[CERT] Warning: PDF not actually stored (requires external storage on Vercel)')
     }
 
     const certification = await prisma.certification.create({

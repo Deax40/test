@@ -1,7 +1,5 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getTool, updateTool } from '@/lib/care-data'
-import { listTools, updateTool as updateCommunTool } from '@/lib/commun-data'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request) {
@@ -17,60 +15,22 @@ export async function POST(request) {
       return Response.json({ error: 'Paramètres manquants' }, { status: 400 })
     }
 
+    console.log('[RESOLVE] Resolving problem for:', toolName)
+
     let success = false
 
-    // D'abord, récupérer tous les outils pour faire le mapping nom -> hash
-    let toolHash = null
+    // 1. Mettre à jour les logs Prisma avec problèmes
     try {
-      // Chercher dans les outils CARE
-      const careRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/care`, {
-        cache: 'no-store'
-      })
-      if (careRes.ok) {
-        const careData = await careRes.json()
-        const careTool = careData.tools.find(t => t.name === toolName)
-        if (careTool) {
-          toolHash = careTool.hash
-        }
-      }
-
-      // Si pas trouvé dans CARE, chercher dans COMMUN
-      if (!toolHash) {
-        const communRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/commons`, {
-          cache: 'no-store'
-        })
-        if (communRes.ok) {
-          const communData = await communRes.json()
-          const communTool = communData.tools.find(t => t.name === toolName)
-          if (communTool) {
-            toolHash = communTool.hash
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Erreur lors de la recherche du hash de l\'outil:', error)
-    }
-
-    // Essayer de supprimer/mettre à jour les logs Prisma avec problèmes
-    try {
-      const whereCondition = {
-        etat: {
-          in: ['Problème', 'Abîmé', 'En maintenance', 'Hors service']
-        }
-      }
-
-      // Chercher par hash si disponible, sinon par nom
-      if (toolHash) {
-        whereCondition.qrData = toolHash
-      } else {
-        whereCondition.OR = [
-          { qrData: toolName },
-          { qrData: { contains: toolName } }
-        ]
-      }
-
       const updatedLogs = await prisma.log.updateMany({
-        where: whereCondition,
+        where: {
+          etat: {
+            in: ['Problème', 'Abîmé', 'En maintenance', 'Hors service']
+          },
+          OR: [
+            { qrData: toolName },
+            { qrData: { contains: toolName } }
+          ]
+        },
         data: {
           etat: 'RAS',
           probleme: null
@@ -78,70 +38,60 @@ export async function POST(request) {
       })
 
       if (updatedLogs.count > 0) {
+        console.log(`[RESOLVE] Updated ${updatedLogs.count} logs`)
         success = true
-        console.log(`Mis à jour ${updatedLogs.count} logs Prisma pour l'outil ${toolName}`)
       }
     } catch (error) {
-      console.error('Erreur lors de la mise à jour des logs Prisma:', error)
+      console.error('[RESOLVE] Error updating logs:', error)
     }
 
-    // Essayer de mettre à jour l'outil dans les systèmes CARE et COMMUN
-    // Essayer d'abord CARE (si type spécifié comme 'care' ou pas de type spécifié)
-    if (!type || type === 'care') {
-      try {
-        const careTools = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3002'}/api/care`, {
-          cache: 'no-store'
+    // 2. Mettre à jour l'outil dans Prisma Tool (Care tools)
+    try {
+      // Chercher l'outil par nom
+      const tool = await prisma.tool.findFirst({
+        where: {
+          name: {
+            contains: toolName,
+            mode: 'insensitive'
+          }
+        }
+      })
+
+      if (tool) {
+        await prisma.tool.update({
+          where: { id: tool.id },
+          data: {
+            lastScanEtat: 'RAS',
+            lastScanAt: new Date(),
+            lastScanUser: session.user.name,
+            problemDescription: null,
+            problemPhotoBuffer: null,
+            problemPhotoType: null
+          }
         })
 
-        if (careTools.ok) {
-          const careData = await careTools.json()
-          const tool = careData.tools.find(t => t.name === toolName)
-
-          if (tool) {
-            // Remettre l'outil à l'état RAS (résolu)
-            const result = updateTool(tool.hash, {
-              lastScanEtat: 'RAS',
-              lastScanAt: new Date().toISOString(),
-              lastScanUser: session.user.name,
-              problemDescription: null,
-              problemPhoto: null
-            }, session.user.id, session.user.name)
-
-            if (result) {
-              success = true
-              console.log(`Outil CARE ${toolName} résolu avec succès`)
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Erreur lors de la résolution de l\'outil CARE:', error)
+        console.log('[RESOLVE] Updated Care tool:', tool.name)
+        success = true
       }
+    } catch (error) {
+      console.error('[RESOLVE] Error updating Care tool:', error)
     }
 
-    // Essayer COMMUN (si type spécifié comme 'commun' ou pas de type spécifié et pas encore résolu)
-    if ((!type && !success) || type === 'commun') {
-      try {
-        const communTools = listTools()
-        const tool = communTools.find(t => t.name === toolName)
-
-        if (tool) {
-          // Remettre l'outil à l'état RAS (résolu)
-          const result = updateCommunTool(tool.hash, {
-            state: 'RAS',
-            lastScanEtat: 'RAS',
-            lastScanAt: new Date().toISOString(),
-            lastScanBy: session.user.name,
-            problemDescription: null
-          }, session.user.name)
-
-          if (result) {
-            success = true
-            console.log(`Outil COMMUN ${toolName} résolu avec succès`)
-          }
+    // 3. Créer un log de résolution
+    try {
+      await prisma.log.create({
+        data: {
+          qrData: toolName,
+          lieu: 'Admin',
+          date: new Date(),
+          actorName: session.user.name,
+          etat: 'RAS',
+          probleme: `Problème résolu par ${session.user.name}`
         }
-      } catch (error) {
-        console.error('Erreur lors de la résolution de l\'outil COMMUN:', error)
-      }
+      })
+      console.log('[RESOLVE] Created resolution log')
+    } catch (error) {
+      console.error('[RESOLVE] Error creating log:', error)
     }
 
     if (success) {
@@ -150,13 +100,18 @@ export async function POST(request) {
         message: `Problème résolu pour "${toolName}"`
       })
     } else {
+      console.error('[RESOLVE] No updates made')
       return Response.json({
-        error: 'Outil non trouvé ou erreur lors de la résolution'
+        error: 'Outil non trouvé ou aucune mise à jour nécessaire',
+        details: `Aucun problème trouvé pour l'outil "${toolName}"`
       }, { status: 404 })
     }
 
   } catch (error) {
-    console.error('Erreur lors de la résolution du problème:', error)
-    return Response.json({ error: 'Erreur serveur' }, { status: 500 })
+    console.error('[RESOLVE] Error:', error)
+    return Response.json({
+      error: 'Erreur serveur',
+      details: error.message
+    }, { status: 500 })
   }
 }
