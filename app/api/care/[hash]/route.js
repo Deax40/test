@@ -9,19 +9,28 @@ export const runtime = 'nodejs'
 export const maxDuration = 30
 
 export async function GET(request, { params }) {
-  // Try memory first
-  let tool = getTool(params.hash)
+  // SKIP MEMORY - Read directly from Prisma database
+  // On Vercel, memory doesn't persist between requests
+  console.log('[CARE] GET request for hash:', params.hash)
 
-  // If not in memory, try Prisma database
-  if (!tool) {
-    try {
-      const normalized = String(params.hash).trim().toUpperCase()
-      tool = await prisma.tool.findUnique({
-        where: { hash: normalized }
-      })
-    } catch (error) {
-      console.error('[CARE] Error fetching tool from database:', error)
+  let tool = null
+
+  try {
+    const normalized = String(params.hash).trim().toUpperCase()
+    console.log('[CARE] Reading from Prisma database:', normalized)
+
+    tool = await prisma.tool.findUnique({
+      where: { hash: normalized }
+    })
+
+    if (tool) {
+      console.log('[CARE] ✅ Tool found in database:', tool.name)
+    } else {
+      console.log('[CARE] ⚠️ Tool not found in database')
     }
+  } catch (error) {
+    console.error('[CARE] ❌ Error fetching tool from database:', error.message)
+    return Response.json({ error: 'Database error', details: error.message }, { status: 500 })
   }
 
   if (!tool) {

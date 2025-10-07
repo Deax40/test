@@ -1,20 +1,32 @@
-import { updateTool, getTool } from '@/lib/commun-data'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 // Configure route for larger body sizes (max 4MB due to Vercel limits)
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
 export async function GET(req, { params }) {
+  // SKIP MEMORY - Read directly from Prisma database
+  console.log('[COMMONS] GET request for hash:', params.hash)
+
   try {
-    const tool = getTool(params.hash)
+    const normalized = String(params.hash).trim().toUpperCase()
+    console.log('[COMMONS] Reading from Prisma database:', normalized)
+
+    const tool = await prisma.tool.findUnique({
+      where: { hash: normalized }
+    })
+
     if (!tool) {
+      console.log('[COMMONS] ⚠️ Tool not found in database')
       return new Response('Tool not found', { status: 404 })
     }
+
+    console.log('[COMMONS] ✅ Tool found in database:', tool.name)
     return Response.json({ tool })
   } catch (e) {
-    console.error('Error fetching tool:', e)
+    console.error('[COMMONS] ❌ Error fetching tool:', e.message)
     return new Response('Server error', { status: 500 })
   }
 }
@@ -25,25 +37,26 @@ export async function PATCH(req, { params }) {
     return new Response('Unauthorized', { status: 401 })
   }
 
+  console.log('=== [COMMONS] PATCH REQUEST START ===')
+  console.log('[COMMONS] Hash:', params.hash)
+
   try {
     const contentType = req.headers.get('content-type')
     let body
-    let problemPhotoPath = null
 
     // Handle FormData for file uploads
     if (contentType?.includes('multipart/form-data')) {
       const formData = await req.formData()
       body = {}
 
-      // Handle problem photo upload - Store in database instead of filesystem
+      // Handle problem photo upload
       const problemPhoto = formData.get('problemPhoto')
       if (problemPhoto && problemPhoto.size > 0) {
         const bytes = await problemPhoto.arrayBuffer()
         const buffer = Buffer.from(bytes)
-
-        // Store photo data in body for database storage
         body.problemPhotoBuffer = buffer
         body.problemPhotoType = problemPhoto.type
+        console.log('[COMMONS] Photo included, size:', buffer.length)
       }
 
       for (const [key, value] of formData.entries()) {
@@ -55,57 +68,93 @@ export async function PATCH(req, { params }) {
       body = await req.json()
     }
 
-    const { name, location, state, weight, imoNumber, user, problemDescription, complementaryInfo, problemPhotoBuffer, problemPhotoType, ...otherFields } = body
+    const { name, location, state, weight, imoNumber, user, problemDescription, complementaryInfo, problemPhotoBuffer, problemPhotoType } = body
 
-    const updateData = {}
+    const normalized = String(params.hash).trim().toUpperCase()
+    const userName = user || session.user.name || 'user'
+
+    console.log('[COMMONS] Saving directly to Prisma database:', normalized)
+
+    // Build update data
+    const updateData = {
+      lastScanAt: new Date(),
+      lastScanUser: userName,
+      lastScanLieu: location || null,
+      lastScanEtat: state || 'RAS',
+      problemDescription: problemDescription || null,
+    }
+
+    // Admin-only fields
     if (name !== undefined) updateData.name = name
-    if (location !== undefined) updateData.location = location
-    if (state !== undefined) updateData.state = state
     if (weight !== undefined) updateData.weight = weight
     if (imoNumber !== undefined) updateData.imoNumber = imoNumber
-    if (problemDescription !== undefined) updateData.problemDescription = problemDescription
     if (complementaryInfo !== undefined) updateData.complementaryInfo = complementaryInfo
 
-    // Track user who made the modification
-    if (user !== undefined) {
-      updateData.lastScanUser = user
-      updateData.lastScanAt = new Date().toISOString()
+    // Photo
+    if (problemPhotoBuffer) {
+      updateData.problemPhotoBuffer = problemPhotoBuffer
+      updateData.problemPhotoType = problemPhotoType
     }
 
-    Object.assign(updateData, otherFields)
+    console.log('[COMMONS] Update data:', {
+      hash: normalized,
+      user: updateData.lastScanUser,
+      lieu: updateData.lastScanLieu,
+      etat: updateData.lastScanEtat
+    })
 
-    // Update in memory (legacy system)
-    const tool = updateTool(params.hash, updateData, session.user.name || 'user')
+    // UPSERT: Create if doesn't exist, update if exists
+    console.log('[COMMONS] Executing upsert...')
+    const tool = await prisma.tool.upsert({
+      where: { hash: normalized },
+      update: updateData,
+      create: {
+        hash: normalized,
+        name: name || `Tool ${normalized}`,
+        category: 'Commun Tools',
+        qrData: `COMMUN_${normalized}`,
+        ...updateData,
+      },
+    })
 
-    if (!tool) {
-      return new Response('Tool not found', { status: 404 })
-    }
+    console.log('[COMMONS] ✅ Database save SUCCESS:', tool.id, tool.name)
 
-    // Save to Prisma database for persistence
+    // Also create a log entry
     try {
-      const { prisma } = await import('@/lib/prisma')
-
-      // Create or update a log entry for Commun tools
       await prisma.log.create({
         data: {
-          qrData: params.hash,
+          qrData: normalized,
           lieu: location || 'Non spécifié',
           date: new Date(),
-          actorName: user || session.user.name || 'user',
+          actorName: userName,
           etat: state || 'RAS',
           probleme: problemDescription || null,
           photo: problemPhotoBuffer || null,
           photoType: problemPhotoType || null,
         },
       })
-    } catch (dbError) {
-      console.error('Failed to persist to database:', dbError)
-      // Continue even if database update fails
+      console.log('[COMMONS] ✅ Log created')
+    } catch (logError) {
+      console.error('[COMMONS] ⚠️ Failed to create log (non-blocking):', logError.message)
     }
 
-    return Response.json({ tool })
+    console.log('[COMMONS] ✅ PATCH successful, returning tool')
+
+    return Response.json({
+      tool: {
+        ...tool,
+        lastScanAt: tool.lastScanAt?.toISOString() || null,
+        createdAt: tool.createdAt?.toISOString() || null
+      },
+      success: true,
+      saved: true
+    })
   } catch (e) {
-    console.error('Error updating tool:', e)
-    return new Response('Server error', { status: 500 })
+    console.error('[COMMONS] ❌ Error updating tool:', e.message)
+    console.error('[COMMONS] Stack:', e.stack)
+    return Response.json({
+      error: 'Database save failed',
+      details: e.message
+    }, { status: 500 })
   }
 }
