@@ -124,12 +124,18 @@ export async function PATCH(request, { params }) {
   // On Vercel, memory and file systems don't persist
   // We MUST use Prisma as the source of truth
 
+  console.log('=== [CARE] PATCH REQUEST START ===')
+  console.log('[CARE] Hash:', params.hash)
+  console.log('[CARE] Environment:', process.env.NODE_ENV)
+  console.log('[CARE] Database configured:', !!process.env.DATABASE_URL)
+  console.log('[CARE] Prisma client available:', !!prisma)
   console.log('[CARE] Saving directly to Prisma database:', params.hash)
 
   let tool = null
 
   try {
     const normalized = String(params.hash).trim().toUpperCase()
+    console.log('[CARE] Normalized hash:', normalized)
 
     const updateData = {
       lastScanAt: data.lastScanAt ? new Date(data.lastScanAt) : new Date(),
@@ -153,7 +159,13 @@ export async function PATCH(request, { params }) {
       etat: updateData.lastScanEtat
     })
 
+    // Test connection first
+    console.log('[CARE] Testing Prisma connection...')
+    await prisma.$connect()
+    console.log('[CARE] ✅ Connection test passed')
+
     // UPSERT: Create if doesn't exist, update if exists
+    console.log('[CARE] Executing upsert...')
     tool = await prisma.tool.upsert({
       where: { hash: normalized },
       update: updateData,
