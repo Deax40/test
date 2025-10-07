@@ -120,32 +120,20 @@ export async function PATCH(request, { params }) {
     }
   }
 
-  // Update in memory (legacy system) - might not exist
-  let tool = updateTool(params.hash, data, userId || 'anonymous', userName)
+  // SKIP MEMORY SYSTEM - GO DIRECTLY TO PRISMA
+  // On Vercel, memory and file systems don't persist
+  // We MUST use Prisma as the source of truth
 
-  // If tool doesn't exist in memory, create a minimal object for response
-  if (!tool) {
-    console.log('[CARE] Tool not in memory, will create in database')
-    tool = {
-      hash: params.hash,
-      name: data.name || `Tool ${params.hash}`,
-      category: 'Care Tools',
-      qrData: `CARE_${params.hash}`,
-      lastScanLieu: data.lastScanLieu,
-      lastScanEtat: data.lastScanEtat,
-      lastScanUser: data.lastScanUser,
-      lastScanAt: data.lastScanAt || new Date().toISOString()
-    }
-  }
+  console.log('[CARE] Saving directly to Prisma database:', params.hash)
 
-  // Also update in Prisma database for Vercel persistence
-  let dbSaveSuccess = false
+  let tool = null
+
   try {
-    console.log('[CARE] Attempting to save to database:', params.hash)
+    const normalized = String(params.hash).trim().toUpperCase()
 
     const updateData = {
       lastScanAt: data.lastScanAt ? new Date(data.lastScanAt) : new Date(),
-      lastScanUser: data.lastScanUser || 'Unknown',
+      lastScanUser: data.lastScanUser || userName || 'Anonymous',
       lastScanLieu: data.lastScanLieu || null,
       lastScanEtat: data.lastScanEtat || 'RAS',
       problemDescription: data.problemDescription || null,
@@ -155,31 +143,40 @@ export async function PATCH(request, { params }) {
     if (data.problemPhotoBuffer) {
       updateData.problemPhotoBuffer = data.problemPhotoBuffer
       updateData.problemPhotoType = data.problemPhotoType
-      console.log('[CARE] Adding photo to database')
+      console.log('[CARE] Photo included, size:', data.problemPhotoBuffer.length)
     }
 
-    const result = await prisma.tool.upsert({
-      where: { hash: params.hash },
+    console.log('[CARE] Update data:', {
+      hash: normalized,
+      user: updateData.lastScanUser,
+      lieu: updateData.lastScanLieu,
+      etat: updateData.lastScanEtat
+    })
+
+    // UPSERT: Create if doesn't exist, update if exists
+    tool = await prisma.tool.upsert({
+      where: { hash: normalized },
       update: updateData,
       create: {
-        hash: params.hash,
-        name: tool.name,
-        category: tool.category || 'Care Tools',
-        qrData: tool.qrData || `CARE_${params.hash}`,
+        hash: normalized,
+        name: data.name || `Tool ${normalized}`,
+        category: 'Care Tools',
+        qrData: `CARE_${normalized}`,
         ...updateData,
       },
     })
 
-    dbSaveSuccess = true
-    console.log('[CARE] Database save SUCCESS:', result.id)
+    console.log('[CARE] ✅ Database save SUCCESS:', tool.id, tool.name)
+
   } catch (dbError) {
-    console.error('[CARE] Database save FAILED:', dbError.message)
-    console.error('[CARE] Full error:', dbError)
-    // Return error to client so user knows
+    console.error('[CARE] ❌ Database save FAILED:', dbError.message)
+    console.error('[CARE] Stack:', dbError.stack)
+
+    // Return detailed error to client
     return Response.json({
       error: 'Database save failed',
       details: dbError.message,
-      tool
+      code: dbError.code
     }, { status: 500 })
   }
 
@@ -203,9 +200,16 @@ export async function PATCH(request, { params }) {
   }
 
   console.log('[CARE] ✅ PATCH successful, returning tool')
+
+  // Return the tool from database (source of truth)
   return Response.json({
-    tool,
+    tool: {
+      ...tool,
+      // Convert dates to ISO strings for JSON
+      lastScanAt: tool.lastScanAt?.toISOString() || null,
+      createdAt: tool.createdAt?.toISOString() || null
+    },
     success: true,
-    dbSaved: dbSaveSuccess
+    saved: true
   })
 }
