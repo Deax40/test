@@ -60,6 +60,8 @@ model Tool {
   lastScanUser   String?
   lastScanLieu   String?
   lastScanEtat   String?
+  typeEnvoi      String?
+  ouEstAppareil  String?
   certificatePath String?
   fileSize       Int?
   fileName       String?
@@ -74,6 +76,8 @@ model Tool {
   problemPhotoType String?       // Type MIME de la photo
   problemDescription String?     // Description du problème
   complementaryInfo String?      // Informations complémentaires (admin only)
+  weight         String?
+  imoNumber      String?
   tracking       String?         // Numéro de tracking (en transit)
   client         String?         // Nom du client (chez client)
   transporteur   String?         // Nom du transporteur

@@ -149,10 +149,29 @@ export async function PATCH(request, { params }) {
     const updateData = {
       lastScanAt: data.lastScanAt ? new Date(data.lastScanAt) : new Date(),
       lastScanUser: data.lastScanUser || userName || 'Anonymous',
-      lastScanLieu: data.lastScanLieu || null,
-      lastScanEtat: data.lastScanEtat || 'RAS',
-      problemDescription: data.problemDescription || null,
     }
+
+    const setIfPresent = (field, value, transform = (v) => v ?? null) => {
+      if (Object.prototype.hasOwnProperty.call(data, field)) {
+        updateData[field] = transform(value)
+      }
+    }
+
+    setIfPresent('lastScanLieu', data.lastScanLieu)
+    setIfPresent('lastScanEtat', data.lastScanEtat, (v) => v ?? 'RAS')
+    setIfPresent('problemDescription', data.problemDescription)
+    setIfPresent('typeEnvoi', data.typeEnvoi)
+    setIfPresent('ouEstAppareil', data.ouEstAppareil)
+    setIfPresent('dimensionLength', data.dimensionLength)
+    setIfPresent('dimensionWidth', data.dimensionWidth)
+    setIfPresent('dimensionHeight', data.dimensionHeight)
+    setIfPresent('dimensionType', data.dimensionType)
+    setIfPresent('weight', data.weight)
+    setIfPresent('imoNumber', data.imoNumber)
+    setIfPresent('complementaryInfo', data.complementaryInfo)
+    setIfPresent('transporteur', data.transporteur)
+    setIfPresent('tracking', data.tracking)
+    setIfPresent('client', data.client)
 
     // Add photo to database if present
     if (data.problemPhotoBuffer) {
@@ -181,8 +200,20 @@ export async function PATCH(request, { params }) {
       create: {
         hash: normalized,
         name: data.name || `Tool ${normalized}`,
-        category: 'Care Tools',
+        category: 'CARE',
         qrData: `CARE_${normalized}`,
+        typeEnvoi: data.typeEnvoi || 'Envoi',
+        ouEstAppareil: data.ouEstAppareil || null,
+        dimensionLength: data.dimensionLength || null,
+        dimensionWidth: data.dimensionWidth || null,
+        dimensionHeight: data.dimensionHeight || null,
+        dimensionType: data.dimensionType || null,
+        weight: data.weight || null,
+        imoNumber: data.imoNumber || null,
+        complementaryInfo: data.complementaryInfo || null,
+        transporteur: data.transporteur || null,
+        tracking: data.tracking || null,
+        client: data.client || null,
         ...updateData,
       },
     })
