@@ -1,11 +1,13 @@
-import { getTool, patchTool, consumeToken, createToken } from '@/lib/commun-data'
+import { getTool, patchTool, consumeToken, createToken, ensureCommunDataLoaded } from '@/lib/commun-data'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { sendProblemNotification, sendBrokenToolAlertToAdmins } from '@/lib/email'
+import { persistCommunTool } from '@/lib/commun-persistence'
 
 export async function GET(req, { params }) {
   const hash = String(params.hash || '').trim().toLowerCase()
+  await ensureCommunDataLoaded()
   const tool = getTool(hash)
   if (!tool) {
     return Response.json({ error: 'tool_not_found' }, { status: 404 })
@@ -29,6 +31,8 @@ export async function PATCH(req, { params }) {
   if (!session) {
     return new Response('Unauthorized', { status: 401 })
   }
+
+  await ensureCommunDataLoaded()
 
   let data = {}
   let problemPhoto = null
@@ -104,6 +108,21 @@ export async function PATCH(req, { params }) {
   const updated = patchTool(hash, patch, userId || '')
   if (!updated) {
     return Response.json({ error: 'tool_not_found' }, { status: 404 })
+  }
+
+  try {
+    if (process.env.DATABASE_URL) {
+      const extras = {}
+      if (problemPhoto?.data !== undefined) {
+        extras.problemPhotoBuffer = problemPhoto?.data
+      }
+      if (problemPhoto?.type !== undefined) {
+        extras.problemPhotoType = problemPhoto?.type
+      }
+      await persistCommunTool(updated, extras)
+    }
+  } catch (error) {
+    console.error('Failed to persist commun tool update to database:', error)
   }
 
   // Create a log entry for the scan

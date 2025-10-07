@@ -1,6 +1,7 @@
-import { updateTool, getTool } from '@/lib/commun-data'
+import { updateTool, getTool, ensureCommunDataLoaded } from '@/lib/commun-data'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { persistCommunTool } from '@/lib/commun-persistence'
 
 // Configure route for larger body sizes (max 4MB due to Vercel limits)
 export const runtime = 'nodejs'
@@ -8,6 +9,7 @@ export const maxDuration = 30
 
 export async function GET(req, { params }) {
   try {
+    await ensureCommunDataLoaded()
     const tool = getTool(params.hash)
     if (!tool) {
       return new Response('Tool not found', { status: 404 })
@@ -26,9 +28,9 @@ export async function PATCH(req, { params }) {
   }
 
   try {
+    await ensureCommunDataLoaded()
     const contentType = req.headers.get('content-type')
     let body
-    let problemPhotoPath = null
 
     // Handle FormData for file uploads
     if (contentType?.includes('multipart/form-data')) {
@@ -68,7 +70,7 @@ export async function PATCH(req, { params }) {
 
     // Track user who made the modification
     if (user !== undefined) {
-      updateData.lastScanUser = user
+      updateData.user = user
       updateData.lastScanAt = new Date().toISOString()
     }
 
@@ -83,9 +85,20 @@ export async function PATCH(req, { params }) {
 
     // Save to Prisma database for persistence
     try {
+      const persistenceExtras = {}
+      if (problemPhotoBuffer !== undefined) {
+        persistenceExtras.problemPhotoBuffer = problemPhotoBuffer
+      }
+      if (problemPhotoType !== undefined) {
+        persistenceExtras.problemPhotoType = problemPhotoType
+      }
+
+      if (process.env.DATABASE_URL) {
+        await persistCommunTool(tool, persistenceExtras)
+      }
+
       const { prisma } = await import('@/lib/prisma')
 
-      // Create or update a log entry for Commun tools
       await prisma.log.create({
         data: {
           qrData: params.hash,

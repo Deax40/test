@@ -56,10 +56,17 @@ model Tool {
   category       String
   hash           String          @unique
   qrData         String          @unique
+  location       String?
+  state          String?
+  weight         String?
+  imoNumber      String?
   lastScanAt     DateTime?
   lastScanUser   String?
   lastScanLieu   String?
   lastScanEtat   String?
+  updatedAt      DateTime?
+  updatedBy      String?
+  lastProblemReportedBy String?
   certificatePath String?
   fileSize       Int?
   fileName       String?
