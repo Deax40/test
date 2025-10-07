@@ -108,7 +108,7 @@ export default function ScanPage() {
   }
 
   async function save() {
-    if (!token || !tool) return
+    if (!tool) return
     setError('')
     setMessage('')
     try {
@@ -142,52 +142,42 @@ export default function ScanPage() {
       // Use appropriate API endpoint based on tool source
       const apiEndpoint = toolSource === 'care' ? `/api/care/${tool.hash}` : `/api/tools/${tool.hash}`
 
-      // Add additional fields to FormData
-      if (toolSource === 'care') {
-        formData.append('lastScanLieu', form.location)
-        formData.append('lastScanEtat', form.state)
-        formData.append('typeEnvoi', form.status === 'Envoi matériel' ? 'En transit' : 'Envoi')
-      }
-      formData.append('shippingStatus', form.status)
+      console.log('[SCAN] Saving to:', apiEndpoint)
+      console.log('[SCAN] Form data:', {
+        location: form.location,
+        state: form.state,
+        user: user?.name
+      })
 
       const res = await fetch(apiEndpoint, {
         method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: formData,
       })
-      if (res.status === 403) {
-        setError('Session expirée — veuillez rescanner.')
-        setToken(null)
-        return
-      }
 
       const data = await res.json()
 
       // Check if there was an error in the response
       if (data.error) {
-        console.error('API Error:', data)
+        console.error('[SCAN] ❌ API Error:', data)
         setError(`Erreur: ${data.error}${data.details ? ' - ' + data.details : ''}`)
         return
       }
 
       if (!res.ok) {
-        console.error('HTTP Error:', res.status, data)
+        console.error('[SCAN] ❌ HTTP Error:', res.status, data)
         throw new Error(`Sauvegarde échouée (${res.status})`)
       }
 
-      console.log('✅ Save successful:', data)
+      console.log('[SCAN] ✅ Save successful:', data)
       setTool(data.tool)
-      setToken(data.editSessionToken || data.token)
-      setMessage(form.state === 'Abîmé' ? 'Outil abîmé signalé et transféré vers Admin.' : 'Mise à jour enregistrée.')
+      setMessage(form.state === 'Abîmé' ? 'Outil abîmé signalé et transféré vers Admin.' : 'Mise à jour enregistrée !')
     } catch (e) {
-      console.error('Save error:', e)
+      console.error('[SCAN] ❌ Save error:', e)
       setError(`Erreur lors de la sauvegarde: ${e.message}`)
     }
   }
 
-  const disabled = !token
+  const disabled = !tool
 
   return (
     <div>
