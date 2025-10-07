@@ -112,35 +112,48 @@ export async function PATCH(request, { params }) {
   }
 
   // Also update in Prisma database for Vercel persistence
+  let dbSaveSuccess = false
   try {
+    console.log('[CARE] Attempting to save to database:', params.hash)
+
     const updateData = {
-      lastScanAt: data.lastScanAt ? new Date(data.lastScanAt) : undefined,
-      lastScanUser: data.lastScanUser,
-      lastScanLieu: data.lastScanLieu,
-      lastScanEtat: data.lastScanEtat,
-      problemDescription: data.problemDescription,
+      lastScanAt: data.lastScanAt ? new Date(data.lastScanAt) : new Date(),
+      lastScanUser: data.lastScanUser || 'Unknown',
+      lastScanLieu: data.lastScanLieu || null,
+      lastScanEtat: data.lastScanEtat || 'RAS',
+      problemDescription: data.problemDescription || null,
     }
 
     // Add photo to database if present
     if (data.problemPhotoBuffer) {
       updateData.problemPhotoBuffer = data.problemPhotoBuffer
       updateData.problemPhotoType = data.problemPhotoType
+      console.log('[CARE] Adding photo to database')
     }
 
-    await prisma.tool.upsert({
+    const result = await prisma.tool.upsert({
       where: { hash: params.hash },
       update: updateData,
       create: {
         hash: params.hash,
         name: tool.name,
-        category: tool.category,
+        category: tool.category || 'Care Tools',
         qrData: tool.qrData || `CARE_${params.hash}`,
         ...updateData,
       },
     })
+
+    dbSaveSuccess = true
+    console.log('[CARE] Database save SUCCESS:', result.id)
   } catch (dbError) {
-    console.error('Failed to persist to database:', dbError)
-    // Continue even if database update fails
+    console.error('[CARE] Database save FAILED:', dbError.message)
+    console.error('[CARE] Full error:', dbError)
+    // Return error to client so user knows
+    return Response.json({
+      error: 'Database save failed',
+      details: dbError.message,
+      tool
+    }, { status: 500 })
   }
 
   // Envoyer email à tous les admins si l'outil est cassé/abîmé

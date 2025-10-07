@@ -50,27 +50,17 @@ export async function PATCH(req, { params }) {
     data.transporteur = formData.get('transporteur') || ''
     data.tracking = formData.get('tracking') || ''
 
-    // Handle photo upload
+    // Handle photo upload - Store in memory for database
     const photoFile = formData.get('problemPhoto')
     if (photoFile && photoFile instanceof File && photoFile.size > 0) {
-      const { writeFile, mkdir } = await import('fs/promises')
-      const path = await import('path')
-
-      const uploadsDir = path.join(process.cwd(), 'uploads', 'commun-photos')
-      await mkdir(uploadsDir, { recursive: true })
-
-      const fileName = `${Date.now()}_${hash}_${photoFile.name}`
-      const filePath = path.join(uploadsDir, fileName)
-
       const bytes = await photoFile.arrayBuffer()
       const buffer = Buffer.from(bytes)
-      await writeFile(filePath, buffer)
 
-      problemPhotoPath = `/uploads/commun-photos/${fileName}`
       problemPhoto = {
         data: buffer,
         type: photoFile.type
       }
+      console.log('[COMMUN] Photo received, size:', buffer.length, 'bytes')
     }
   } catch (e) {
     // Fallback to JSON
@@ -118,12 +108,22 @@ export async function PATCH(req, { params }) {
 
   // Create a log entry for the scan
   try {
-    const user = await prisma.user.findUnique({
-      where: { username: session.user.username }
+    console.log('[COMMUN] Attempting to save log, session user:', session.user?.name || session.user?.username)
+
+    // Find user by name or username or email
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: session.user.username || '' },
+          { name: session.user.name || '' },
+          { email: session.user.email || '' }
+        ]
+      }
     })
 
     if (user) {
-      await prisma.log.create({
+      console.log('[COMMUN] User found:', user.id, user.name)
+      const logResult = await prisma.log.create({
         data: {
           qrData: hash,
           lieu: data.location || '',
@@ -136,6 +136,7 @@ export async function PATCH(req, { params }) {
           createdById: user.id
         }
       })
+      console.log('[COMMUN] Log created successfully:', logResult.id)
 
       // Create tool log for shipping status
       if (data.shippingStatus) {
@@ -182,9 +183,18 @@ export async function PATCH(req, { params }) {
           console.error('Failed to send broken tool alert to admins:', error)
         }
       }
+    } else {
+      console.error('[COMMUN] User not found in database for session:', session.user)
     }
   } catch (e) {
-    console.error('Error creating log entry:', e)
+    console.error('[COMMUN] Error creating log entry:', e.message)
+    console.error('[COMMUN] Full error:', e)
+    // Return error so user knows
+    return Response.json({
+      error: 'Failed to save changes',
+      details: e.message,
+      tool: updated
+    }, { status: 500 })
   }
 
   console.log('Tool updated', { hash, patch, userId })
