@@ -9,10 +9,25 @@ export const runtime = 'nodejs'
 export const maxDuration = 30
 
 export async function GET(request, { params }) {
-  const tool = getTool(params.hash)
+  // Try memory first
+  let tool = getTool(params.hash)
+
+  // If not in memory, try Prisma database
+  if (!tool) {
+    try {
+      const normalized = String(params.hash).trim().toUpperCase()
+      tool = await prisma.tool.findUnique({
+        where: { hash: normalized }
+      })
+    } catch (error) {
+      console.error('[CARE] Error fetching tool from database:', error)
+    }
+  }
+
   if (!tool) {
     return Response.json({ error: 'Tool not found' }, { status: 404 })
   }
+
   return Response.json({ tool })
 }
 
@@ -104,11 +119,22 @@ export async function PATCH(request, { params }) {
     }
   }
 
-  // Update in memory (legacy system)
-  const tool = updateTool(params.hash, data, session.user.id, session.user.name)
+  // Update in memory (legacy system) - might not exist
+  let tool = updateTool(params.hash, data, session.user.id, session.user.name)
 
+  // If tool doesn't exist in memory, create a minimal object for response
   if (!tool) {
-    return Response.json({ error: 'Tool not found' }, { status: 404 })
+    console.log('[CARE] Tool not in memory, will create in database')
+    tool = {
+      hash: params.hash,
+      name: data.name || `Tool ${params.hash}`,
+      category: 'Care Tools',
+      qrData: `CARE_${params.hash}`,
+      lastScanLieu: data.lastScanLieu,
+      lastScanEtat: data.lastScanEtat,
+      lastScanUser: data.lastScanUser,
+      lastScanAt: data.lastScanAt || new Date().toISOString()
+    }
   }
 
   // Also update in Prisma database for Vercel persistence
