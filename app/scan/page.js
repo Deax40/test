@@ -17,6 +17,8 @@ export default function ScanPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [user, setUser] = useState(null)
+  const [cameraError, setCameraError] = useState(false)
+  const [manualInput, setManualInput] = useState('')
 
   useEffect(() => {
     async function loadSession() {
@@ -41,7 +43,22 @@ export default function ScanPage() {
       ? result[0]?.rawValue || result[0]?.text
       : result?.rawValue || result?.text || String(result)
     if (!text) return
+    setCameraError(false)
     startScan(text)
+  }
+
+  function handleCameraError(err) {
+    console.error('Camera error:', err)
+    setCameraError(true)
+    setError('Caméra inaccessible. Utilisez la saisie manuelle ci-dessous.')
+  }
+
+  function handleManualSubmit(e) {
+    e.preventDefault()
+    if (manualInput.trim()) {
+      startScan(manualInput.trim())
+      setManualInput('')
+    }
   }
 
   async function startScan(raw) {
@@ -165,26 +182,75 @@ export default function ScanPage() {
           <div className="card text-center">
             <h1 className="text-2xl font-bold text-gray-800 mb-2">Scanner QR Code</h1>
             <p className="text-gray-600 mb-6">Placez le QR code de l'outil dans le cadre ci-dessous</p>
-            <div className="rounded-xl overflow-hidden bg-gray-100 max-w-md mx-auto">
-              <Scanner
-                onScan={handleScan}
-                onError={err => setError('Erreur caméra : ' + (err?.message || err))}
-                constraints={{ width: 400, height: 400 }}
-              />
-            </div>
+
+            {!cameraError && (
+              <div className="rounded-xl overflow-hidden bg-gray-100 max-w-md mx-auto">
+                <Scanner
+                  onScan={handleScan}
+                  onError={handleCameraError}
+                  constraints={{ width: 400, height: 400 }}
+                />
+              </div>
+            )}
+
             {error && <p className="text-red-600 mt-4">{error}</p>}
+
+            {/* Saisie manuelle - toujours disponible */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">Ou saisie manuelle</h2>
+              <form onSubmit={handleManualSubmit} className="flex gap-2 max-w-md mx-auto">
+                <input
+                  type="text"
+                  value={manualInput}
+                  onChange={(e) => setManualInput(e.target.value)}
+                  placeholder="Entrez le code QR ou nom de l'outil"
+                  className="input flex-1"
+                />
+                <button type="submit" className="btn btn-primary">
+                  Rechercher
+                </button>
+              </form>
+              <p className="text-sm text-gray-500 mt-2">
+                Entrez le hash (ex: CARE_ABC123) ou le nom de l'outil
+              </p>
+            </div>
           </div>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
           <div className="card">
             <h2 className="text-lg font-semibold mb-4">Scanner un autre outil</h2>
-            <div className="rounded-xl overflow-hidden bg-gray-100">
-              <Scanner onScan={handleScan} onError={err => setError('Erreur caméra : ' + (err?.message || err))} />
-            </div>
+
+            {!cameraError ? (
+              <div className="rounded-xl overflow-hidden bg-gray-100">
+                <Scanner onScan={handleScan} onError={handleCameraError} />
+              </div>
+            ) : (
+              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
+                <p className="text-yellow-800 font-medium">⚠️ Caméra inaccessible</p>
+                <p className="text-sm text-yellow-700 mt-1">Utilisez la saisie manuelle ci-dessous</p>
+              </div>
+            )}
+
+            {/* Saisie manuelle rapide */}
+            <form onSubmit={handleManualSubmit} className="mt-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={manualInput}
+                  onChange={(e) => setManualInput(e.target.value)}
+                  placeholder="Code QR ou nom"
+                  className="input flex-1"
+                />
+                <button type="submit" className="btn btn-primary">
+                  OK
+                </button>
+              </div>
+            </form>
+
             <button
               className="btn btn-secondary w-full mt-4"
-              onClick={() => {setShowForm(false); setTool(null); setToken(null); setError(''); setMessage('');}}
+              onClick={() => {setShowForm(false); setTool(null); setToken(null); setError(''); setMessage(''); setCameraError(false);}}
             >
               Retour au scanner principal
             </button>
