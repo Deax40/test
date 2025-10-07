@@ -5,6 +5,13 @@ const nextConfig = {
     esmExternals: 'loose',
     serverComponentsExternalPackages: ['bcryptjs'],
   },
+  // Increase body size limit for image uploads
+  // Note: Vercel has a hard limit of 4.5MB for serverless functions
+  api: {
+    bodyParser: {
+      sizeLimit: '4mb',
+    },
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

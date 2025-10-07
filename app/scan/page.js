@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Nav from '@/components/nav'
+import { compressImage } from '@/lib/image-compression'
 
 const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(m => m.Scanner), { ssr: false })
 
@@ -107,8 +108,18 @@ export default function ScanPage() {
       formData.append('transporteur', form.transporteur)
       formData.append('tracking', form.tracking)
       formData.append('clientDetails', form.clientDetails)
+
+      // Compress image before upload to avoid 413 error on Vercel
       if (form.problemPhoto) {
-        formData.append('problemPhoto', form.problemPhoto)
+        try {
+          const compressedPhoto = await compressImage(form.problemPhoto, 1, 1920)
+          formData.append('problemPhoto', compressedPhoto)
+          console.log('Photo compressed successfully')
+        } catch (compressionError) {
+          console.error('Image compression failed:', compressionError)
+          // Fallback: try with original image
+          formData.append('problemPhoto', form.problemPhoto)
+        }
       }
 
       // Use appropriate API endpoint based on tool source

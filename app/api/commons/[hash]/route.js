@@ -2,6 +2,10 @@ import { updateTool, getTool } from '@/lib/commun-data'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+// Configure route for larger body sizes (max 4MB due to Vercel limits)
+export const runtime = 'nodejs'
+export const maxDuration = 30
+
 export async function GET(req, { params }) {
   try {
     const tool = getTool(params.hash)

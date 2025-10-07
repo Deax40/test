@@ -4,6 +4,10 @@ import { authOptions } from '@/lib/auth'
 import { sendBrokenToolAlertToAdmins } from '@/lib/email'
 import { prisma } from '@/lib/prisma'
 
+// Configure route for larger body sizes (max 4MB due to Vercel limits)
+export const runtime = 'nodejs'
+export const maxDuration = 30
+
 export async function GET(request, { params }) {
   const tool = getTool(params.hash)
   if (!tool) {
