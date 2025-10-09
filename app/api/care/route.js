@@ -1,13 +1,17 @@
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import { refreshToolsFromFiles } from '@/lib/care-data'
-
-const prisma = new PrismaClient()
 
 export async function GET() {
   // Prefer database (works on Vercel); fallback to file-based if empty
   try {
     const dbTools = await prisma.tool.findMany({
-      where: { category: 'CARE' },
+      where: {
+        OR: [
+          { category: { equals: 'CARE', mode: 'insensitive' } },
+          { category: { contains: 'care', mode: 'insensitive' } },
+          { qrData: { startsWith: 'CARE_', mode: 'insensitive' } },
+        ],
+      },
       orderBy: { name: 'asc' }
     })
 
