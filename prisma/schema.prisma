@@ -51,46 +51,48 @@ model ToolLog {
 }
 
 model Tool {
-  id             String          @id @default(cuid())
-  name           String
-  category       String
-  hash           String          @unique
-  qrData         String          @unique
-  lastScanAt     DateTime?
-  lastScanUser   String?
-  lastScanLieu   String?
-  lastScanEtat   String?
-  certificatePath String?
-  fileSize       Int?
-  fileName       String?
-  fileExtension  String?
-  filePath       String?
-  dimensionLength String?        // Longueur en cm
-  dimensionWidth  String?        // Largeur en cm
-  dimensionHeight String?        // Hauteur en cm
-  dimensionType   String?        // "piece" ou "colis"
-  problemPhotoPath String?       // Chemin vers la photo du problème (legacy)
-  problemPhotoBuffer Bytes?      // Photo stockée en base de données
-  problemPhotoType String?       // Type MIME de la photo
-  problemDescription String?     // Description du problème
-  complementaryInfo String?      // Informations complémentaires (admin only)
-  tracking       String?         // Numéro de tracking (en transit)
-  client         String?         // Nom du client (chez client)
-  transporteur   String?         // Nom du transporteur
-  createdAt      DateTime        @default(now())
-  certifications Certification[]
-  careLogs       CareLog[]
+  id                 String          @id @default(cuid())
+  name               String
+  category           String
+  hash               String          @unique
+  qrData             String          @unique
+  lastScanAt         DateTime?
+  lastScanUser       String?
+  lastScanLieu       String?
+  lastScanEtat       String?
+  certificatePath    String?
+  fileSize           Int?
+  fileName           String?
+  fileExtension      String?
+  filePath           String?
+  dimensionLength    String? // Longueur en cm
+  dimensionWidth     String? // Largeur en cm
+  dimensionHeight    String? // Hauteur en cm
+  dimensionType      String? // "piece" ou "colis"
+  weight             String? // Poids de l'outil
+  imoNumber          String? // Numéro IMO ou identification
+  problemPhotoPath   String? // Chemin vers la photo du problème (legacy)
+  problemPhotoBuffer Bytes? // Photo stockée en base de données
+  problemPhotoType   String? // Type MIME de la photo
+  problemDescription String? // Description du problème
+  complementaryInfo  String? // Informations complémentaires (admin only)
+  tracking           String? // Numéro de tracking (en transit)
+  client             String? // Nom du client (chez client)
+  transporteur       String? // Nom du transporteur
+  createdAt          DateTime        @default(now())
+  certifications     Certification[]
+  careLogs           CareLog[]
 }
 
 model Certification {
   id           String   @id @default(cuid())
   tool         Tool?    @relation(fields: [toolId], references: [id])
-  toolId       String?  // Pour les outils Prisma (Care)
-  toolHash     String?  // Pour les outils Commun (hash)
-  toolName     String   // Nom de l'outil pour référence
-  toolCategory String   // CARE ou COMMUN
+  toolId       String? // Pour les outils Prisma (Care)
+  toolHash     String? // Pour les outils Commun (hash)
+  toolName     String // Nom de l'outil pour référence
+  toolCategory String // CARE ou COMMUN
   revisionDate DateTime @default(now())
-  pdfPath      String?  // Chemin vers le PDF du certificat
+  pdfPath      String? // Chemin vers le PDF du certificat
   createdAt    DateTime @default(now())
 }
 
@@ -116,13 +118,13 @@ model CareLog {
   id        String   @id @default(cuid())
   tool      Tool     @relation(fields: [toolId], references: [id])
   toolId    String
-  action    String   // "MODIFY", "CREATE", "SCAN"
-  field     String?  // Le champ modifié
-  oldValue  String?  // Ancienne valeur
-  newValue  String?  // Nouvelle valeur
+  action    String // "MODIFY", "CREATE", "SCAN"
+  field     String? // Le champ modifié
+  oldValue  String? // Ancienne valeur
+  newValue  String? // Nouvelle valeur
   user      User?    @relation("CareLogUser", fields: [userId], references: [id])
   userId    String?
-  userName  String   // Nom de l'utilisateur qui a fait la modification
+  userName  String // Nom de l'utilisateur qui a fait la modification
   createdAt DateTime @default(now())
 }
 
@@ -130,7 +132,7 @@ model AdminFileInfo {
   id            String   @id @default(cuid())
   fileName      String   @unique
   filePath      String
-  category      String   // "Care Tools" ou "Commun Tools"
+  category      String // "Care Tools" ou "Commun Tools"
   equipmentType String?
   location      String?
   fileSize      Int?
@@ -142,17 +144,17 @@ model AdminFileInfo {
 }
 
 model InvalidScan {
-  id          String   @id @default(cuid())
-  qrData      String?  // Données QR tentées
-  imagePath   String?  // Chemin vers l'image capturée
-  imageType   String?  // Type MIME de l'image
-  userId      String?
-  userName    String   // Nom de l'utilisateur qui a scanné
-  location    String?  // Lieu du scan
-  reason      String?  // Raison de l'échec (QR invalide, non trouvé, etc.)
-  status      String   @default("PENDING") // PENDING, RESOLVED, IGNORED
-  createdAt   DateTime @default(now())
-  resolvedAt  DateTime?
-  resolvedBy  String?  // Admin qui a résolu
-  notes       String?  // Notes de l'admin
+  id         String    @id @default(cuid())
+  qrData     String? // Données QR tentées
+  imagePath  String? // Chemin vers l'image capturée
+  imageType  String? // Type MIME de l'image
+  userId     String?
+  userName   String // Nom de l'utilisateur qui a scanné
+  location   String? // Lieu du scan
+  reason     String? // Raison de l'échec (QR invalide, non trouvé, etc.)
+  status     String    @default("PENDING") // PENDING, RESOLVED, IGNORED
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+  resolvedBy String? // Admin qui a résolu
+  notes      String? // Notes de l'admin
 }
