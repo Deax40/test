@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 // Configure route for larger body sizes (max 4MB due to Vercel limits)
 export const runtime = 'nodejs'
 export const maxDuration = 30
+export const maxBodySize = '4mb'
 
 export async function GET(req, { params }) {
   // SKIP MEMORY - Read directly from Prisma database

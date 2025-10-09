@@ -2,8 +2,10 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getTool } from '@/lib/care-data'
-import { promises as fs } from 'fs'
-import path from 'path'
+
+export const runtime = 'nodejs'
+export const maxDuration = 30
+export const maxBodySize = '4mb'
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url)

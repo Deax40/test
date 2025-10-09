@@ -401,8 +401,8 @@ export default function CommunPage() {
                     </td>
                     <td className="px-4 py-4">
                       <div className="text-sm">
-                        {t.lastScanBy ? (
-                          <span className="text-gray-900 font-medium">{t.lastScanBy}</span>
+                        {t.lastScanUser || t.lastScanBy ? (
+                          <span className="text-gray-900 font-medium">{t.lastScanUser || t.lastScanBy}</span>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
@@ -573,7 +573,7 @@ export default function CommunPage() {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-600">Utilisateur :</label>
-                      <p className="text-gray-900">{selectedTool.lastScanBy || 'Aucun'}</p>
+                      <p className="text-gray-900">{selectedTool.lastScanUser || selectedTool.lastScanBy || 'Aucun'}</p>
                     </div>
                   </div>
                 </div>
