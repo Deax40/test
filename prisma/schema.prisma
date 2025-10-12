@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  username      String         @unique
+  name          String
+  email         String?        @unique
+  passwordHash  String
+  role          String         @default("TECH") // "TECH" ou "ADMIN" defaut automatiquement en temps que tech
+  createdAt     DateTime       @default(now())
+  logs          Log[]          @relation("UserLogs")
+  toolLogs      ToolLog[]
+  habilitations Habilitation[]
+  careLogs      CareLog[]      @relation("CareLogUser")
+}
+
+model Log {
+  id          String   @id @default(cuid())
+  qrData      String
+  lieu        String
+  date        DateTime
+  actorName   String
+  etat        String   @default("RAS")
+  probleme    String?
+  photo       Bytes?
+  photoType   String?
+  createdAt   DateTime @default(now())
+  createdById String?
+  createdBy   User?    @relation("UserLogs", fields: [createdById], references: [id])
+}
+
+model ToolLog {
+  id           String   @id @default(cuid())
+  tool         String
+  status       String
+  lieu         String?
+  client       String?
+  etat         String?
+  transporteur String?
+  tracking     String?
+  createdAt    DateTime @default(now())
+  createdById  String?
+  createdBy    User?    @relation(fields: [createdById], references: [id])
+}
+
+model Tool {
+  id             String          @id @default(cuid())
+  name           String
+  category       String
+  hash           String          @unique
+  qrData         String          @unique
+  lastScanAt     DateTime?
+  lastScanUser   String?
+  lastScanLieu   String?
+  lastScanEtat   String?
+  certificatePath String?
+  fileSize       Int?
+  fileName       String?
+  fileExtension  String?
+  filePath       String?
+  dimensionLength String?        // Longueur en cm
+  dimensionWidth  String?        // Largeur en cm
+  dimensionHeight String?        // Hauteur en cm
+  dimensionType   String?        // "piece" ou "colis"
+  problemPhotoPath String?       // Chemin vers la photo du problème (legacy)
+  problemPhotoBuffer Bytes?      // Photo stockée en base de données
+  problemPhotoType String?       // Type MIME de la photo
+  problemDescription String?     // Description du problème
+  complementaryInfo String?      // Informations complémentaires (admin only)
+  weight         String?         // Poids de l'outil (admin only)
+  imoNumber      String?         // Numéro IMO (admin only)
+  typeEnvoi      String?         // Type d'envoi (Envoi/Retour)
+  tracking       String?         // Numéro de tracking (en transit)
+  client         String?         // Nom du client (chez client)
+  transporteur   String?         // Nom du transporteur
+  createdAt      DateTime        @default(now())
+  certifications Certification[]
+  careLogs       CareLog[]
+}
+
+model Certification {
+  id           String   @id @default(cuid())
+  tool         Tool?    @relation(fields: [toolId], references: [id])
+  toolId       String?  // Pour les outils Prisma (Care)
+  toolHash     String?  // Pour les outils Commun (hash)
+  toolName     String   // Nom de l'outil pour référence
+  toolCategory String   // CARE ou COMMUN
+  revisionDate DateTime @default(now())
+  pdfPath      String?  // Chemin vers le PDF du certificat
+  createdAt    DateTime @default(now())
+}
+
+model MachineRevision {
+  id           String    @id @default(cuid())
+  name         String    @unique
+  revisionDate DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Habilitation {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  title     String?
+  filePath  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model CareLog {
+  id        String   @id @default(cuid())
+  tool      Tool     @relation(fields: [toolId], references: [id])
+  toolId    String
+  action    String   // "MODIFY", "CREATE", "SCAN"
+  field     String?  // Le champ modifié
+  oldValue  String?  // Ancienne valeur
+  newValue  String?  // Nouvelle valeur
+  user      User?    @relation("CareLogUser", fields: [userId], references: [id])
+  userId    String?
+  userName  String   // Nom de l'utilisateur qui a fait la modification
+  createdAt DateTime @default(now())
+}
+
+model AdminFileInfo {
+  id            String   @id @default(cuid())
+  fileName      String   @unique
+  filePath      String
+  category      String   // "Care Tools" ou "Commun Tools"
+  equipmentType String?
+  location      String?
+  fileSize      Int?
+  createdAt     DateTime @default(now())
+  format        String?
+  extension     String?
+  hash          String?
+  uuid          String?
+}
+
+model InvalidScan {
+  id          String   @id @default(cuid())
+  qrData      String?  // Données QR tentées
+  imagePath   String?  // Chemin vers l'image capturée
+  imageType   String?  // Type MIME de l'image
+  userId      String?
+  userName    String   // Nom de l'utilisateur qui a scanné
+  location    String?  // Lieu du scan
+  reason      String?  // Raison de l'échec (QR invalide, non trouvé, etc.)
+  status      String   @default("PENDING") // PENDING, RESOLVED, IGNORED
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+  resolvedBy  String?  // Admin qui a résolu
+  notes       String?  // Notes de l'admin
+}
