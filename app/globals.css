@@ -126,3 +126,30 @@ body::before {
 
 /* small utility */
 .text-muted { color: var(--muted); }
+
+/* Custom scroll animations */
+@keyframes bounce-x {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-10px);
+  }
+}
+
+@keyframes bounce-x-reverse {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(10px);
+  }
+}
+
+.animate-bounce-x {
+  animation: bounce-x 1.5s ease-in-out infinite;
+}
+
+.animate-bounce-x-reverse {
+  animation: bounce-x-reverse 1.5s ease-in-out infinite;
+}
