@@ -754,16 +754,17 @@ export default function AdminPage() {
                       )}
 
                       {/* Photo du problème */}
-                      {tool.problemPhoto && (
+                      {(tool.problemPhotoBuffer || tool.problemPhotoType) && (
                         <div className="mb-3">
                           <p className="text-sm font-medium text-gray-700 mb-2">Photo du problème :</p>
                           <div className="bg-white p-2 rounded border">
                             <img
-                              src={`/api/uploads/${tool.problemPhoto.replace('uploads/', '')}`}
+                              src={`/api/tools/${tool.hash}/photo`}
                               alt="Photo du problème"
                               className="max-w-full h-auto max-h-64 rounded cursor-pointer hover:opacity-90 transition-opacity"
-                              onClick={() => window.open(`/api/uploads/${tool.problemPhoto.replace('uploads/', '')}`, '_blank')}
+                              onClick={() => window.open(`/api/tools/${tool.hash}/photo`, '_blank')}
                               onError={(e) => {
+                                console.error('Failed to load photo for:', tool.hash)
                                 e.target.style.display = 'none'
                                 e.target.nextSibling.style.display = 'block'
                               }}
