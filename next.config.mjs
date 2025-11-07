@@ -5,6 +5,18 @@ const nextConfig = {
     esmExternals: 'loose',
     serverComponentsExternalPackages: ['bcryptjs', '@prisma/client', 'prisma'],
   },
+
+  // Skip static generation for API routes to avoid build-time DB access
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, must-revalidate' },
+        ],
+      },
+    ]
+  },
   // NOTE: api.bodyParser is for Pages Router only (deprecated)
   // App Router uses route handlers which handle their own body parsing
   // Body size limit is controlled at the route level with maxDuration
