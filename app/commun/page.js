@@ -851,26 +851,8 @@ export default function CommunPage() {
 
               </div>
 
-              {/* Informations techniques */}
+              {/* Actions et Statut */}
               <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Données techniques</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Hash :</label>
-                      <p className="text-xs text-gray-800 font-mono bg-white p-2 rounded border break-all">
-                        {selectedTool.hash}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">QR Data :</label>
-                      <p className="text-xs text-gray-800 font-mono bg-white p-2 rounded border break-all">
-                        {selectedTool.qrData}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="bg-yellow-50 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">Actions</h3>
                   <div className="space-y-2">

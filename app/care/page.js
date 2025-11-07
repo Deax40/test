@@ -702,27 +702,8 @@ export default function CarePage() {
                 </div>
               </div>
 
-              {/* Informations techniques */}
+              {/* Statut visuel */}
               <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Données techniques</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Hash :</label>
-                      <p className="text-xs text-gray-800 font-mono bg-white p-2 rounded border break-all">
-                        {selectedTool.hash}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Taille :</label>
-                      <p className="text-sm text-gray-800">
-                        {selectedTool.fileSize ? `${Math.round(selectedTool.fileSize / 1024)} Ko` : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Statut visuel */}
                 <div className="text-center">
                   <div className={`w-16 h-16 rounded-full mx-auto mb-2 flex items-center justify-center text-2xl ${
                     selectedTool.lastScanEtat === 'Abîmé' || selectedTool.lastScanEtat === 'Problème'
