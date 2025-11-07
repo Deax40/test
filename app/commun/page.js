@@ -317,7 +317,6 @@ export default function CommunPage() {
 
         // Use FormData for file upload
         const formData = new FormData()
-        formData.append('name', editForm.name || '')
         formData.append('lastScanLieu', editForm.lastScanLieu)
         formData.append('lastScanEtat', editForm.lastScanEtat)
         formData.append('user', session?.user?.name || 'User')
@@ -345,7 +344,6 @@ export default function CommunPage() {
       } else {
         console.log('[FRONTEND] Envoi avec JSON (pas de photo)')
         const jsonPayload = {
-          name: editForm.name,
           lastScanLieu: editForm.lastScanLieu,
           lastScanEtat: editForm.lastScanEtat,
           dimensionLength: editForm.dimensionLength,
@@ -932,23 +930,6 @@ export default function CommunPage() {
 
             <div className="p-6 space-y-6">
               {/* Nom de l'outil (Admin uniquement) */}
-              {session?.user?.role === 'ADMIN' && (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <label className="block text-sm font-medium text-amber-900 mb-2">
-                    Nom de l'outil
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                    value={editForm.name || ''}
-                    onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                    placeholder="Entrez un nom descriptif pour l'outil..."
-                  />
-                  <p className="text-xs text-amber-700 mt-1">
-                    Donnez un nom descriptif pour faciliter l'identification de l'outil
-                  </p>
-                </div>
-              )}
 
               {/* Position */}
               <div>

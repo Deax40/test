@@ -113,7 +113,6 @@ export default function ScanPage() {
     setMessage('')
     try {
       const formData = new FormData()
-      formData.append('name', form.name)
       formData.append('location', form.location)
       formData.append('state', form.state)
       formData.append('user', user?.name || '')
@@ -239,21 +238,6 @@ export default function ScanPage() {
               </div>
             )}
 
-            {/* Saisie manuelle rapide */}
-            <form onSubmit={handleManualSubmit} className="mt-4">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={manualInput}
-                  onChange={(e) => setManualInput(e.target.value)}
-                  placeholder="Code QR ou nom"
-                  className="input flex-1"
-                />
-                <button type="submit" className="btn btn-primary">
-                  OK
-                </button>
-              </div>
-            </form>
 
             <button
               className="btn btn-secondary w-full mt-4"
