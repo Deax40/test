@@ -577,6 +577,16 @@ export default function CommunPage() {
                         >
                           {t.name}
                         </button>
+                        {t.complementaryInfo && (
+                          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900">
+                            <div className="flex items-start gap-1">
+                              <svg className="w-3 h-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                              </svg>
+                              <span className="whitespace-pre-wrap break-words">{t.complementaryInfo}</span>
+                            </div>
+                          </div>
+                        )}
                         <p className="text-xs text-gray-500 md:hidden">
                           {t.lastScanLieu || 'Non défini'}
                         </p>
