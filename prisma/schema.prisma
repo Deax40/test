@@ -88,6 +88,7 @@ model Tool {
   createdAt      DateTime        @default(now())
   certifications Certification[]
   careLogs       CareLog[]
+  scanHistory    ScanHistory[]   // Historique des scans
 }
 
 model Certification {
@@ -165,4 +166,23 @@ model InvalidScan {
   resolvedAt  DateTime?
   resolvedBy  String?  // Admin qui a résolu
   notes       String?  // Notes de l'admin
+}
+
+model ScanHistory {
+  id              String   @id @default(cuid())
+  tool            Tool     @relation(fields: [toolHash], references: [hash])
+  toolHash        String   // Hash de l'outil scanné
+  scanLieu        String   // Lieu du scan
+  scanEtat        String   // État au moment du scan (RAS, Problème, etc.)
+  scanUser        String   // Nom de l'utilisateur qui a scanné
+  client          String?  // Client si "Chez client"
+  tracking        String?  // Numéro de tracking si "En transit"
+  transporteur    String?  // Transporteur si "En transit"
+  typeEnvoi       String?  // Type envoi/réception (Care)
+  ouEstAppareil   String?  // Où est l'appareil (Care)
+  problemDescription String? // Description du problème
+  createdAt       DateTime @default(now())
+
+  @@index([toolHash])
+  @@index([createdAt])
 }

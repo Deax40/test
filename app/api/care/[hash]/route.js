@@ -245,6 +245,27 @@ export async function PATCH(request, { params }) {
     }, { status: 500 })
   }
 
+  // Create scan history entry
+  try {
+    await prisma.scanHistory.create({
+      data: {
+        toolHash: String(params.hash).trim().toUpperCase(),
+        scanLieu: data.lastScanLieu || 'Non spécifié',
+        scanEtat: data.lastScanEtat || 'RAS',
+        scanUser: data.lastScanUser || userName,
+        client: data.client || null,
+        tracking: data.tracking || null,
+        transporteur: data.transporteur || null,
+        typeEnvoi: data.typeEnvoi || null,
+        ouEstAppareil: data.ouEstAppareil || null,
+        problemDescription: data.problemDescription || null,
+      },
+    })
+    console.log('[CARE] ✅ Scan history created')
+  } catch (historyError) {
+    console.error('[CARE] ⚠️ Failed to create scan history (non-blocking):', historyError.message)
+  }
+
   // Envoyer email à tous les admins si l'outil est cassé/abîmé (optionnel)
   if (data.state === 'Abîmé' || data.state === 'Problème') {
     try {

@@ -188,6 +188,25 @@ export async function PATCH(req, { params }) {
       console.error('[COMMONS] ⚠️ Failed to create log (non-blocking):', logError.message)
     }
 
+    // Create scan history entry
+    try {
+      await prisma.scanHistory.create({
+        data: {
+          toolHash: normalized,
+          scanLieu: updateData.lastScanLieu || 'Non spécifié',
+          scanEtat: updateData.lastScanEtat || 'RAS',
+          scanUser: userName,
+          client: updateData.client || null,
+          tracking: updateData.tracking || null,
+          transporteur: updateData.transporteur || null,
+          problemDescription: updateData.problemDescription || null,
+        },
+      })
+      console.log('[COMMONS] ✅ Scan history created')
+    } catch (historyError) {
+      console.error('[COMMONS] ⚠️ Failed to create scan history (non-blocking):', historyError.message)
+    }
+
     console.log('[COMMONS] ✅ PATCH successful, returning tool')
 
     return Response.json({

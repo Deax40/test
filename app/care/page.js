@@ -13,6 +13,7 @@ export default function CarePage() {
   const [editForm, setEditForm] = useState({})
   const [selectedTool, setSelectedTool] = useState(null)
   const [selectedToolCertificates, setSelectedToolCertificates] = useState([])
+  const [selectedToolHistory, setSelectedToolHistory] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [locationFilter, setLocationFilter] = useState('')
   const [stateFilter, setStateFilter] = useState('')
@@ -150,6 +151,21 @@ export default function CarePage() {
     } catch (e) {
       console.error('Error loading certificates:', e)
       setSelectedToolCertificates([])
+    }
+  }
+
+  const loadToolHistory = async (toolHash) => {
+    try {
+      const res = await fetch(`/api/scan-history?toolHash=${toolHash}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSelectedToolHistory(data.history || [])
+      } else {
+        setSelectedToolHistory([])
+      }
+    } catch (e) {
+      console.error('Error loading scan history:', e)
+      setSelectedToolHistory([])
     }
   }
 
@@ -417,6 +433,7 @@ export default function CarePage() {
                           onClick={() => {
                             setSelectedTool(t)
                             loadToolCertificates(t.hash)
+                            loadToolHistory(t.hash)
                           }}
                         >
                           {t.name}
@@ -509,6 +526,7 @@ export default function CarePage() {
                           onClick={() => {
                             setSelectedTool(t)
                             loadToolCertificates(t.hash)
+                            loadToolHistory(t.hash)
                           }}
                         >
                           <span className="sm:hidden">ℹ️</span>
@@ -540,6 +558,7 @@ export default function CarePage() {
                 onClick={() => {
                   setSelectedTool(null)
                   setSelectedToolCertificates([])
+                  setSelectedToolHistory([])
                 }}
               >
                 ×
@@ -707,6 +726,72 @@ export default function CarePage() {
                   ) : (
                     <div className="text-center py-3">
                       <p className="text-gray-500">Aucun certificat de révision</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Historique des scans */}
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Historique des scans (12 derniers mois)</h3>
+                  {selectedToolHistory.length > 0 ? (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {selectedToolHistory.map((scan, index) => (
+                        <div key={scan.id} className="p-3 bg-white border border-purple-200 rounded-lg">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                                  scan.scanEtat === 'Problème' || scan.scanEtat === 'Abîmé'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-green-100 text-green-800'
+                                }`}>
+                                  {scan.scanEtat}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(scan.createdAt).toLocaleString('fr-FR', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-900">
+                                <strong>Lieu :</strong> {scan.scanLieu}
+                              </div>
+                              <div className="text-sm text-gray-700">
+                                <strong>Par :</strong> {scan.scanUser}
+                              </div>
+                              {scan.typeEnvoi && (
+                                <div className="text-sm text-gray-700">
+                                  <strong>Type :</strong> {scan.typeEnvoi}
+                                </div>
+                              )}
+                              {scan.client && (
+                                <div className="text-sm text-gray-700">
+                                  <strong>Client :</strong> {scan.client}
+                                </div>
+                              )}
+                              {scan.tracking && (
+                                <div className="text-sm text-gray-700">
+                                  <strong>Tracking :</strong> {scan.tracking}
+                                  {scan.transporteur && ` (${scan.transporteur})`}
+                                </div>
+                              )}
+                              {scan.problemDescription && (
+                                <div className="text-sm text-red-700 mt-1 p-2 bg-red-50 rounded">
+                                  <strong>Problème :</strong> {scan.problemDescription}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-3">
+                      <p className="text-gray-500">Aucun historique de scan disponible</p>
                     </div>
                   )}
                 </div>
