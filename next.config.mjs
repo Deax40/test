@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   swcMinify: true,
+
   experimental: {
     esmExternals: 'loose',
     serverComponentsExternalPackages: ['bcryptjs', '@prisma/client', 'prisma'],
