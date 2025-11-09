@@ -3,6 +3,8 @@ import { sendExpirationAlert } from '@/lib/email'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   const threeMonthsFromNow = new Date()
   threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3)

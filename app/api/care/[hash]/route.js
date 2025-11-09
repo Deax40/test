@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 import { sendBrokenToolAlertToAdmins } from '@/lib/email'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 // Configure route for larger body sizes (max 4MB due to Vercel limits)
 export const runtime = 'nodejs'
 export const maxDuration = 30

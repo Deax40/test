@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { sendProblemNotification, sendBrokenToolAlertToAdmins } from '@/lib/email'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req, { params }) {
   // SKIP MEMORY - Read directly from Prisma
   console.log('[TOOLS] GET request for hash:', params.hash)

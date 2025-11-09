@@ -2,6 +2,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 // Configure route for larger body sizes (max 4MB due to Vercel limits)
 export const runtime = 'nodejs'
 export const maxDuration = 30

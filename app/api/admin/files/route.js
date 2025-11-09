@@ -2,6 +2,8 @@ import { getAllFileInfo, getFileStats } from '@/lib/admin-file-info'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request) {
   const session = await getServerSession(authOptions)
   if (!session?.user) {

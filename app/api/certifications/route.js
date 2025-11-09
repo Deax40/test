@@ -5,6 +5,8 @@ import { getTool } from '@/lib/care-data'
 import { promises as fs } from 'fs'
 import path from 'path'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url)
   const toolId = searchParams.get('toolId')

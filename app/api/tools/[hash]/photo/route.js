@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req, { params }) {
   try {
     const normalized = String(params.hash || '').trim().toUpperCase()

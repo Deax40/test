@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   const revisions = await prisma.machineRevision.findMany({
     orderBy: { name: 'asc' }

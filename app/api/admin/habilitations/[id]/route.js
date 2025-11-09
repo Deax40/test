@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma'
 import { unlink } from 'fs/promises'
 import path from 'path'
 
+export const dynamic = 'force-dynamic'
+
 export async function DELETE(request, { params }) {
   try {
     const session = await getServerSession(authOptions)

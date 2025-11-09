@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { sendHabilitationExpirationAlert } from '@/lib/email'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req) {
   try {
     // Calculer la date dans 30 jours

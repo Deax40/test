@@ -6,6 +6,8 @@ import { PrismaClient } from '@prisma/client'
 import crypto from 'crypto'
 import { refreshToolsFromFiles } from '@/lib/care-data'
 
+export const dynamic = 'force-dynamic'
+
 const prisma = new PrismaClient()
 
 export async function POST(req) {
