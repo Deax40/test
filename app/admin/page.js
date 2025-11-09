@@ -11,6 +11,9 @@ export default function AdminPage() {
   const [logs, setLogs] = useState([])
   const [users, setUsers] = useState([])
   const [habilitations, setHabilitations] = useState([])
+  const [scanHistory, setScanHistory] = useState([])
+  const [scanHistoryTotal, setScanHistoryTotal] = useState(0)
+  const [scanFilters, setScanFilters] = useState({ lieu: '', etat: '', userName: '' })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(true)
@@ -67,6 +70,24 @@ export default function AdminPage() {
     } catch (e) {
       setError(e.message)
       setLoading(false)
+    }
+  }
+
+  const loadScanHistory = async () => {
+    try {
+      const params = new URLSearchParams({ limit: '100' })
+      if (scanFilters.lieu) params.append('lieu', scanFilters.lieu)
+      if (scanFilters.etat) params.append('etat', scanFilters.etat)
+      if (scanFilters.userName) params.append('userName', scanFilters.userName)
+
+      const res = await fetch(`/api/admin/scan-history?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setScanHistory(data.history || [])
+        setScanHistoryTotal(data.total || 0)
+      }
+    } catch (e) {
+      console.error('Error loading scan history:', e)
     }
   }
 
@@ -344,6 +365,17 @@ export default function AdminPage() {
               onClick={() => setActiveTab('habilitations')}
             >
               Habilitations
+            </button>
+            <button
+              className={`px-4 py-2 border-b-2 font-medium ${
+                activeTab === 'scanHistory' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500'
+              }`}
+              onClick={() => {
+                setActiveTab('scanHistory')
+                loadScanHistory()
+              }}
+            >
+              Historique des scans
             </button>
           </div>
 
@@ -643,6 +675,120 @@ export default function AdminPage() {
                       </div>
                     )
                   })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'scanHistory' && (
+            <div className="space-y-6">
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h2 className="text-lg font-semibold mb-4">Filtres</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Lieu"
+                    value={scanFilters.lieu}
+                    onChange={(e) => setScanFilters({ ...scanFilters, lieu: e.target.value })}
+                  />
+                  <select
+                    className="input"
+                    value={scanFilters.etat}
+                    onChange={(e) => setScanFilters({ ...scanFilters, etat: e.target.value })}
+                  >
+                    <option value="">Tous les états</option>
+                    <option value="RAS">RAS</option>
+                    <option value="Problème">Problème</option>
+                    <option value="En transit">En transit</option>
+                    <option value="Chez client">Chez client</option>
+                  </select>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Nom utilisateur"
+                    value={scanFilters.userName}
+                    onChange={(e) => setScanFilters({ ...scanFilters, userName: e.target.value })}
+                  />
+                  <button
+                    className="btn btn-primary"
+                    onClick={loadScanHistory}
+                  >
+                    Rechercher
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h2 className="text-lg font-semibold mb-4">
+                  Historique des scans ({scanHistoryTotal} total)
+                </h2>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="px-4 py-2 text-left">Outil</th>
+                        <th className="px-4 py-2 text-left">Date/Heure</th>
+                        <th className="px-4 py-2 text-left">Lieu</th>
+                        <th className="px-4 py-2 text-left">État</th>
+                        <th className="px-4 py-2 text-left">Utilisateur</th>
+                        <th className="px-4 py-2 text-left">Détails</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {scanHistory.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
+                            Aucun scan trouvé
+                          </td>
+                        </tr>
+                      ) : (
+                        scanHistory.map((scan) => (
+                          <tr key={scan.id} className="border-b hover:bg-gray-50">
+                            <td className="px-4 py-3">
+                              <div className="font-medium">{scan.tool?.name || scan.toolHash}</div>
+                              <div className="text-xs text-gray-500">{scan.tool?.category}</div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div>{new Date(scan.createdAt).toLocaleDateString('fr-FR')}</div>
+                              <div className="text-xs text-gray-500">
+                                {new Date(scan.createdAt).toLocaleTimeString('fr-FR')}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">{scan.scanLieu}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                scan.scanEtat === 'Problème'
+                                  ? 'bg-red-100 text-red-800'
+                                  : scan.scanEtat === 'En transit'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : scan.scanEtat === 'Chez client'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                                {scan.scanEtat}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">{scan.scanUser}</td>
+                            <td className="px-4 py-3">
+                              <div className="text-sm">
+                                {scan.client && <div><strong>Client:</strong> {scan.client}</div>}
+                                {scan.tracking && <div><strong>Tracking:</strong> {scan.tracking}</div>}
+                                {scan.transporteur && <div><strong>Transporteur:</strong> {scan.transporteur}</div>}
+                                {scan.typeEnvoi && <div><strong>Type:</strong> {scan.typeEnvoi}</div>}
+                                {scan.ouEstAppareil && <div><strong>Appareil:</strong> {scan.ouEstAppareil}</div>}
+                                {scan.problemDescription && (
+                                  <div className="text-red-600">
+                                    <strong>Problème:</strong> {scan.problemDescription}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
