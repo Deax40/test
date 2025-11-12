@@ -11,8 +11,13 @@ export default function ScanPage() {
   const [token, setToken] = useState(null)
   const [tool, setTool] = useState(null)
   const [toolSource, setToolSource] = useState(null) // 'care' or 'commun'
-  const [form, setForm] = useState({ name: '', location: '', state: 'RAS', weight: '', imoNumber: '', problemDescription: '', problemPhoto: null, status: '', client: '', transporteur: '', tracking: '', clientDetails: '', dimensionLength: '', dimensionWidth: '', dimensionHeight: '', dimensionType: 'piece' })
-  const [showStatusFields, setShowStatusFields] = useState(false)
+  const [scanAction, setScanAction] = useState('') // Action principale
+  const [form, setForm] = useState({
+    client: '',
+    state: 'RAS',
+    problemDescription: '',
+    problemPhoto: null
+  })
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -66,6 +71,7 @@ export default function ScanPage() {
     setError('')
     setMessage('')
     setToken(null)
+    setScanAction('')
     try {
       const res = await fetch('/api/scan/start', {
         method: 'POST',
@@ -82,24 +88,11 @@ export default function ScanPage() {
       setTool(data.tool)
       setToolSource(data.source)
       setForm({
-        name: data.tool.name || '',
-        location: data.tool.lastScanLieu || data.tool.location || '',
-        state: 'RAS',
-        weight: data.tool.weight || '',
-        imoNumber: data.tool.imoNumber || '',
-        problemDescription: '',
-        problemPhoto: null,
-        status: '',
         client: '',
-        transporteur: '',
-        tracking: '',
-        clientDetails: '',
-        dimensionLength: data.tool.dimensionLength || '',
-        dimensionWidth: data.tool.dimensionWidth || '',
-        dimensionHeight: data.tool.dimensionHeight || '',
-        dimensionType: data.tool.dimensionType || 'piece'
+        state: 'RAS',
+        problemDescription: '',
+        problemPhoto: null
       })
-      setShowStatusFields(false)
       setShowForm(true)
       setToken(data.editSessionToken)
     } catch (e) {
@@ -108,28 +101,67 @@ export default function ScanPage() {
   }
 
   async function save() {
-    if (!tool) return
+    if (!tool || !scanAction) {
+      setError('Veuillez sélectionner une action')
+      return
+    }
+
+    // Validation pour les actions qui requièrent un client
+    if (['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE'].includes(scanAction)) {
+      if (!form.client.trim()) {
+        setError('Le nom du client est obligatoire pour cette action')
+        return
+      }
+    }
+
+    // Validation pour état abîmé
+    if (form.state === 'Abîmé' && (!form.problemDescription || !form.problemPhoto)) {
+      setError('Photo et description obligatoires pour un outil abîmé')
+      return
+    }
+
     setError('')
     setMessage('')
     try {
       const formData = new FormData()
-      formData.append('location', form.location)
+
+      // Définir le lieu en fonction de l'action
+      let location = ''
+      switch(scanAction) {
+        case 'ENVOIE MATERIEL':
+          location = 'En transit'
+          break
+        case 'RECEPTION MATERIEL':
+          location = form.client
+          break
+        case 'DEPOT BUREAU PARIS':
+          location = 'Paris Bureau'
+          break
+        case 'SORTIE BUREAU PARIS':
+          location = form.client
+          break
+        case 'DEPOTS BUREAU GLEIZE':
+          location = 'Gleizé Bureau'
+          break
+        case 'SORTIE BUREAU GLEIZE':
+          location = form.client
+          break
+        case 'AUTRES':
+          location = form.client
+          break
+        case 'CHEZ CLIENT':
+          location = 'Chez client'
+          break
+        default:
+          location = 'Non spécifié'
+      }
+
+      formData.append('location', location)
       formData.append('state', form.state)
       formData.append('user', user?.name || '')
-      formData.append('weight', form.weight || '')
-      formData.append('imoNumber', form.imoNumber || '')
-      formData.append('problemDescription', form.problemDescription)
-      formData.append('status', form.status)
       formData.append('client', form.client)
-      formData.append('transporteur', form.transporteur)
-      formData.append('tracking', form.tracking)
-      formData.append('clientDetails', form.clientDetails)
-
-      // Dimensions
-      formData.append('dimensionLength', form.dimensionLength || '')
-      formData.append('dimensionWidth', form.dimensionWidth || '')
-      formData.append('dimensionHeight', form.dimensionHeight || '')
-      formData.append('dimensionType', form.dimensionType || 'piece')
+      formData.append('problemDescription', form.problemDescription)
+      formData.append('scanAction', scanAction)
 
       // Compress image before upload to avoid 413 error on Vercel
       if (form.problemPhoto) {
@@ -150,24 +182,8 @@ export default function ScanPage() {
       console.log('[SCAN] ========== SAVING TOOL ==========')
       console.log('[SCAN] API endpoint:', apiEndpoint)
       console.log('[SCAN] Tool source:', toolSource)
-      console.log('[SCAN] Complete form data:', {
-        name: form.name,
-        location: form.location,
-        state: form.state,
-        user: user?.name,
-        weight: form.weight,
-        imoNumber: form.imoNumber,
-        dimensionLength: form.dimensionLength,
-        dimensionWidth: form.dimensionWidth,
-        dimensionHeight: form.dimensionHeight,
-        dimensionType: form.dimensionType,
-        client: form.client,
-        tracking: form.tracking,
-        transporteur: form.transporteur,
-        status: form.status,
-        problemDescription: form.problemDescription,
-        hasPhoto: !!form.problemPhoto
-      })
+      console.log('[SCAN] Scan action:', scanAction)
+      console.log('[SCAN] Location:', location)
       console.log('[SCAN] =================================')
 
       const res = await fetch(apiEndpoint, {
@@ -192,6 +208,15 @@ export default function ScanPage() {
       console.log('[SCAN] ✅ Save successful:', data)
       setTool(data.tool)
       setMessage(form.state === 'Abîmé' ? 'Outil abîmé signalé et transféré vers Admin.' : 'Mise à jour enregistrée !')
+
+      // Reset form
+      setScanAction('')
+      setForm({
+        client: '',
+        state: 'RAS',
+        problemDescription: '',
+        problemPhoto: null
+      })
     } catch (e) {
       console.error('[SCAN] ❌ Save error:', e)
       setError(`Erreur lors de la sauvegarde: ${e.message}`)
@@ -199,6 +224,10 @@ export default function ScanPage() {
   }
 
   const disabled = !tool
+
+  // Déterminer si on doit afficher les champs client et état
+  const showClientField = scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE'].includes(scanAction)
+  const showStateField = scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOTS BUREAU GLEIZE'].includes(scanAction)
 
   return (
     <div>
@@ -238,108 +267,72 @@ export default function ScanPage() {
               </div>
             )}
 
-
             <button
               className="btn btn-secondary w-full mt-4"
-              onClick={() => {setShowForm(false); setTool(null); setToken(null); setError(''); setMessage(''); setCameraError(false);}}
+              onClick={() => {
+                setShowForm(false)
+                setTool(null)
+                setToken(null)
+                setError('')
+                setMessage('')
+                setCameraError(false)
+                setScanAction('')
+              }}
             >
               Retour au scanner principal
             </button>
           </div>
           <div className="card space-y-4">
             {error && <p className="text-red-600">{error}</p>}
+            {message && <p className="text-green-600">{message}</p>}
             {tool && (
             <>
-              <h2 className="text-lg font-semibold">{tool.name}</h2>
-              <div className="mb-2">
-                <span className={`inline-block px-2 py-1 text-sm rounded ${
-                  toolSource === 'care'
-                    ? 'bg-orange-100 text-orange-800'
-                    : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {toolSource === 'care' ? 'Outil Care' : 'Outil Commun'}
-                </span>
+              {/* Nom de l'outil en haut */}
+              <div className="bg-blue-600 text-white p-4 rounded-lg -mt-4 -mx-4 mb-4">
+                <h2 className="text-xl font-bold">{tool.name}</h2>
+                <div className="mt-2">
+                  <span className={`inline-block px-2 py-1 text-xs rounded ${
+                    toolSource === 'care'
+                      ? 'bg-orange-100 text-orange-800'
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {toolSource === 'care' ? 'Outil Care' : 'Outil Commun'}
+                  </span>
+                </div>
               </div>
 
-              {/* Informations enregistrées précédemment */}
-              {(tool.dimensionLength || tool.dimensionWidth || tool.dimensionHeight || tool.certificatePath || tool.lastScanLieu || tool.lastScanEtat || tool.tracking || tool.client) && (
-                <div className="mb-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                  <h3 className="font-bold text-blue-800 text-md mb-3 flex items-center gap-2">
-                    <span>📋</span>
-                    Informations enregistrées
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    {tool.lastScanLieu && (
-                      <div className="flex items-start">
-                        <span className="font-medium text-gray-700 min-w-[140px]">Position actuelle:</span>
-                        <span className="text-gray-900">{tool.lastScanLieu}</span>
-                      </div>
-                    )}
-                    {tool.lastScanEtat && tool.lastScanEtat !== 'RAS' && (
-                      <div className="flex items-start">
-                        <span className="font-medium text-gray-700 min-w-[140px]">État actuel:</span>
-                        <span className={`font-semibold ${tool.lastScanEtat === 'Abîmé' || tool.lastScanEtat === 'Problème' ? 'text-red-600' : 'text-green-600'}`}>
-                          {tool.lastScanEtat}
-                        </span>
-                      </div>
-                    )}
-                    {(tool.dimensionLength || tool.dimensionWidth || tool.dimensionHeight) && (
-                      <div className="flex items-start">
-                        <span className="font-medium text-gray-700 min-w-[140px]">Dimensions:</span>
-                        <span className="text-gray-900">
-                          {tool.dimensionLength && `L: ${tool.dimensionLength}cm`}
-                          {tool.dimensionWidth && ` × l: ${tool.dimensionWidth}cm`}
-                          {tool.dimensionHeight && ` × H: ${tool.dimensionHeight}cm`}
-                          {tool.dimensionType && ` (${tool.dimensionType})`}
-                        </span>
-                      </div>
-                    )}
-                    {tool.tracking && (
-                      <div className="flex items-start">
-                        <span className="font-medium text-gray-700 min-w-[140px]">Numéro tracking:</span>
-                        <span className="text-gray-900">{tool.tracking}</span>
-                      </div>
-                    )}
-                    {tool.client && (
-                      <div className="flex items-start">
-                        <span className="font-medium text-gray-700 min-w-[140px]">Client:</span>
-                        <span className="text-gray-900">{tool.client}</span>
-                      </div>
-                    )}
-                    {tool.transporteur && (
-                      <div className="flex items-start">
-                        <span className="font-medium text-gray-700 min-w-[140px]">Transporteur:</span>
-                        <span className="text-gray-900">{tool.transporteur}</span>
-                      </div>
-                    )}
-                    {tool.certificatePath && (
-                      <div className="flex items-start">
-                        <span className="font-medium text-gray-700 min-w-[140px]">Certificat:</span>
-                        <a
-                          href={tool.certificatePath}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 underline"
-                        >
-                          📄 Voir le certificat
-                        </a>
-                      </div>
-                    )}
-                    {tool.lastScanAt && (
-                      <div className="flex items-start">
-                        <span className="font-medium text-gray-700 min-w-[140px]">Dernier scan:</span>
-                        <span className="text-gray-900">{new Date(tool.lastScanAt).toLocaleString('fr-FR')}</span>
-                      </div>
-                    )}
-                    {tool.lastScanUser && (
-                      <div className="flex items-start">
-                        <span className="font-medium text-gray-700 min-w-[140px]">Scanné par:</span>
-                        <span className="text-gray-900">{tool.lastScanUser}</span>
-                      </div>
-                    )}
+              {/* Informations du dernier scan */}
+              <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
+                <h3 className="font-bold text-gray-800 text-sm mb-2">📋 Dernières informations</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Lieu:</span>
+                    <span className="font-medium">{tool.lastScanLieu || 'Non renseigné'}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">État:</span>
+                    <span className={`font-semibold ${
+                      tool.lastScanEtat === 'Abîmé' || tool.lastScanEtat === 'Problème'
+                        ? 'text-red-600'
+                        : 'text-green-600'
+                    }`}>
+                      {tool.lastScanEtat || 'RAS'}
+                    </span>
+                  </div>
+                  {tool.lastScanAt && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Dernier scan:</span>
+                      <span className="font-medium">{new Date(tool.lastScanAt).toLocaleString('fr-FR')}</span>
+                    </div>
+                  )}
+                  {tool.lastScanUser && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Par:</span>
+                      <span className="font-medium">{tool.lastScanUser}</span>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Afficher la photo du problème si l'outil est abîmé */}
               {(tool.lastScanEtat === 'Abîmé' || tool.lastScanEtat === 'Problème') && (tool.problemPhotoPath || tool.problemPhoto) && (
@@ -363,220 +356,64 @@ export default function ScanPage() {
                       <p className="text-sm text-gray-900">{tool.problemDescription}</p>
                     </div>
                   )}
-                  {tool.complementaryInfo && (
-                    <div className="bg-blue-50 p-3 rounded border border-blue-200 mt-2">
-                      <p className="text-sm font-medium text-blue-700 mb-1">ℹ️ Informations complémentaires (Admin):</p>
-                      <p className="text-sm text-blue-900">{tool.complementaryInfo}</p>
-                    </div>
-                  )}
                 </div>
               )}
+
+              {/* Menu principal - Action */}
               <div>
-                <label className="label">Nom</label>
-                <input className="input" value={form.name} readOnly />
-              </div>
-              <div>
-                <label className="label">Position: Sélectionnez la position actuelle</label>
+                <label className="label">Sélectionner l'action *</label>
                 <select
                   className="input"
-                  value={form.location}
-                  onChange={e => setForm({ ...form, location: e.target.value })}
-                  disabled={disabled}
-                >
-                  <option value="">Sélectionner position</option>
-                  <option value="Paris Bureau">Paris Bureau</option>
-                  <option value="Gleizé Bureau">Gleizé Bureau</option>
-                  <option value="Tanger">Tanger</option>
-                  <option value="Tunisie">Tunisie</option>
-                  <option value="Chez client">Chez client</option>
-                  <option value="En transit">En transit</option>
-                  <option value="Autres">Autres</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Statut</label>
-                <select
-                  className="input"
-                  value={form.status}
+                  value={scanAction}
                   onChange={e => {
-                    setForm({ ...form, status: e.target.value })
-                    setShowStatusFields(true)
+                    setScanAction(e.target.value)
+                    setForm({ client: '', state: 'RAS', problemDescription: '', problemPhoto: null })
                   }}
                   disabled={disabled}
                 >
-                  <option value="">Sélectionner un statut</option>
-                  <option value="Dépôt bureau Paris">Dépôt bureau Paris</option>
-                  <option value="Dépôt bureau Gleizé">Dépôt bureau Gleizé</option>
-                  <option value="Sortie bureau Paris">Sortie bureau Paris</option>
-                  <option value="Sortie bureau Gleizé">Sortie bureau Gleizé</option>
-                  <option value="Autres">Autres</option>
-                  <option value="Chez client">Chez client</option>
+                  <option value="">-- Sélectionner une action --</option>
+                  <option value="ENVOIE MATERIEL">ENVOIE MATÉRIEL</option>
+                  <option value="RECEPTION MATERIEL">RECEPTION MATERIEL</option>
+                  <option value="DEPOT BUREAU PARIS">DEPOT BUREAU PARIS</option>
+                  <option value="SORTIE BUREAU PARIS">SORTIE BUREAU PARIS</option>
+                  <option value="DEPOTS BUREAU GLEIZE">DEPOTS BUREAU GLEIZE</option>
+                  <option value="SORTIE BUREAU GLEIZE">SORTIE BUREAU GLEIZE</option>
+                  <option value="AUTRES">AUTRES</option>
+                  <option value="CHEZ CLIENT">CHEZ CLIENT</option>
                 </select>
               </div>
 
-              {/* Dynamic fields based on status selection */}
-              {showStatusFields && form.status && (
-                <>
-                  {(form.status === 'Dépôt bureau Paris' || form.status === 'Dépôt bureau Gleizé') && (
-                    <>
-                      <div>
-                        <label className="label">État</label>
-                        <select className="input" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} disabled={disabled}>
-                          <option value="RAS">RAS</option>
-                          <option value="Abîmé">Abîmé</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="label" style={{ color: '#9ca3af' }}>Heure</label>
-                        <input className="input" value={new Date().toLocaleTimeString('fr-FR')} readOnly style={{ color: '#9ca3af' }} />
-                      </div>
-                      <div>
-                        <label className="label" style={{ color: '#9ca3af' }}>Responsable</label>
-                        <input className="input" value={user?.name || 'Chargement...'} readOnly style={{ color: '#9ca3af' }} />
-                      </div>
-                    </>
-                  )}
-
-                  {(form.status === 'Sortie bureau Paris' || form.status === 'Sortie bureau Gleizé') && (
-                    <>
-                      <div>
-                        <label className="label">Position</label>
-                        <input
-                          className="input"
-                          value={form.location}
-                          onChange={e => setForm({ ...form, location: e.target.value })}
-                          disabled={disabled}
-                          placeholder="Lieu de destination..."
-                        />
-                      </div>
-                      <div>
-                        <label className="label">Nom du client</label>
-                        <input
-                          className="input"
-                          value={form.client}
-                          onChange={e => setForm({ ...form, client: e.target.value })}
-                          disabled={disabled}
-                          placeholder="Nom du client..."
-                        />
-                      </div>
-                      <div>
-                        <label className="label">État</label>
-                        <select className="input" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} disabled={disabled}>
-                          <option value="RAS">RAS</option>
-                          <option value="Abîmé">Abîmé</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="label" style={{ color: '#9ca3af' }}>Heure</label>
-                        <input className="input" value={new Date().toLocaleTimeString('fr-FR')} readOnly style={{ color: '#9ca3af' }} />
-                      </div>
-                      <div>
-                        <label className="label" style={{ color: '#9ca3af' }}>Responsable</label>
-                        <input className="input" value={user?.name || 'Chargement...'} readOnly style={{ color: '#9ca3af' }} />
-                      </div>
-                    </>
-                  )}
-
-                  {(form.status === 'Autres' || form.status === 'Chez client') && (
-                    <>
-                      <div>
-                        <label className="label">Position</label>
-                        <input
-                          className="input"
-                          value={form.location}
-                          onChange={e => setForm({ ...form, location: e.target.value })}
-                          disabled={disabled}
-                          placeholder="Position..."
-                        />
-                      </div>
-                      <div>
-                        <label className="label">Nom du client</label>
-                        <input
-                          className="input"
-                          value={form.client}
-                          onChange={e => setForm({ ...form, client: e.target.value })}
-                          disabled={disabled}
-                          placeholder="Nom du client..."
-                        />
-                      </div>
-                      <div>
-                        <label className="label">État</label>
-                        <select className="input" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} disabled={disabled}>
-                          <option value="RAS">RAS</option>
-                          <option value="Abîmé">Abîmé</option>
-                        </select>
-                      </div>
-
-                      {/* Dimensions */}
-                      <div className="space-y-3 p-4 bg-gray-50 rounded-lg border">
-                        <h3 className="text-sm font-semibold text-gray-700">Dimensions (en cm)</h3>
-
-                        <div>
-                          <label className="label">Type de dimension</label>
-                          <select
-                            className="input"
-                            value={form.dimensionType}
-                            onChange={e => setForm({ ...form, dimensionType: e.target.value })}
-                            disabled={disabled}
-                          >
-                            <option value="piece">Dimension de la pièce</option>
-                            <option value="colis">Dimension du colis</option>
-                          </select>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2">
-                          <div>
-                            <label className="label text-xs">Longueur</label>
-                            <input
-                              type="number"
-                              className="input"
-                              value={form.dimensionLength}
-                              onChange={e => setForm({ ...form, dimensionLength: e.target.value })}
-                              disabled={disabled}
-                              placeholder="cm"
-                            />
-                          </div>
-                          <div>
-                            <label className="label text-xs">Largeur</label>
-                            <input
-                              type="number"
-                              className="input"
-                              value={form.dimensionWidth}
-                              onChange={e => setForm({ ...form, dimensionWidth: e.target.value })}
-                              disabled={disabled}
-                              placeholder="cm"
-                            />
-                          </div>
-                          <div>
-                            <label className="label text-xs">Hauteur</label>
-                            <input
-                              type="number"
-                              className="input"
-                              value={form.dimensionHeight}
-                              onChange={e => setForm({ ...form, dimensionHeight: e.target.value })}
-                              disabled={disabled}
-                              placeholder="cm"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="label" style={{ color: '#9ca3af' }}>Heure</label>
-                        <input className="input" value={new Date().toLocaleTimeString('fr-FR')} readOnly style={{ color: '#9ca3af' }} />
-                      </div>
-                      <div>
-                        <label className="label" style={{ color: '#9ca3af' }}>Responsable</label>
-                        <input className="input" value={user?.name || 'Chargement...'} readOnly style={{ color: '#9ca3af' }} />
-                      </div>
-                    </>
-                  )}
-                </>
+              {/* Champ client (conditionnel) */}
+              {showClientField && (
+                <div>
+                  <label className="label">Saisir client *</label>
+                  <input
+                    className="input"
+                    value={form.client}
+                    onChange={e => setForm({ ...form, client: e.target.value })}
+                    disabled={disabled}
+                    placeholder="Nom du client..."
+                  />
+                </div>
               )}
-              <div>
-                <label className="label">Dernier scan</label>
-                <p>{tool.lastScanAt || '-'}</p>
-              </div>
+
+              {/* Champ état (conditionnel) */}
+              {showStateField && (
+                <div>
+                  <label className="label">Saisir état *</label>
+                  <select
+                    className="input"
+                    value={form.state}
+                    onChange={e => setForm({ ...form, state: e.target.value })}
+                    disabled={disabled}
+                  >
+                    <option value="RAS">RAS</option>
+                    <option value="Abîmé">Abîmé</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Champs pour état abîmé */}
               {form.state === 'Abîmé' && (
                 <>
                   <div>
@@ -603,14 +440,45 @@ export default function ScanPage() {
                   </div>
                 </>
               )}
+
+              {/* Informations non modifiables en bas */}
+              <div className="border-t-2 pt-4 space-y-2">
+                <div>
+                  <label className="label" style={{ color: '#9ca3af' }}>Date</label>
+                  <input
+                    className="input"
+                    value={new Date().toLocaleDateString('fr-FR')}
+                    readOnly
+                    style={{ color: '#9ca3af', backgroundColor: '#f9fafb' }}
+                  />
+                </div>
+                <div>
+                  <label className="label" style={{ color: '#9ca3af' }}>Heure</label>
+                  <input
+                    className="input"
+                    value={new Date().toLocaleTimeString('fr-FR')}
+                    readOnly
+                    style={{ color: '#9ca3af', backgroundColor: '#f9fafb' }}
+                  />
+                </div>
+                <div>
+                  <label className="label" style={{ color: '#9ca3af' }}>Responsable</label>
+                  <input
+                    className="input"
+                    value={user?.name || 'Chargement...'}
+                    readOnly
+                    style={{ color: '#9ca3af', backgroundColor: '#f9fafb' }}
+                  />
+                </div>
+              </div>
+
               <button
                 className="btn btn-success w-full"
                 onClick={save}
-                disabled={disabled || (form.state === 'Abîmé' && (!form.problemDescription || !form.problemPhoto))}
+                disabled={disabled || !scanAction || (form.state === 'Abîmé' && (!form.problemDescription || !form.problemPhoto))}
               >
                 Enregistrer
               </button>
-              {message && <p className="text-green-600">{message}</p>}
             </>
           )}
           {!tool && <p>Aucun outil chargé.</p>}
