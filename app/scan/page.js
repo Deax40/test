@@ -16,7 +16,10 @@ export default function ScanPage() {
     client: '',
     state: 'RAS',
     problemDescription: '',
-    problemPhoto: null
+    problemPhoto: null,
+    transporteur: '',
+    tracking: '',
+    lieuEnvoi: ''
   })
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
@@ -24,6 +27,7 @@ export default function ScanPage() {
   const [user, setUser] = useState(null)
   const [cameraError, setCameraError] = useState(false)
   const [manualInput, setManualInput] = useState('')
+  const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
     async function loadSession() {
@@ -40,6 +44,13 @@ export default function ScanPage() {
       }
     }
     loadSession()
+
+    // Mettre à jour l'heure toutes les secondes
+    const interval = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+
+    return () => clearInterval(interval)
   }, [])
 
   function handleScan(result) {
@@ -91,7 +102,10 @@ export default function ScanPage() {
         client: '',
         state: 'RAS',
         problemDescription: '',
-        problemPhoto: null
+        problemPhoto: null,
+        transporteur: '',
+        tracking: '',
+        lieuEnvoi: ''
       })
       setShowForm(true)
       setToken(data.editSessionToken)
@@ -104,6 +118,26 @@ export default function ScanPage() {
     if (!tool || !scanAction) {
       setError('Veuillez sélectionner une action')
       return
+    }
+
+    // Validation pour ENVOIE MATERIEL
+    if (scanAction === 'ENVOIE MATERIEL') {
+      if (!form.lieuEnvoi.trim()) {
+        setError('Le lieu d\'envoi est obligatoire')
+        return
+      }
+      if (!form.client.trim()) {
+        setError('Le nom du client est obligatoire')
+        return
+      }
+      if (!form.transporteur.trim()) {
+        setError('Le transporteur est obligatoire')
+        return
+      }
+      if (!form.tracking.trim()) {
+        setError('Le numéro de tracking est obligatoire')
+        return
+      }
     }
 
     // Validation pour les actions qui requièrent un client
@@ -129,7 +163,7 @@ export default function ScanPage() {
       let location = ''
       switch(scanAction) {
         case 'ENVOIE MATERIEL':
-          location = 'En transit'
+          location = form.lieuEnvoi || 'En transit'
           break
         case 'RECEPTION MATERIEL':
           location = form.client
@@ -162,6 +196,8 @@ export default function ScanPage() {
       formData.append('client', form.client)
       formData.append('problemDescription', form.problemDescription)
       formData.append('scanAction', scanAction)
+      formData.append('transporteur', form.transporteur)
+      formData.append('tracking', form.tracking)
 
       // Compress image before upload to avoid 413 error on Vercel
       if (form.problemPhoto) {
@@ -215,7 +251,10 @@ export default function ScanPage() {
         client: '',
         state: 'RAS',
         problemDescription: '',
-        problemPhoto: null
+        problemPhoto: null,
+        transporteur: '',
+        tracking: '',
+        lieuEnvoi: ''
       })
     } catch (e) {
       console.error('[SCAN] ❌ Save error:', e)
@@ -226,8 +265,9 @@ export default function ScanPage() {
   const disabled = !tool
 
   // Déterminer si on doit afficher les champs client et état
-  const showClientField = scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE'].includes(scanAction)
-  const showStateField = scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOTS BUREAU GLEIZE'].includes(scanAction)
+  const showClientField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE'].includes(scanAction)
+  const showStateField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOTS BUREAU GLEIZE'].includes(scanAction)
+  const showEnvoiFields = scanAction === 'ENVOIE MATERIEL'
 
   return (
     <div>
@@ -367,7 +407,15 @@ export default function ScanPage() {
                   value={scanAction}
                   onChange={e => {
                     setScanAction(e.target.value)
-                    setForm({ client: '', state: 'RAS', problemDescription: '', problemPhoto: null })
+                    setForm({
+                      client: '',
+                      state: 'RAS',
+                      problemDescription: '',
+                      problemPhoto: null,
+                      transporteur: '',
+                      tracking: '',
+                      lieuEnvoi: ''
+                    })
                   }}
                   disabled={disabled}
                 >
@@ -383,8 +431,66 @@ export default function ScanPage() {
                 </select>
               </div>
 
-              {/* Champ client (conditionnel) */}
-              {showClientField && (
+              {/* Champs spécifiques pour ENVOIE MATERIEL */}
+              {showEnvoiFields && (
+                <>
+                  <div>
+                    <label className="label">Saisir lieu d'envoi *</label>
+                    <input
+                      className="input"
+                      value={form.lieuEnvoi}
+                      onChange={e => setForm({ ...form, lieuEnvoi: e.target.value })}
+                      disabled={disabled}
+                      placeholder="Lieu d'envoi..."
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Saisir client *</label>
+                    <input
+                      className="input"
+                      value={form.client}
+                      onChange={e => setForm({ ...form, client: e.target.value })}
+                      disabled={disabled}
+                      placeholder="Nom du client..."
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Saisir transporteur *</label>
+                    <input
+                      className="input"
+                      value={form.transporteur}
+                      onChange={e => setForm({ ...form, transporteur: e.target.value })}
+                      disabled={disabled}
+                      placeholder="Nom du transporteur..."
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Saisir tracking number *</label>
+                    <input
+                      className="input"
+                      value={form.tracking}
+                      onChange={e => setForm({ ...form, tracking: e.target.value })}
+                      disabled={disabled}
+                      placeholder="Numéro de tracking..."
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Saisir état *</label>
+                    <select
+                      className="input"
+                      value={form.state}
+                      onChange={e => setForm({ ...form, state: e.target.value })}
+                      disabled={disabled}
+                    >
+                      <option value="RAS">RAS</option>
+                      <option value="Abîmé">Abîmé</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {/* Champ client (conditionnel pour autres actions) */}
+              {!showEnvoiFields && showClientField && (
                 <div>
                   <label className="label">Saisir client *</label>
                   <input
@@ -397,8 +503,8 @@ export default function ScanPage() {
                 </div>
               )}
 
-              {/* Champ état (conditionnel) */}
-              {showStateField && (
+              {/* Champ état (conditionnel pour autres actions) */}
+              {!showEnvoiFields && showStateField && (
                 <div>
                   <label className="label">Saisir état *</label>
                   <select
@@ -447,7 +553,7 @@ export default function ScanPage() {
                   <label className="label" style={{ color: '#9ca3af' }}>Date</label>
                   <input
                     className="input"
-                    value={new Date().toLocaleDateString('fr-FR')}
+                    value={currentTime.toLocaleDateString('fr-FR')}
                     readOnly
                     style={{ color: '#9ca3af', backgroundColor: '#f9fafb' }}
                   />
@@ -456,7 +562,7 @@ export default function ScanPage() {
                   <label className="label" style={{ color: '#9ca3af' }}>Heure</label>
                   <input
                     className="input"
-                    value={new Date().toLocaleTimeString('fr-FR')}
+                    value={currentTime.toLocaleTimeString('fr-FR')}
                     readOnly
                     style={{ color: '#9ca3af', backgroundColor: '#f9fafb' }}
                   />
