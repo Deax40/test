@@ -21,6 +21,19 @@ export default function CarePage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDamageModal, setShowDamageModal] = useState(false)
   const [damageForm, setDamageForm] = useState({ photo: null, description: '' })
+  const [showScanModal, setShowScanModal] = useState(false)
+  const [scanningTool, setScanningTool] = useState(null)
+  const [scanAction, setScanAction] = useState('')
+  const [scanForm, setScanForm] = useState({
+    client: '',
+    state: 'RAS',
+    problemDescription: '',
+    problemPhoto: null,
+    transporteur: '',
+    tracking: '',
+    lieuEnvoi: ''
+  })
+  const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
     async function load() {
@@ -47,6 +60,13 @@ export default function CarePage() {
       }
     }
     load()
+
+    // Mettre à jour l'heure toutes les secondes
+    const interval = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+
+    return () => clearInterval(interval)
   }, [])
 
   const startEdit = (tool) => {
@@ -207,6 +227,144 @@ export default function CarePage() {
     } catch (e) {
       console.error('[RESYNC] Error:', e)
       setError(e.message)
+    }
+  }
+
+  const startQuickScan = (tool) => {
+    setScanningTool(tool)
+    setScanAction('')
+    setScanForm({
+      client: '',
+      state: 'RAS',
+      problemDescription: '',
+      problemPhoto: null,
+      transporteur: '',
+      tracking: '',
+      lieuEnvoi: ''
+    })
+    setShowScanModal(true)
+  }
+
+  const saveScan = async () => {
+    if (!scanningTool || !scanAction) {
+      setError('Veuillez sélectionner une action')
+      return
+    }
+
+    // Validation pour ENVOIE MATERIEL
+    if (scanAction === 'ENVOIE MATERIEL') {
+      if (!scanForm.lieuEnvoi.trim()) {
+        setError('Le lieu d\'envoi est obligatoire')
+        return
+      }
+      if (!scanForm.client.trim()) {
+        setError('Le nom du client est obligatoire')
+        return
+      }
+      if (!scanForm.transporteur.trim()) {
+        setError('Le transporteur est obligatoire')
+        return
+      }
+      if (!scanForm.tracking.trim()) {
+        setError('Le numéro de tracking est obligatoire')
+        return
+      }
+    }
+
+    // Validation pour les actions qui requièrent un client
+    if (['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE'].includes(scanAction)) {
+      if (!scanForm.client.trim()) {
+        setError('Le nom du client est obligatoire pour cette action')
+        return
+      }
+    }
+
+    // Validation pour état abîmé
+    if (scanForm.state === 'Abîmé' && (!scanForm.problemDescription || !scanForm.problemPhoto)) {
+      setError('Photo et description obligatoires pour un outil abîmé')
+      return
+    }
+
+    setError('')
+    try {
+      const formData = new FormData()
+
+      // Définir le lieu en fonction de l'action
+      let location = ''
+      switch(scanAction) {
+        case 'ENVOIE MATERIEL':
+          location = scanForm.lieuEnvoi || 'En transit'
+          break
+        case 'RECEPTION MATERIEL':
+          location = scanForm.client
+          break
+        case 'DEPOT BUREAU PARIS':
+          location = 'Paris Bureau'
+          break
+        case 'SORTIE BUREAU PARIS':
+          location = scanForm.client
+          break
+        case 'DEPOTS BUREAU GLEIZE':
+          location = 'Gleizé Bureau'
+          break
+        case 'SORTIE BUREAU GLEIZE':
+          location = scanForm.client
+          break
+        case 'AUTRES':
+          location = scanForm.client
+          break
+        case 'CHEZ CLIENT':
+          location = 'Chez client'
+          break
+        default:
+          location = 'Non spécifié'
+      }
+
+      formData.append('location', location)
+      formData.append('state', scanForm.state)
+      formData.append('user', session?.user?.name || '')
+      formData.append('client', scanForm.client)
+      formData.append('problemDescription', scanForm.problemDescription)
+      formData.append('scanAction', scanAction)
+      formData.append('transporteur', scanForm.transporteur)
+      formData.append('tracking', scanForm.tracking)
+
+      if (scanForm.problemPhoto) {
+        formData.append('problemPhoto', scanForm.problemPhoto)
+      }
+
+      const res = await fetch(`/api/care/${scanningTool.hash}`, {
+        method: 'PATCH',
+        body: formData,
+      })
+
+      const data = await res.json()
+
+      if (data.error) {
+        setError(`Erreur: ${data.error}${data.details ? ' - ' + data.details : ''}`)
+        return
+      }
+
+      if (!res.ok) {
+        throw new Error(`Sauvegarde échouée (${res.status})`)
+      }
+
+      setShowScanModal(false)
+      setScanningTool(null)
+      setScanAction('')
+      setScanForm({
+        client: '',
+        state: 'RAS',
+        problemDescription: '',
+        problemPhoto: null,
+        transporteur: '',
+        tracking: '',
+        lieuEnvoi: ''
+      })
+      await resyncData()
+    } catch (e) {
+      console.error('[SCAN] ❌ Save error:', e)
+      setError(`Erreur lors de la sauvegarde: ${e.message}`)
     }
   }
 
@@ -514,6 +672,13 @@ export default function CarePage() {
                     </td>
                     <td className="px-2 sm:px-4 py-3 sm:py-4">
                       <div className="flex gap-1 sm:gap-2 flex-col sm:flex-row">
+                        <button
+                          className="inline-flex items-center justify-center px-2 sm:px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full hover:bg-green-200 transition-colors whitespace-nowrap"
+                          onClick={() => startQuickScan(t)}
+                        >
+                          <span className="sm:hidden">📦</span>
+                          <span className="hidden sm:inline">J'ai l'outil</span>
+                        </button>
                         <button
                           className="inline-flex items-center justify-center px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full hover:bg-blue-200 transition-colors whitespace-nowrap"
                           onClick={() => startEdit(t)}
@@ -1081,6 +1246,259 @@ export default function CarePage() {
                 <button
                   className="px-4 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                   onClick={() => setShowDamageModal(false)}
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Scan Rapide */}
+      {showScanModal && scanningTool && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold">Mettre à jour l'outil</h2>
+              <button
+                onClick={() => {
+                  setShowScanModal(false)
+                  setScanningTool(null)
+                  setScanAction('')
+                  setError('')
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* En-tête de l'outil */}
+              <div className="bg-blue-600 text-white p-4 rounded-lg -mt-2 -mx-2 mb-4">
+                <h3 className="text-xl font-bold">{scanningTool.name}</h3>
+                <div className="mt-2">
+                  <span className="inline-block px-2 py-1 text-xs rounded bg-orange-100 text-orange-800">
+                    Outil Care
+                  </span>
+                </div>
+              </div>
+
+              {/* Dernières informations */}
+              <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
+                <h4 className="font-bold text-gray-800 text-sm mb-2">📋 Dernières informations</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Lieu:</span>
+                    <span className="font-medium">{scanningTool.lastScanLieu || 'Non renseigné'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">État:</span>
+                    <span className={`font-semibold ${
+                      scanningTool.lastScanEtat === 'Abîmé' || scanningTool.lastScanEtat === 'Problème'
+                        ? 'text-red-600'
+                        : 'text-green-600'
+                    }`}>
+                      {scanningTool.lastScanEtat || 'RAS'}
+                    </span>
+                  </div>
+                  {scanningTool.lastScanAt && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Dernier scan:</span>
+                      <span className="font-medium">{new Date(scanningTool.lastScanAt).toLocaleString('fr-FR')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
+
+              {/* Menu principal - Action */}
+              <div>
+                <label className="label">Sélectionner l'action *</label>
+                <select
+                  className="input"
+                  value={scanAction}
+                  onChange={e => {
+                    setScanAction(e.target.value)
+                    setScanForm({
+                      client: '',
+                      state: 'RAS',
+                      problemDescription: '',
+                      problemPhoto: null,
+                      transporteur: '',
+                      tracking: '',
+                      lieuEnvoi: ''
+                    })
+                  }}
+                >
+                  <option value="">-- Sélectionner une action --</option>
+                  <option value="ENVOIE MATERIEL">ENVOIE MATÉRIEL</option>
+                  <option value="RECEPTION MATERIEL">RECEPTION MATERIEL</option>
+                  <option value="DEPOT BUREAU PARIS">DEPOT BUREAU PARIS</option>
+                  <option value="SORTIE BUREAU PARIS">SORTIE BUREAU PARIS</option>
+                  <option value="DEPOTS BUREAU GLEIZE">DEPOTS BUREAU GLEIZE</option>
+                  <option value="SORTIE BUREAU GLEIZE">SORTIE BUREAU GLEIZE</option>
+                  <option value="AUTRES">AUTRES</option>
+                  <option value="CHEZ CLIENT">CHEZ CLIENT</option>
+                </select>
+              </div>
+
+              {/* Champs spécifiques pour ENVOIE MATERIEL */}
+              {scanAction === 'ENVOIE MATERIEL' && (
+                <>
+                  <div>
+                    <label className="label">Saisir lieu d'envoi *</label>
+                    <input
+                      className="input"
+                      value={scanForm.lieuEnvoi}
+                      onChange={e => setScanForm({ ...scanForm, lieuEnvoi: e.target.value })}
+                      placeholder="Lieu d'envoi..."
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Saisir client *</label>
+                    <input
+                      className="input"
+                      value={scanForm.client}
+                      onChange={e => setScanForm({ ...scanForm, client: e.target.value })}
+                      placeholder="Nom du client..."
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Saisir transporteur *</label>
+                    <input
+                      className="input"
+                      value={scanForm.transporteur}
+                      onChange={e => setScanForm({ ...scanForm, transporteur: e.target.value })}
+                      placeholder="Nom du transporteur..."
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Saisir tracking number *</label>
+                    <input
+                      className="input"
+                      value={scanForm.tracking}
+                      onChange={e => setScanForm({ ...scanForm, tracking: e.target.value })}
+                      placeholder="Numéro de tracking..."
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Saisir état *</label>
+                    <select
+                      className="input"
+                      value={scanForm.state}
+                      onChange={e => setScanForm({ ...scanForm, state: e.target.value })}
+                    >
+                      <option value="RAS">RAS</option>
+                      <option value="Abîmé">Abîmé</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {/* Champ client (conditionnel pour autres actions) */}
+              {scanAction !== 'ENVOIE MATERIEL' && scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE'].includes(scanAction) && (
+                <div>
+                  <label className="label">Saisir client *</label>
+                  <input
+                    className="input"
+                    value={scanForm.client}
+                    onChange={e => setScanForm({ ...scanForm, client: e.target.value })}
+                    placeholder="Nom du client..."
+                  />
+                </div>
+              )}
+
+              {/* Champ état (conditionnel pour autres actions) */}
+              {scanAction !== 'ENVOIE MATERIEL' && scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOTS BUREAU GLEIZE'].includes(scanAction) && (
+                <div>
+                  <label className="label">Saisir état *</label>
+                  <select
+                    className="input"
+                    value={scanForm.state}
+                    onChange={e => setScanForm({ ...scanForm, state: e.target.value })}
+                  >
+                    <option value="RAS">RAS</option>
+                    <option value="Abîmé">Abîmé</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Champs pour état abîmé */}
+              {scanForm.state === 'Abîmé' && (
+                <>
+                  <div>
+                    <label className="label">Description du problème *</label>
+                    <textarea
+                      className="input min-h-[80px]"
+                      value={scanForm.problemDescription}
+                      onChange={e => setScanForm({ ...scanForm, problemDescription: e.target.value })}
+                      placeholder="Décrivez le problème matériel..."
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Photo du problème *</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="input"
+                      onChange={e => setScanForm({ ...scanForm, problemPhoto: e.target.files[0] })}
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Informations non modifiables en bas */}
+              <div className="border-t-2 pt-4 space-y-2">
+                <div>
+                  <label className="label" style={{ color: '#9ca3af' }}>Date</label>
+                  <input
+                    className="input"
+                    value={currentTime.toLocaleDateString('fr-FR')}
+                    readOnly
+                    style={{ color: '#9ca3af', backgroundColor: '#f9fafb' }}
+                  />
+                </div>
+                <div>
+                  <label className="label" style={{ color: '#9ca3af' }}>Heure</label>
+                  <input
+                    className="input"
+                    value={currentTime.toLocaleTimeString('fr-FR')}
+                    readOnly
+                    style={{ color: '#9ca3af', backgroundColor: '#f9fafb' }}
+                  />
+                </div>
+                <div>
+                  <label className="label" style={{ color: '#9ca3af' }}>Responsable</label>
+                  <input
+                    className="input"
+                    value={session?.user?.name || 'Chargement...'}
+                    readOnly
+                    style={{ color: '#9ca3af', backgroundColor: '#f9fafb' }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  className="flex-1 btn btn-success"
+                  onClick={saveScan}
+                  disabled={!scanAction || (scanForm.state === 'Abîmé' && (!scanForm.problemDescription || !scanForm.problemPhoto))}
+                >
+                  Enregistrer
+                </button>
+                <button
+                  className="px-4 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                  onClick={() => {
+                    setShowScanModal(false)
+                    setScanningTool(null)
+                    setScanAction('')
+                    setError('')
+                  }}
                 >
                   Annuler
                 </button>
