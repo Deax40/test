@@ -765,6 +765,12 @@ export default function CarePage() {
                         {selectedTool.typeEnvoi || 'Envoi'}
                       </span>
                     </div>
+                    {selectedTool.client && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Client :</label>
+                        <p className="text-gray-900 font-medium">{selectedTool.client}</p>
+                      </div>
+                    )}
                     <div>
                       <label className="text-sm font-medium text-gray-600">Poids :</label>
                       <p className="text-gray-900 font-medium">{selectedTool.weight || '-'}</p>
