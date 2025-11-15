@@ -151,40 +151,43 @@ export async function GET() {
       console.error('Error fetching commun tools:', e)
     }
 
-    const problems = problemLogs.length + careToolsWithProblems.length + communToolsWithProblems.length
-    const problemToolsDetails = [
-      ...problemLogs.map(log => {
-        // Essayer de trouver le nom de l'outil à partir du hash dans qrData
-        const toolHash = log.qrData
-        const toolName = careToolsMap[toolHash] || communToolsMap[toolHash] || toolHash || 'Outil inconnu'
+    // Fusionner les outils avec problèmes en évitant les doublons
+    const problemToolsMap = new Map()
 
-        return {
-          name: toolName,
-          lastScanLieu: log.lieu,
-          lastScanAt: log.createdAt,
-          lastScanUser: log.createdBy?.name || log.actorName,
-          lastScanEtat: log.etat,
-          problemDescription: log.probleme
-        }
-      }),
-      ...careToolsWithProblems.map(tool => ({
+    // Ajouter les outils Care avec problèmes
+    careToolsWithProblems.forEach(tool => {
+      problemToolsMap.set(tool.hash, {
+        hash: tool.hash,
         name: tool.name,
         lastScanLieu: tool.lastScanLieu,
         lastScanAt: tool.lastScanAt,
         lastScanUser: tool.lastScanUser,
         lastScanEtat: tool.lastScanEtat,
         problemDescription: tool.problemDescription,
-        problemPhoto: tool.problemPhoto
-      })),
-      ...communToolsWithProblems.map(tool => ({
-        name: tool.name,
-        lastScanLieu: tool.lastScanLieu,
-        lastScanAt: tool.lastScanAt,
-        lastScanUser: tool.lastScanBy,
-        lastScanEtat: tool.lastScanEtat || tool.state,
-        problemDescription: tool.problemDescription
-      }))
-    ]
+        problemPhotoBuffer: tool.problemPhotoBuffer,
+        problemPhotoType: tool.problemPhotoType
+      })
+    })
+
+    // Ajouter les outils Commun avec problèmes
+    communToolsWithProblems.forEach(tool => {
+      if (!problemToolsMap.has(tool.hash)) {
+        problemToolsMap.set(tool.hash, {
+          hash: tool.hash,
+          name: tool.name,
+          lastScanLieu: tool.lastScanLieu,
+          lastScanAt: tool.lastScanAt,
+          lastScanUser: tool.lastScanBy,
+          lastScanEtat: tool.lastScanEtat || tool.state,
+          problemDescription: tool.problemDescription,
+          problemPhotoBuffer: tool.problemPhotoBuffer,
+          problemPhotoType: tool.problemPhotoType
+        })
+      }
+    })
+
+    const problemToolsDetails = Array.from(problemToolsMap.values())
+    const problems = problemToolsDetails.length
 
     return NextResponse.json({
       totalTools,

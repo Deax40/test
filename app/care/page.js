@@ -780,11 +780,19 @@ export default function CarePage() {
                       <p className="text-gray-900 font-medium">{selectedTool.imoNumber || '-'}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">
-                        Dimensions ({selectedTool.dimensionType === 'colis' ? 'Colis' : 'Pièce'}) :
-                      </label>
+                      <label className="text-sm font-medium text-gray-600">Dimensions Pièce :</label>
                       <p className="text-gray-900 font-medium">
-                        {selectedTool.dimensionLength || '-'} × {selectedTool.dimensionWidth || '-'} × {selectedTool.dimensionHeight || '-'} cm
+                        {(selectedTool.dimensionLength || selectedTool.dimensionWidth || selectedTool.dimensionHeight)
+                          ? `${selectedTool.dimensionLength || '-'} × ${selectedTool.dimensionWidth || '-'} × ${selectedTool.dimensionHeight || '-'} cm`
+                          : '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Dimensions Colis :</label>
+                      <p className="text-gray-900 font-medium">
+                        {(selectedTool.colisLength || selectedTool.colisWidth || selectedTool.colisHeight)
+                          ? `${selectedTool.colisLength || '-'} × ${selectedTool.colisWidth || '-'} × ${selectedTool.colisHeight || '-'} cm`
+                          : '-'}
                       </p>
                     </div>
                   </div>

@@ -68,10 +68,13 @@ model Tool {
   fileName       String?
   fileExtension  String?
   filePath       String?
-  dimensionLength String?        // Longueur en cm
-  dimensionWidth  String?        // Largeur en cm
-  dimensionHeight String?        // Hauteur en cm
+  dimensionLength String?        // Longueur en cm (pièce)
+  dimensionWidth  String?        // Largeur en cm (pièce)
+  dimensionHeight String?        // Hauteur en cm (pièce)
   dimensionType   String?        // "piece" ou "colis"
+  colisLength     String?        // Longueur du colis en cm
+  colisWidth      String?        // Largeur du colis en cm
+  colisHeight     String?        // Hauteur du colis en cm
   problemPhotoPath String?       // Chemin vers la photo du problème (legacy)
   problemPhotoBuffer Bytes?      // Photo stockée en base de données
   problemPhotoType String?       // Type MIME de la photo
