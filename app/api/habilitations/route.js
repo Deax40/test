@@ -13,6 +13,17 @@ export async function GET(req) {
   }
   const { searchParams } = new URL(req.url)
   const userIdParam = searchParams.get('userId')
+
+  // Si l'utilisateur est admin ET qu'aucun userId spécifique n'est demandé, retourner TOUTES les habilitations
+  if (session.user?.role === 'ADMIN' && !userIdParam) {
+    const habilitations = await prisma.habilitation.findMany({
+      include: { user: { select: { id: true, name: true, username: true, email: true } } },
+      orderBy: { createdAt: 'desc' }
+    })
+    return Response.json({ habilitations })
+  }
+
+  // Sinon, filtrer par userId
   let userId
   if (userIdParam && session.user?.role === 'ADMIN') {
     userId = userIdParam
@@ -23,7 +34,7 @@ export async function GET(req) {
   }
   const habilitations = await prisma.habilitation.findMany({
     where: { userId },
-    include: { user: { select: { name: true, username: true } } },
+    include: { user: { select: { id: true, name: true, username: true, email: true } } },
     orderBy: { createdAt: 'desc' }
   })
   return Response.json({ habilitations })
