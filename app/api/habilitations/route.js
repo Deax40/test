@@ -62,29 +62,27 @@ export async function POST(req) {
       return new Response('Only PDF files are allowed', { status: 400 })
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'habilitations')
-    await fs.mkdir(uploadsDir, { recursive: true })
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      return new Response('File size must be less than 10MB', { status: 400 })
+    }
 
-    // Generate unique filename
-    const timestamp = Date.now()
-    const filename = `habilitation_${userId}_${timestamp}.pdf`
-    const filePath = path.join(uploadsDir, filename)
-    const relativePath = `uploads/habilitations/${filename}`
-
-    // Save file
+    // Convert file to buffer
     const buffer = await file.arrayBuffer()
-    await fs.writeFile(filePath, Buffer.from(buffer))
+    const fileBuffer = Buffer.from(buffer)
 
-    // Create habilitation record
+    // Create habilitation record with file stored in database
     const habilitation = await prisma.habilitation.create({
       data: {
         userId,
         title: title && title.trim() !== '' ? title.trim() : null,
-        filePath: relativePath,
+        fileBuffer: fileBuffer,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
         expiresAt: new Date(expiresAt)
       },
-      include: { user: { select: { name: true, username: true } } }
+      include: { user: { select: { id: true, name: true, username: true, email: true } } }
     })
 
     return Response.json({ habilitation })

@@ -117,13 +117,17 @@ model MachineRevision {
 }
 
 model Habilitation {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  title     String?
-  filePath  String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  title      String?
+  filePath   String?  // Legacy: chemin fichier (optionnel)
+  fileBuffer Bytes?   // Fichier PDF stocké en base de données
+  fileName   String?  // Nom du fichier original
+  fileType   String?  // Type MIME (application/pdf)
+  fileSize   Int?     // Taille du fichier en bytes
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
 }
 
 model CareLog {

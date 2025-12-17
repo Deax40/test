@@ -47,31 +47,40 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
-    // Lire le fichier
-    try {
-      const fullPath = path.join(process.cwd(), habilitation.filePath)
-      const fileBuffer = await readFile(fullPath)
+    // Récupérer le fichier depuis la base de données ou le système de fichiers (legacy)
+    let fileBuffer
+    let fileName = habilitation.fileName || 'habilitation.pdf'
 
-      // Extraire le nom original du fichier
-      const originalFileName = habilitation.filePath.split('/').pop().replace(/^\d+_[^_]+_/, '')
-
-      // Vérifier si c'est une requête pour visualiser ou télécharger
-      const { searchParams } = new URL(request.url)
-      const action = searchParams.get('action') // 'view' ou 'download'
-
-      return new NextResponse(fileBuffer, {
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': action === 'download'
-            ? `attachment; filename="${originalFileName}"`
-            : `inline; filename="${originalFileName}"`,
-          'Content-Length': fileBuffer.length.toString()
-        }
-      })
-    } catch (fileError) {
-      console.error('Erreur lors de la lecture du fichier:', fileError)
-      return NextResponse.json({ error: 'Fichier non trouvé' }, { status: 404 })
+    if (habilitation.fileBuffer) {
+      // Nouveau système : fichier en base de données
+      fileBuffer = habilitation.fileBuffer
+    } else if (habilitation.filePath) {
+      // Legacy : fichier sur le système de fichiers
+      try {
+        const fullPath = path.join(process.cwd(), habilitation.filePath)
+        fileBuffer = await readFile(fullPath)
+        fileName = habilitation.filePath.split('/').pop().replace(/^\d+_[^_]+_/, '')
+      } catch (fileError) {
+        console.error('Erreur lors de la lecture du fichier legacy:', fileError)
+        return NextResponse.json({ error: 'Fichier non trouvé' }, { status: 404 })
+      }
+    } else {
+      return NextResponse.json({ error: 'Aucun fichier disponible' }, { status: 404 })
     }
+
+    // Vérifier si c'est une requête pour visualiser ou télécharger
+    const { searchParams } = new URL(request.url)
+    const action = searchParams.get('action') // 'view' ou 'download'
+
+    return new NextResponse(fileBuffer, {
+      headers: {
+        'Content-Type': habilitation.fileType || 'application/pdf',
+        'Content-Disposition': action === 'download'
+          ? `attachment; filename="${fileName}"`
+          : `inline; filename="${fileName}"`,
+        'Content-Length': fileBuffer.length.toString()
+      }
+    })
   } catch (error) {
     console.error('Erreur lors du téléchargement de l\'habilitation:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
