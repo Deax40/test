@@ -7,6 +7,7 @@ import Nav from '@/components/nav'
 export default function CertificatsPage() {
   const { data: session } = useSession()
   const [tools, setTools] = useState([])
+  const [machines, setMachines] = useState([])
   const [certifications, setCertifications] = useState([])
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -18,6 +19,7 @@ export default function CertificatsPage() {
   const [certificationToDelete, setCertificationToDelete] = useState(null)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState('all') // 'all', 'certified', 'expiring', 'none'
 
   useEffect(() => {
     if (session?.user?.role !== 'ADMIN') {
@@ -32,21 +34,24 @@ export default function CertificatsPage() {
       setLoading(true)
       setError('')
 
-      // Charger tous les outils (Commun et Care)
-      const [communRes, careRes, certRes] = await Promise.all([
+      // Charger tous les outils (Commun et Care), machines et certifications
+      const [communRes, careRes, machinesRes, certRes] = await Promise.all([
         fetch('/api/commons'),
         fetch('/api/care'),
+        fetch('/api/machine-revisions'),
         fetch('/api/certifications')
       ])
 
       let allTools = []
+      let allMachines = []
 
       if (communRes.ok) {
         const communData = await communRes.json()
         const communTools = (communData.tools || []).map(tool => ({
           ...tool,
           id: tool.hash,
-          category: 'COMMUN'
+          category: 'COMMUN',
+          type: 'TOOL'
         }))
         allTools = [...allTools, ...communTools]
       }
@@ -56,9 +61,21 @@ export default function CertificatsPage() {
         const careTools = (careData.tools || []).map(tool => ({
           ...tool,
           id: tool.hash,
-          category: 'CARE'
+          category: 'CARE',
+          type: 'TOOL'
         }))
         allTools = [...allTools, ...careTools]
+      }
+
+      if (machinesRes.ok) {
+        const machinesData = await machinesRes.json()
+        allMachines = (machinesData.revisions || []).map(machine => ({
+          ...machine,
+          id: machine.name, // Utiliser le nom comme ID pour les machines
+          hash: machine.name,
+          category: 'MACHINE',
+          type: 'MACHINE'
+        }))
       }
 
       // Charger les certifications
@@ -76,7 +93,16 @@ export default function CertificatsPage() {
         )
       }))
 
+      // Associer les certifications aux machines
+      allMachines = allMachines.map(machine => ({
+        ...machine,
+        certifications: certifications.filter(cert =>
+          cert.toolId === machine.name || cert.toolHash === machine.name
+        )
+      }))
+
       setTools(allTools)
+      setMachines(allMachines)
       setCertifications(certifications)
     } catch (e) {
       setError(e.message)
@@ -148,14 +174,17 @@ export default function CertificatsPage() {
     const formData = new FormData(e.target)
 
     if (!selectedToolId) {
-      setError('Veuillez sélectionner un outil')
+      setError('Veuillez sélectionner un outil ou une machine')
       return
     }
 
-    // Trouver l'outil sélectionné pour récupérer ses informations
+    // Trouver l'outil ou la machine sélectionné(e) pour récupérer ses informations
     const selectedTool = tools.find(tool => tool.id === selectedToolId || tool.hash === selectedToolId)
-    if (!selectedTool) {
-      setError('Outil sélectionné introuvable')
+    const selectedMachine = machines.find(machine => machine.name === selectedToolId)
+    const selectedItem = selectedTool || selectedMachine
+
+    if (!selectedItem) {
+      setError('Outil ou machine sélectionné(e) introuvable')
       return
     }
 
@@ -164,8 +193,8 @@ export default function CertificatsPage() {
       const uploadFormData = new FormData()
       uploadFormData.append('toolId', selectedToolId)
       uploadFormData.append('revisionDate', formData.get('revisionDate'))
-      uploadFormData.append('toolName', selectedTool.name)
-      uploadFormData.append('toolCategory', selectedTool.category || 'COMMUN')
+      uploadFormData.append('toolName', selectedItem.name)
+      uploadFormData.append('toolCategory', selectedItem.category || 'MACHINE')
 
       // Ajouter le PDF si présent
       const pdfFile = formData.get('pdfFile')
@@ -242,132 +271,207 @@ export default function CertificatsPage() {
               </div>
             )}
 
-            {/* Liste des outils avec leurs certificats */}
+            {/* Liste des outils et machines avec leurs certificats */}
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-2xl font-bold text-gray-800">Outils et leurs Certificats</h2>
+              <div className="flex flex-col gap-4">
+                <h2 className="text-2xl font-bold text-gray-800">Outils, Machines et leurs Certificats</h2>
 
-                {/* Barre de recherche */}
-                <div className="w-full sm:w-96">
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Rechercher un outil..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+                <div className="flex flex-col sm:flex-row gap-4">
+                  {/* Barre de recherche */}
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Rechercher un outil ou une machine..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Filtre par statut */}
+                  <div className="sm:w-64">
+                    <select
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                    >
+                      <option value="all">Tous les statuts</option>
+                      <option value="certified">✅ Certifiés</option>
+                      <option value="expiring">⚠️ Expire bientôt</option>
+                      <option value="none">❌ Non certifiés</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Statistiques */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs text-blue-600 font-medium">Total</p>
+                    <p className="text-2xl font-bold text-blue-900">{tools.length + machines.length}</p>
+                  </div>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-xs text-green-600 font-medium">Certifiés</p>
+                    <p className="text-2xl font-bold text-green-900">
+                      {[...tools, ...machines].filter(item => {
+                        const certs = getToolCertifications(item)
+                        const latest = certs[0]
+                        return latest && !isExpiringSoon(latest.revisionDate)
+                      }).length}
+                    </p>
+                  </div>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                    <p className="text-xs text-orange-600 font-medium">Expire bientôt</p>
+                    <p className="text-2xl font-bold text-orange-900">
+                      {[...tools, ...machines].filter(item => {
+                        const certs = getToolCertifications(item)
+                        const latest = certs[0]
+                        return latest && isExpiringSoon(latest.revisionDate)
+                      }).length}
+                    </p>
+                  </div>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-xs text-red-600 font-medium">Non certifiés</p>
+                    <p className="text-2xl font-bold text-red-900">
+                      {[...tools, ...machines].filter(item => {
+                        const certs = getToolCertifications(item)
+                        return certs.length === 0
+                      }).length}
+                    </p>
+                  </div>
                 </div>
               </div>
 
               {loading && (
                 <div className="text-center py-8">
-                  <div className="text-gray-500">Chargement des outils...</div>
+                  <div className="text-gray-500">Chargement des outils et machines...</div>
                 </div>
               )}
 
-              {!loading && tools.filter(tool =>
-                tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                tool.hash.toLowerCase().includes(searchTerm.toLowerCase())
-              ).length === 0 && (
-                <div className="text-center py-8">
-                  <div className="text-gray-500">
-                    {searchTerm ? 'Aucun outil trouvé correspondant à votre recherche' : 'Aucun outil trouvé'}
+              {!loading && (() => {
+                // Combiner outils et machines
+                const allItems = [...tools, ...machines]
+
+                // Filtrer par recherche
+                let filtered = allItems.filter(item =>
+                  item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (item.hash && item.hash.toLowerCase().includes(searchTerm.toLowerCase()))
+                )
+
+                // Filtrer par statut
+                if (filterStatus !== 'all') {
+                  filtered = filtered.filter(item => {
+                    const certs = getToolCertifications(item)
+                    const latest = certs[0]
+                    const hasValidCert = latest && !isExpiringSoon(latest.revisionDate)
+
+                    if (filterStatus === 'certified') return hasValidCert
+                    if (filterStatus === 'expiring') return latest && isExpiringSoon(latest.revisionDate)
+                    if (filterStatus === 'none') return !latest
+                    return true
+                  })
+                }
+
+                return filtered.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500">
+                      {searchTerm || filterStatus !== 'all'
+                        ? 'Aucun élément trouvé correspondant à vos critères'
+                        : 'Aucun outil ou machine trouvé'}
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  filtered.map(item => {
+                    const itemCertifications = getToolCertifications(item)
+                    const latestCert = itemCertifications[0]
+                    const hasValidCert = latestCert && !isExpiringSoon(latestCert.revisionDate)
 
-              {tools.filter(tool =>
-                tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                tool.hash.toLowerCase().includes(searchTerm.toLowerCase())
-              ).map(tool => {
-                const toolCertifications = getToolCertifications(tool)
-                const latestCert = toolCertifications[0]
-                const hasValidCert = latestCert && !isExpiringSoon(latestCert.revisionDate)
+                    return (
+                      <div key={item.id || item.hash} className={`border rounded-xl p-6 ${
+                        hasValidCert ? 'border-green-200 bg-green-50' :
+                        latestCert ? 'border-orange-200 bg-orange-50' :
+                        'border-red-200 bg-red-50'
+                      }`}>
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-bold text-gray-800">{item.name}</h3>
+                            <p className="text-gray-500 text-sm break-all">
+                              {item.type === 'MACHINE' ? '🏭 Machine' : `${item.category} Tools`}
+                              {item.hash && ` • ${item.hash}`}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {hasValidCert ? (
+                              <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                                ✅ Certifié
+                              </span>
+                            ) : latestCert ? (
+                              <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                                ⚠️ Expire bientôt
+                              </span>
+                            ) : (
+                              <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                                ❌ Non certifié
+                              </span>
+                            )}
+                          </div>
+                        </div>
 
-                return (
-                  <div key={tool.hash} className={`border rounded-xl p-6 ${
-                    hasValidCert ? 'border-green-200 bg-green-50' :
-                    latestCert ? 'border-orange-200 bg-orange-50' :
-                    'border-red-200 bg-red-50'
-                  }`}>
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-800">{tool.name}</h3>
-                        <p className="text-gray-500 text-sm break-all">
-                          {tool.category || 'Commun'} Tools • {tool.hash}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {hasValidCert ? (
-                          <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            Certifié
-                          </span>
-                        ) : latestCert ? (
-                          <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            Expire bientôt
-                          </span>
+                        {itemCertifications.length > 0 ? (
+                          <div className="space-y-2">
+                            <h4 className="font-medium text-gray-700">Historique des certifications :</h4>
+                            {itemCertifications.map(cert => (
+                              <div key={cert.id} className="bg-white p-3 rounded-lg border">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex flex-col flex-1">
+                                    <span className="text-sm font-medium">
+                                      Date de révision : {new Date(cert.revisionDate).toLocaleDateString('fr-FR')}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      Ajouté le {new Date(cert.createdAt).toLocaleDateString('fr-FR')}
+                                    </span>
+                                    {(cert.pdfBuffer || cert.pdfPath) && (
+                                      <span className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        PDF disponible
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    {(cert.pdfBuffer || cert.pdfPath) && (
+                                      <button
+                                        onClick={() => window.open(`/api/certifications/${cert.id}/pdf`, '_blank')}
+                                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                                      >
+                                        PDF
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => editCertification(cert)}
+                                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                                    >
+                                      Modifier
+                                    </button>
+                                    <button
+                                      onClick={() => confirmDeleteCertification(cert)}
+                                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                                    >
+                                      Supprimer
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         ) : (
-                          <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            Non certifié
-                          </span>
+                          <p className="text-gray-500 italic">Aucune certification enregistrée</p>
                         )}
                       </div>
-                    </div>
-
-                    {toolCertifications.length > 0 ? (
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-gray-700">Historique des certifications :</h4>
-                        {toolCertifications.map(cert => (
-                          <div key={cert.id} className="bg-white p-3 rounded-lg border">
-                            <div className="flex justify-between items-center">
-                              <div className="flex flex-col flex-1">
-                                <span className="text-sm font-medium">
-                                  Date de révision : {new Date(cert.revisionDate).toLocaleDateString('fr-FR')}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  Ajouté le {new Date(cert.createdAt).toLocaleDateString('fr-FR')}
-                                </span>
-                                {(cert.pdfBuffer || cert.pdfPath) && (
-                                  <span className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    PDF disponible
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex gap-2">
-                                {(cert.pdfBuffer || cert.pdfPath) && (
-                                  <button
-                                    onClick={() => window.open(`/api/certifications/${cert.id}/pdf`, '_blank')}
-                                    className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                  >
-                                    PDF
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => editCertification(cert)}
-                                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                >
-                                  Modifier
-                                </button>
-                                <button
-                                  onClick={() => confirmDeleteCertification(cert)}
-                                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                >
-                                  Supprimer
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 italic">Aucune certification enregistrée</p>
-                    )}
-                  </div>
+                    )
+                  })
                 )
-              })}
+              })()}
             </div>
           </div>
         </div>
@@ -382,7 +486,7 @@ export default function CertificatsPage() {
             <form onSubmit={addCertification}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Sélectionner un outil *
+                  Sélectionner un outil ou une machine *
                 </label>
                 <select
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -390,12 +494,28 @@ export default function CertificatsPage() {
                   onChange={(e) => setSelectedToolId(e.target.value)}
                   required
                 >
-                  <option value="">-- Choisir un outil --</option>
-                  {tools.map(tool => (
-                    <option key={tool.hash} value={tool.hash}>
-                      {tool.name} ({tool.category})
-                    </option>
-                  ))}
+                  <option value="">-- Choisir un outil ou une machine --</option>
+                  <optgroup label="Machines">
+                    {machines.map(machine => (
+                      <option key={machine.name} value={machine.name}>
+                        🏭 {machine.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Outils CARE">
+                    {tools.filter(t => t.category === 'CARE').map(tool => (
+                      <option key={tool.hash} value={tool.hash}>
+                        {tool.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Outils COMMUN">
+                    {tools.filter(t => t.category === 'COMMUN').map(tool => (
+                      <option key={tool.hash} value={tool.hash}>
+                        {tool.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
               </div>
 
