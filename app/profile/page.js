@@ -251,7 +251,7 @@ export default function ProfilePage() {
                         </h3>
                         {!hab.title && (
                           <p className="text-sm text-gray-600">
-                            Fichier : {hab.filePath.split('/').pop()}
+                            Fichier : {hab.fileName || (hab.filePath ? hab.filePath.split('/').pop() : 'Document PDF')}
                           </p>
                         )}
                       </div>

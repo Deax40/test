@@ -102,6 +102,7 @@ export default function HabilitationsPage() {
             <thead>
               <tr className="text-left border-b">
                 <th className="p-3">Utilisateur</th>
+                <th className="p-3">Titre</th>
                 <th className="p-3">Fichier</th>
                 <th className="p-3">Date d'expiration</th>
                 <th className="p-3">Statut</th>
@@ -117,13 +118,18 @@ export default function HabilitationsPage() {
                   <tr key={hab.id} className="border-b hover:bg-gray-50">
                     <td className="p-3">{hab.user?.name || 'Utilisateur inconnu'}</td>
                     <td className="p-3">
+                      <span className="text-gray-700">
+                        {hab.title || '-'}
+                      </span>
+                    </td>
+                    <td className="p-3">
                       <a
-                        href={`/api/habilitations/${hab.id}`}
+                        href={`/api/habilitations/download/${hab.id}?action=view`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline"
                       >
-                        {hab.filePath.split('/').pop()}
+                        {hab.fileName || (hab.filePath ? hab.filePath.split('/').pop() : 'Document PDF')}
                       </a>
                     </td>
                     <td className="p-3">
@@ -192,6 +198,19 @@ export default function HabilitationsPage() {
               </div>
 
               <div className="mb-4">
+                <label className="label">Titre de l'habilitation (optionnel)</label>
+                <input
+                  type="text"
+                  name="title"
+                  className="input"
+                  placeholder="Ex: Formation CACES, Habilitation électrique..."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Décrivez le type d'habilitation (optionnel)
+                </p>
+              </div>
+
+              <div className="mb-4">
                 <label className="label">Date d'expiration *</label>
                 <input
                   type="date"
@@ -211,7 +230,7 @@ export default function HabilitationsPage() {
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Seuls les fichiers PDF sont acceptés
+                  Seuls les fichiers PDF sont acceptés (max 10MB)
                 </p>
               </div>
 

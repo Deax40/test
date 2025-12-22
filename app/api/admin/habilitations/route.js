@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
 
 export const dynamic = 'force-dynamic'
 
@@ -89,25 +87,19 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Le fichier ne doit pas dépasser 10MB' }, { status: 400 })
     }
 
-    // Créer le dossier d'upload s'il n'existe pas
-    const uploadDir = path.join(process.cwd(), 'uploads', 'habilitations')
-    await mkdir(uploadDir, { recursive: true })
-
-    // Générer un nom de fichier unique
-    const fileName = `${Date.now()}_${targetUser.username}_${file.name}`
-    const filePath = path.join(uploadDir, fileName)
-
-    // Sauvegarder le fichier
+    // Convertir le fichier en buffer pour stockage en base de données
     const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
+    const fileBuffer = Buffer.from(bytes)
 
-    // Créer l'habilitation en base
+    // Créer l'habilitation en base avec le fichier stocké en database
     const habilitation = await prisma.habilitation.create({
       data: {
         userId: userId,
         title: title && title.trim() !== '' ? title.trim() : null,
-        filePath: `uploads/habilitations/${fileName}`,
+        fileBuffer: fileBuffer,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
         expiresAt: new Date(expiresAt)
       },
       include: {
