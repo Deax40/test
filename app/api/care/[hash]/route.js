@@ -43,28 +43,14 @@ export async function GET(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
-  const authHeader = request.headers.get('authorization')
-  let userName = 'Anonymous'
-  let userId = null
-
-  // Handle token-based authentication (from scan)
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.substring(7)
-    console.log('[CARE] Token-based auth, token:', token.substring(0, 10) + '...')
-
-    // For token-based, we'll handle everything ourselves
-    // No session required
-  }
-
-  // Try to get session (optional for scans)
   const session = await getServerSession(authOptions)
-  if (session?.user) {
-    userName = session.user.name || session.user.username || 'User'
-    userId = session.user.id
-    console.log('[CARE] Session found:', userName)
-  } else {
-    console.log('[CARE] No session, continuing as anonymous')
+  if (!session?.user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  let userName = session.user.name || session.user.username || 'User'
+  let userId = session.user.id
+  console.log('[CARE] Session found:', userName)
 
   // Check if it's FormData (has file upload)
   const contentType = request.headers.get('content-type')
