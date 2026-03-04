@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Nav from '@/components/nav'
+import DateInputFR from '@/components/date-input-fr'
 
 export default function AdminPage() {
   const { data: session } = useSession()
@@ -621,8 +622,7 @@ export default function AdminPage() {
                     className="input"
                     onChange={(e) => setNewHabilitation({ ...newHabilitation, file: e.target.files[0] })}
                   />
-                  <input
-                    type="date"
+                  <DateInputFR
                     className="input"
                     value={newHabilitation.expiresAt}
                     onChange={(e) => setNewHabilitation({ ...newHabilitation, expiresAt: e.target.value })}

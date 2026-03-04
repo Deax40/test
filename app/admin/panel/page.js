@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Nav from '@/components/nav'
+import DateInputFR from '@/components/date-input-fr'
 
 export default function AdminPanel() {
   const { data: session } = useSession()
@@ -718,8 +719,7 @@ export default function AdminPanel() {
                 </div>
                 <div>
                   <label className="label">Date d'expiration *</label>
-                  <input
-                    type="date"
+                  <DateInputFR
                     className="input"
                     value={newHabilitation.expiresAt}
                     onChange={(e) => setNewHabilitation({ ...newHabilitation, expiresAt: e.target.value })}
