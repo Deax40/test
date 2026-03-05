@@ -559,182 +559,66 @@ export default function CarePage() {
           </div>
         )}
 
-        {/* Table format like Commun page */}
-        {/* Vue cartes — petits écrans et fenêtres réduites */}
-        <div className="lg:hidden bg-white rounded-lg shadow-sm border divide-y divide-gray-100">
+        {/* Liste responsive — s'adapte à toutes tailles d'écran */}
+        <div className="bg-white rounded-lg shadow-sm border divide-y divide-gray-100">
           {filteredTools.map(t => {
             const hasProblem = t.lastScanEtat === 'Abîmé' || t.lastScanEtat === 'Problème'
             return (
-              <div key={`card-${t.hash}`} className={`p-4 ${hasProblem ? 'bg-red-50 border-l-4 border-red-500' : ''}`}>
-                <div className="flex justify-between items-start gap-2 mb-2">
-                  <button
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium text-left"
-                    onClick={() => { setSelectedTool(t); loadToolCertificates(t.hash); loadToolHistory(t.hash) }}
-                  >
-                    {t.name}
-                  </button>
-                  <span className={`shrink-0 inline-block px-2 py-1 rounded-full text-xs font-medium ${hasProblem ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
-                    {hasProblem ? (t.lastScanEtat || 'Problème') : 'RAS'}
-                  </span>
+              <div
+                key={t.hash}
+                className={`px-4 py-3 transition-colors ${hasProblem ? 'bg-red-50 border-l-4 border-red-500' : 'hover:bg-gray-50'}`}
+              >
+                {/* Nom + badges + boutons */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
+                    <button
+                      className="text-blue-600 hover:text-blue-800 font-medium text-sm hover:underline text-left"
+                      onClick={() => { setSelectedTool(t); loadToolCertificates(t.hash); loadToolHistory(t.hash) }}
+                    >
+                      {t.name}
+                    </button>
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${hasProblem ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
+                      {hasProblem ? (t.lastScanEtat || 'Problème') : 'RAS'}
+                    </span>
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${t.typeEnvoi === 'Réception' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                      {t.typeEnvoi || 'Envoi'}
+                    </span>
+                  </div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full hover:bg-green-200 transition-colors whitespace-nowrap" onClick={() => startQuickScan(t)}>J'ai l'outil</button>
+                    <button className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full hover:bg-blue-200 transition-colors whitespace-nowrap" onClick={() => startEdit(t)}>Modifier</button>
+                    <button className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full hover:bg-gray-200 transition-colors whitespace-nowrap" onClick={() => { setSelectedTool(t); loadToolCertificates(t.hash); loadToolHistory(t.hash) }}>Détails</button>
+                  </div>
                 </div>
-                {t.complementaryInfo && (
-                  <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900">{t.complementaryInfo}</div>
+                {/* Métadonnées */}
+                <div className="flex flex-wrap gap-x-5 gap-y-0.5 mt-1.5 text-xs">
+                  <span className="text-gray-500"><span className="text-gray-400">Lieu : </span>{t.lastScanLieu || 'N/D'}</span>
+                  {t.lastScanAt && (
+                    <span className="text-gray-500">
+                      <span className="text-gray-400">Date : </span>
+                      {new Date(t.lastScanAt).toLocaleDateString('fr-FR')} {new Date(t.lastScanAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                  {t.lastScanUser && (
+                    <span className="text-gray-500"><span className="text-gray-400">Scanné par : </span><span className="font-medium text-gray-700">{t.lastScanUser}</span></span>
+                  )}
+                </div>
+                {/* Description problème */}
+                {hasProblem && t.problemDescription && (
+                  <div className="mt-1.5 text-xs text-orange-700 font-medium">{t.problemDescription}</div>
                 )}
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600 mb-3">
-                  <div><span className="font-medium text-gray-700">Lieu : </span>{t.lastScanLieu || 'N/D'}</div>
-                  <div><span className="font-medium text-gray-700">Type : </span>{t.typeEnvoi || 'Envoi'}</div>
-                  <div><span className="font-medium text-gray-700">Date : </span>{t.lastScanAt ? new Date(t.lastScanAt).toLocaleDateString('fr-FR') : 'N/A'}</div>
-                  <div><span className="font-medium text-gray-700">Scanné par : </span>{t.lastScanUser || '-'}</div>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <button className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full hover:bg-green-200 transition-colors" onClick={() => startQuickScan(t)}>J'ai l'outil</button>
-                  <button className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full hover:bg-blue-200 transition-colors" onClick={() => startEdit(t)}>Modifier</button>
-                  <button className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full hover:bg-gray-200 transition-colors" onClick={() => { setSelectedTool(t); loadToolCertificates(t.hash); loadToolHistory(t.hash) }}>Détails</button>
-                </div>
+                {/* Info complémentaire */}
+                {t.complementaryInfo && (
+                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900 flex items-start gap-1">
+                    <svg className="w-3 h-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>{t.complementaryInfo}</span>
+                  </div>
+                )}
               </div>
             )
           })}
-        </div>
-        {/* Vue tableau — grands écrans */}
-        <div className="hidden lg:block overflow-x-auto bg-white rounded-lg shadow-sm border">
-          <table className="w-full min-w-[860px]">
-            <thead className="bg-gray-50 border-b">
-              <tr className="text-left">
-                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">Nom</th>
-                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">Lieu</th>
-                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">État</th>
-                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">Type</th>
-                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">Date</th>
-                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">Scanné par</th>
-                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredTools.map(t => {
-                const hasProblem = t.lastScanEtat === 'Abîmé' || t.lastScanEtat === 'Problème'
-                return (
-                  <tr key={t.hash} className={`transition-colors ${
-                    hasProblem
-                      ? 'bg-red-50 hover:bg-red-100 border-l-4 border-red-500'
-                      : 'hover:bg-gray-50'
-                  }`}>
-                    <td className="px-2 sm:px-4 py-3 sm:py-4">
-                      <div className="space-y-1">
-                        <button
-                          className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm font-medium cursor-pointer hover:underline line-clamp-2"
-                          onClick={() => {
-                            setSelectedTool(t)
-                            loadToolCertificates(t.hash)
-                            loadToolHistory(t.hash)
-                          }}
-                        >
-                          {t.name}
-                        </button>
-                        {t.complementaryInfo && (
-                          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900">
-                            <div className="flex items-start gap-1">
-                              <svg className="w-3 h-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                              </svg>
-                              <span className="whitespace-pre-wrap break-words">{t.complementaryInfo}</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 sm:py-4">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        t.lastScanLieu
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}>
-                        {t.lastScanLieu || 'N/D'}
-                      </span>
-                    </td>
-                    <td className="px-2 sm:px-4 py-3 sm:py-4">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                        t.lastScanEtat === 'Abîmé' || t.lastScanEtat === 'Problème'
-                          ? 'bg-orange-100 text-orange-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {t.lastScanEtat === 'Abîmé' || t.lastScanEtat === 'Problème'
-                          ? (t.lastScanEtat || 'Problème')
-                          : 'RAS'}
-                      </span>
-                      {(t.lastScanEtat === 'Abîmé' || t.lastScanEtat === 'Problème') && t.problemDescription && (
-                        <div className="mt-1 text-xs text-gray-600 truncate">
-                          {t.problemDescription}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-3 py-3 sm:py-4">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        t.typeEnvoi === 'Envoi'
-                          ? 'bg-blue-100 text-blue-800'
-                          : t.typeEnvoi === 'Réception'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {t.typeEnvoi || 'Envoi'}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 sm:py-4">
-                      <div className="text-xs sm:text-sm text-gray-900 whitespace-nowrap">
-                        {t.lastScanAt ? (
-                          <>
-                            <div>{new Date(t.lastScanAt).toLocaleDateString('fr-FR')}</div>
-                            <div className="text-xs text-gray-500">
-                              {new Date(t.lastScanAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                          </>
-                        ) : (
-                          <span className="text-gray-400 text-xs">N/A</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 sm:py-4">
-                      <div className="text-xs sm:text-sm whitespace-nowrap">
-                        {t.lastScanUser ? (
-                          <span className="text-gray-900 font-medium">{t.lastScanUser}</span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-2 sm:px-4 py-3 sm:py-4">
-                      <div className="flex gap-1 sm:gap-2 flex-col sm:flex-row">
-                        <button
-                          className="inline-flex items-center justify-center px-2 sm:px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full hover:bg-green-200 transition-colors whitespace-nowrap"
-                          onClick={() => startQuickScan(t)}
-                        >
-                          <span className="sm:hidden">📦</span>
-                          <span className="hidden sm:inline">J'ai l'outil</span>
-                        </button>
-                        <button
-                          className="inline-flex items-center justify-center px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full hover:bg-blue-200 transition-colors whitespace-nowrap"
-                          onClick={() => startEdit(t)}
-                        >
-                          <span className="sm:hidden">✏️</span>
-                          <span className="hidden sm:inline">Modifier</span>
-                        </button>
-                        <button
-                          className="inline-flex items-center justify-center px-2 sm:px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full hover:bg-gray-200 transition-colors whitespace-nowrap"
-                          onClick={() => {
-                            setSelectedTool(t)
-                            loadToolCertificates(t.hash)
-                            loadToolHistory(t.hash)
-                          }}
-                        >
-                          <span className="sm:hidden">ℹ️</span>
-                          <span className="hidden sm:inline">Détails</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
           {filteredTools.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               {tools.length === 0 ? 'Aucun outil Care disponible' : 'Aucun outil ne correspond aux filtres'}
