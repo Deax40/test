@@ -27,7 +27,7 @@ export default function RootLayout({ children }) {
             {children}
           </main>
           <footer className="mx-auto max-w-4xl px-6 py-8 text-xs footer">
-            © 2026 ENGEL — v1.2.1
+            © 2026 ENGEL — v1.0.2
           </footer>
         </Providers>
       </body>

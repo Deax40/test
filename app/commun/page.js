@@ -697,7 +697,42 @@ export default function CommunPage() {
             {error}
           </div>
         )}
-        <div className="overflow-x-auto bg-white rounded-lg shadow-sm border">
+        {/* Vue cartes — petits écrans et fenêtres réduites */}
+        <div className="lg:hidden bg-white rounded-lg shadow-sm border divide-y divide-gray-100">
+          {filteredTools.map(t => {
+            const hasProblem = t.lastScanEtat === 'Problème' || t.lastScanEtat === 'Abîmé' || t.state === 'Problème' || t.state === 'Abîmé'
+            return (
+              <div key={`card-${t.hash}`} className={`p-4 ${hasProblem ? 'bg-red-50 border-l-4 border-red-500' : ''}`}>
+                <div className="flex justify-between items-start gap-2 mb-2">
+                  <button
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium text-left"
+                    onClick={() => { setSelectedTool(t); loadToolCertificates(t.hash); loadToolHistory(t.hash) }}
+                  >
+                    {t.name}
+                  </button>
+                  <span className={`shrink-0 inline-block px-2 py-1 rounded-full text-xs font-medium ${hasProblem ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
+                    {hasProblem ? (t.lastScanEtat || t.state || 'Problème') : 'RAS'}
+                  </span>
+                </div>
+                {t.complementaryInfo && (
+                  <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900">{t.complementaryInfo}</div>
+                )}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600 mb-3">
+                  <div><span className="font-medium text-gray-700">Lieu : </span>{t.lastScanLieu || 'N/D'}</div>
+                  <div><span className="font-medium text-gray-700">Date : </span>{t.lastScanAt ? new Date(t.lastScanAt).toLocaleDateString('fr-FR') : 'N/A'}</div>
+                  <div className="col-span-2"><span className="font-medium text-gray-700">Scanné par : </span>{t.lastScanUser || '-'}</div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <button className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full hover:bg-green-200 transition-colors" onClick={() => startQuickScan(t)}>J'ai l'outil</button>
+                  <button className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full hover:bg-blue-200 transition-colors" onClick={() => startEdit(t)}>Modifier</button>
+                  <button className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full hover:bg-gray-200 transition-colors" onClick={() => { setSelectedTool(t); loadToolCertificates(t.hash); loadToolHistory(t.hash) }}>Détails</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        {/* Vue tableau — grands écrans */}
+        <div className="hidden lg:block overflow-x-auto bg-white rounded-lg shadow-sm border">
           <table className="w-full min-w-[780px]">
             <thead className="bg-gray-50 border-b">
               <tr className="text-left">
