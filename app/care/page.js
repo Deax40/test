@@ -561,16 +561,16 @@ export default function CarePage() {
 
         {/* Table format like Commun page */}
         <div className="overflow-x-auto bg-white rounded-lg shadow-sm border">
-          <table className="w-full min-w-[640px]">
+          <table className="w-full min-w-[860px]">
             <thead className="bg-gray-50 border-b">
               <tr className="text-left">
-                <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm">Nom</th>
-                <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm hidden md:table-cell">Lieu</th>
-                <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm">État</th>
-                <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm hidden md:table-cell">Type</th>
-                <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm hidden lg:table-cell">Date</th>
-                <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm hidden sm:table-cell">Scanné par</th>
-                <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm">Actions</th>
+                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">Nom</th>
+                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">Lieu</th>
+                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">État</th>
+                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">Type</th>
+                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">Date</th>
+                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">Scanné par</th>
+                <th className="px-3 py-3 font-medium text-gray-700 text-xs sm:text-sm">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -604,12 +604,9 @@ export default function CarePage() {
                             </div>
                           </div>
                         )}
-                        <p className="text-xs text-gray-500 md:hidden">
-                          {t.lastScanLieu || 'Non défini'}
-                        </p>
                       </div>
                     </td>
-                    <td className="px-2 sm:px-4 py-3 sm:py-4 hidden md:table-cell">
+                    <td className="px-3 py-3 sm:py-4">
                       <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
                         t.lastScanLieu
                           ? 'bg-blue-100 text-blue-800'
@@ -634,7 +631,7 @@ export default function CarePage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-2 sm:px-4 py-3 sm:py-4 hidden md:table-cell">
+                    <td className="px-3 py-3 sm:py-4">
                       <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
                         t.typeEnvoi === 'Envoi'
                           ? 'bg-blue-100 text-blue-800'
@@ -645,8 +642,8 @@ export default function CarePage() {
                         {t.typeEnvoi || 'Envoi'}
                       </span>
                     </td>
-                    <td className="px-2 sm:px-4 py-3 sm:py-4 hidden lg:table-cell">
-                      <div className="text-xs sm:text-sm text-gray-900">
+                    <td className="px-3 py-3 sm:py-4">
+                      <div className="text-xs sm:text-sm text-gray-900 whitespace-nowrap">
                         {t.lastScanAt ? (
                           <>
                             <div>{new Date(t.lastScanAt).toLocaleDateString('fr-FR')}</div>
@@ -659,10 +656,10 @@ export default function CarePage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-2 sm:px-4 py-3 sm:py-4 hidden sm:table-cell">
-                      <div className="text-xs sm:text-sm">
+                    <td className="px-3 py-3 sm:py-4">
+                      <div className="text-xs sm:text-sm whitespace-nowrap">
                         {t.lastScanUser ? (
-                          <span className="text-gray-900 font-medium truncate block max-w-[100px]">{t.lastScanUser}</span>
+                          <span className="text-gray-900 font-medium">{t.lastScanUser}</span>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
