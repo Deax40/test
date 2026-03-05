@@ -42,15 +42,13 @@ export default function CarePage() {
         const toolsData = await toolsRes.json()
         const freshTools = [...(toolsData.tools || [])]
 
-        // SORT: Put problem tools first
+        // SORT: Problem tools first, then alphabetical by name
         freshTools.sort((a, b) => {
           const aProblem = a.lastScanEtat === 'Abîmé' || a.lastScanEtat === 'Problème'
           const bProblem = b.lastScanEtat === 'Abîmé' || b.lastScanEtat === 'Problème'
           if (aProblem && !bProblem) return -1
           if (!aProblem && bProblem) return 1
-          const aDate = a.lastScanAt ? new Date(a.lastScanAt).getTime() : 0
-          const bDate = b.lastScanAt ? new Date(b.lastScanAt).getTime() : 0
-          return bDate - aDate
+          return (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' })
         })
 
         setTools(freshTools)
@@ -571,7 +569,7 @@ export default function CarePage() {
                 <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm">État</th>
                 <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm hidden md:table-cell">Type</th>
                 <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm hidden lg:table-cell">Date</th>
-                <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm hidden sm:table-cell">User</th>
+                <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm hidden sm:table-cell">Scanné par</th>
                 <th className="px-2 sm:px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm">Actions</th>
               </tr>
             </thead>

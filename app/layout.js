@@ -27,7 +27,7 @@ export default function RootLayout({ children }) {
             {children}
           </main>
           <footer className="mx-auto max-w-4xl px-6 py-8 text-xs footer">
-            © {new Date().getFullYear()} ENGEL
+            © 2026 ENGEL — v1.0.1
           </footer>
         </Providers>
       </body>
