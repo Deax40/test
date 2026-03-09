@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Nav from '@/components/nav'
+import DateInputFR from '@/components/date-input-fr'
 
 export default function AdminPanel() {
   const { data: session } = useSession()
@@ -13,7 +14,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true)
   const [isResetting, setIsResetting] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
-  const [newUser, setNewUser] = useState({ username: '', name: '', email: '', password: '', role: 'TECH' })
+  const [newUser, setNewUser] = useState({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH' })
   const [editingUser, setEditingUser] = useState(null)
   const [viewingUser, setViewingUser] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -78,6 +79,10 @@ export default function AdminPanel() {
       setError('Veuillez remplir tous les champs obligatoires')
       return
     }
+    if (newUser.password !== newUser.confirmPassword) {
+      setError('Les mots de passe ne correspondent pas')
+      return
+    }
 
     try {
       const res = await fetch('/api/admin/users', {
@@ -88,7 +93,7 @@ export default function AdminPanel() {
 
       if (res.ok) {
         setSuccess('Utilisateur créé avec succès')
-        setNewUser({ username: '', name: '', email: '', password: '', role: 'TECH' })
+        setNewUser({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH' })
         // Recharger les utilisateurs
         const usersRes = await fetch('/api/admin/users')
         if (usersRes.ok) {
@@ -453,6 +458,16 @@ export default function AdminPanel() {
                   />
                 </div>
                 <div>
+                  <label className="label">Confirmer le mot de passe *</label>
+                  <input
+                    className="input"
+                    type="password"
+                    value={newUser.confirmPassword}
+                    onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
+                    placeholder="Confirmer le mot de passe"
+                  />
+                </div>
+                <div>
                   <label className="label">Rôle</label>
                   <select
                     className="input"
@@ -634,6 +649,15 @@ export default function AdminPanel() {
                   />
                 </div>
                 <div>
+                  <label className="label">Confirmer le nouveau mot de passe</label>
+                  <input
+                    className="input"
+                    type="password"
+                    placeholder="Confirmer le nouveau mot de passe"
+                    onChange={(e) => setEditingUser({ ...editingUser, confirmNewPassword: e.target.value })}
+                  />
+                </div>
+                <div>
                   <label className="label">Rôle</label>
                   <select
                     className="input"
@@ -648,6 +672,10 @@ export default function AdminPanel() {
                   <button
                     className="btn btn-success flex-1"
                     onClick={() => {
+                      if (editingUser.newPassword && editingUser.newPassword !== editingUser.confirmNewPassword) {
+                        setError('Les mots de passe ne correspondent pas')
+                        return
+                      }
                       const updateData = {
                         username: editingUser.username,
                         name: editingUser.name,
@@ -718,8 +746,7 @@ export default function AdminPanel() {
                 </div>
                 <div>
                   <label className="label">Date d'expiration *</label>
-                  <input
-                    type="date"
+                  <DateInputFR
                     className="input"
                     value={newHabilitation.expiresAt}
                     onChange={(e) => setNewHabilitation({ ...newHabilitation, expiresAt: e.target.value })}

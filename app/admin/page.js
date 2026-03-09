@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Nav from '@/components/nav'
+import DateInputFR from '@/components/date-input-fr'
 
 export default function AdminPage() {
   const { data: session } = useSession()
@@ -21,7 +22,7 @@ export default function AdminPage() {
   const [problemTools, setProblemTools] = useState([])
   const [showScansPopup, setShowScansPopup] = useState(false)
   const [showProblemsPopup, setShowProblemsPopup] = useState(false)
-  const [newUser, setNewUser] = useState({ username: '', name: '', email: '', password: '', role: 'TECH' })
+  const [newUser, setNewUser] = useState({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH' })
   const [editingUser, setEditingUser] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [newHabilitation, setNewHabilitation] = useState({ userId: '', file: null, expiresAt: '', title: '' })
@@ -96,6 +97,10 @@ export default function AdminPage() {
       setError('Veuillez remplir tous les champs obligatoires')
       return
     }
+    if (newUser.password !== newUser.confirmPassword) {
+      setError('Les mots de passe ne correspondent pas')
+      return
+    }
 
     try {
       const res = await fetch('/api/admin/users', {
@@ -106,7 +111,7 @@ export default function AdminPage() {
 
       if (res.ok) {
         setSuccess('Utilisateur créé avec succès')
-        setNewUser({ username: '', name: '', email: '', password: '', role: 'TECH' })
+        setNewUser({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH' })
         loadData() // Reload data
       } else {
         const errorData = await res.json()
@@ -140,7 +145,8 @@ export default function AdminPage() {
       name: user.name,
       email: user.email || '',
       role: user.role,
-      password: '' // Vide par défaut, seulement rempli si on veut changer
+      password: '',
+      confirmPassword: ''
     })
   }
 
@@ -151,6 +157,10 @@ export default function AdminPage() {
   const updateUser = async () => {
     if (!editingUser.name) {
       setError('Le nom est obligatoire')
+      return
+    }
+    if (editingUser.password && editingUser.password !== editingUser.confirmPassword) {
+      setError('Les mots de passe ne correspondent pas')
       return
     }
 
@@ -490,6 +500,13 @@ export default function AdminPage() {
                     value={newUser.password}
                     onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                   />
+                  <input
+                    className="input"
+                    type="password"
+                    placeholder="Confirmer le mot de passe *"
+                    value={newUser.confirmPassword}
+                    onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
+                  />
                   <select
                     className="input"
                     value={newUser.role}
@@ -540,6 +557,13 @@ export default function AdminPage() {
                               placeholder="Nouveau mot de passe (optionnel)"
                               value={editingUser.password}
                               onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
+                            />
+                            <input
+                              type="password"
+                              className="input"
+                              placeholder="Confirmer le nouveau mot de passe"
+                              value={editingUser.confirmPassword}
+                              onChange={(e) => setEditingUser({ ...editingUser, confirmPassword: e.target.value })}
                             />
                             <select
                               className="input"
@@ -621,8 +645,7 @@ export default function AdminPage() {
                     className="input"
                     onChange={(e) => setNewHabilitation({ ...newHabilitation, file: e.target.files[0] })}
                   />
-                  <input
-                    type="date"
+                  <DateInputFR
                     className="input"
                     value={newHabilitation.expiresAt}
                     onChange={(e) => setNewHabilitation({ ...newHabilitation, expiresAt: e.target.value })}

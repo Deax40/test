@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Nav from '@/components/nav'
+import DateInputFR from '@/components/date-input-fr'
 
 export default function HabilitationsPage() {
   const { data: session } = useSession()
@@ -212,8 +213,7 @@ export default function HabilitationsPage() {
 
               <div className="mb-4">
                 <label className="label">Date d'expiration *</label>
-                <input
-                  type="date"
+                <DateInputFR
                   name="expiresAt"
                   className="input"
                   required
