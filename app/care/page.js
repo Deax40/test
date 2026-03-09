@@ -42,14 +42,8 @@ export default function CarePage() {
         const toolsData = await toolsRes.json()
         const freshTools = [...(toolsData.tools || [])]
 
-        // SORT: Problem tools first, then alphabetical by name
-        freshTools.sort((a, b) => {
-          const aProblem = a.lastScanEtat === 'Abîmé' || a.lastScanEtat === 'Problème'
-          const bProblem = b.lastScanEtat === 'Abîmé' || b.lastScanEtat === 'Problème'
-          if (aProblem && !bProblem) return -1
-          if (!aProblem && bProblem) return 1
-          return (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' })
-        })
+        // SORT: Ordre alphabétique fixe
+        freshTools.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' }))
 
         setTools(freshTools)
         setFilteredTools([...freshTools])
@@ -121,16 +115,8 @@ export default function CarePage() {
       return matchesSearch && matchesLocation && matchesState
     })
 
-    // SORT: Put problem tools first
-    filtered.sort((a, b) => {
-      const aProblem = a.lastScanEtat === 'Abîmé' || a.lastScanEtat === 'Problème'
-      const bProblem = b.lastScanEtat === 'Abîmé' || b.lastScanEtat === 'Problème'
-      if (aProblem && !bProblem) return -1
-      if (!aProblem && bProblem) return 1
-      const aDate = a.lastScanAt ? new Date(a.lastScanAt).getTime() : 0
-      const bDate = b.lastScanAt ? new Date(b.lastScanAt).getTime() : 0
-      return bDate - aDate
-    })
+    // SORT: Ordre alphabétique fixe
+    filtered.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' }))
 
     setFilteredTools([...filtered])
   }
@@ -202,16 +188,8 @@ export default function CarePage() {
       const toolsData = await toolsRes.json()
       const freshTools = [...(toolsData.tools || [])]
 
-      // SORT: Put problem tools first
-      freshTools.sort((a, b) => {
-        const aProblem = a.lastScanEtat === 'Abîmé' || a.lastScanEtat === 'Problème'
-        const bProblem = b.lastScanEtat === 'Abîmé' || b.lastScanEtat === 'Problème'
-        if (aProblem && !bProblem) return -1
-        if (!aProblem && bProblem) return 1
-        const aDate = a.lastScanAt ? new Date(a.lastScanAt).getTime() : 0
-        const bDate = b.lastScanAt ? new Date(b.lastScanAt).getTime() : 0
-        return bDate - aDate
-      })
+      // SORT: Ordre alphabétique fixe
+      freshTools.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' }))
 
       setTools(freshTools)
 
@@ -580,9 +558,6 @@ export default function CarePage() {
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${hasProblem ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
                       {hasProblem ? (t.lastScanEtat || 'Problème') : 'RAS'}
                     </span>
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${t.typeEnvoi === 'Réception' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                      {t.typeEnvoi || 'Envoi'}
-                    </span>
                   </div>
                   <div className="flex gap-1.5 flex-wrap">
                     <button className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full hover:bg-green-200 transition-colors whitespace-nowrap" onClick={() => startQuickScan(t)}>J'ai l'outil</button>
@@ -592,7 +567,7 @@ export default function CarePage() {
                 </div>
                 {/* Métadonnées */}
                 <div className="flex flex-wrap gap-x-5 gap-y-0.5 mt-1.5 text-xs">
-                  <span className="text-gray-500"><span className="text-gray-400">Lieu : </span>{t.lastScanLieu || 'N/D'}</span>
+                  <span className="text-gray-500"><span className="text-gray-400">Lieu : </span><span className="font-semibold">{t.lastScanLieu || 'N/D'}</span></span>
                   {t.lastScanAt && (
                     <span className="text-gray-500">
                       <span className="text-gray-400">Date : </span>
@@ -666,18 +641,6 @@ export default function CarePage() {
                           ? `⚠️ ${selectedTool.lastScanEtat || 'Problème'}`
                           : '✅ Bon état'
                         }
-                      </span>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Type :</label>
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                        selectedTool.typeEnvoi === 'Envoi'
-                          ? 'bg-blue-100 text-blue-800'
-                          : selectedTool.typeEnvoi === 'Réception'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {selectedTool.typeEnvoi || 'Envoi'}
                       </span>
                     </div>
                     {selectedTool.client && (
@@ -944,15 +907,34 @@ export default function CarePage() {
                   onChange={(e) => setEditForm({...editForm, emplacementActuel: e.target.value})}
                 >
                   <option value="">Sélectionner position</option>
-                  <option value="Paris Bureau">Paris Bureau</option>
-                  <option value="Gleizé Bureau">Gleizé Bureau</option>
-                  <option value="Tanger">Tanger</option>
-                  <option value="Tunisie">Tunisie</option>
-                  <option value="Chez client">Chez client</option>
-                  <option value="En transit">En transit</option>
-                  <option value="Autres">Autres</option>
+                  <option value="ENVOIE MATERIEL">ENVOIE MATÉRIEL</option>
+                  <option value="RECEPTION MATERIEL">RECEPTION MATERIEL</option>
+                  <option value="DEPOT BUREAU PARIS">DEPOT BUREAU PARIS</option>
+                  <option value="SORTIE BUREAU PARIS">SORTIE BUREAU PARIS</option>
+                  <option value="DEPOTS BUREAU GLEIZE">DEPOTS BUREAU GLEIZE</option>
+                  <option value="SORTIE BUREAU GLEIZE">SORTIE BUREAU GLEIZE</option>
+                  <option value="DEPOT BUREAU TANGER">DEPOT BUREAU TANGER</option>
+                  <option value="SORTIE BUREAU TANGER">SORTIE BUREAU TANGER</option>
+                  <option value="AUTRES">AUTRES</option>
+                  <option value="CHEZ CLIENT">CHEZ CLIENT</option>
                 </select>
               </div>
+
+              {/* Champ Client (si Chez client) */}
+              {editForm.emplacementActuel === 'CHEZ CLIENT' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nom du client *
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={editForm.client || ''}
+                    onChange={(e) => setEditForm({...editForm, client: e.target.value})}
+                    placeholder="Entrer le nom du client..."
+                  />
+                </div>
+              )}
 
               {/* Statut */}
               <div>
@@ -969,20 +951,6 @@ export default function CarePage() {
                 </select>
               </div>
 
-              {/* Type Envoi/Réception */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Envoi/Réception
-                </label>
-                <select
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={editForm.typeEnvoi}
-                  onChange={(e) => setEditForm({...editForm, typeEnvoi: e.target.value})}
-                >
-                  <option value="Envoi">Envoi</option>
-                  <option value="Réception">Réception</option>
-                </select>
-              </div>
 
               {/* Poids et Numéro IMO (Admin uniquement) */}
               {session?.user?.role === 'ADMIN' && (
@@ -1269,6 +1237,8 @@ export default function CarePage() {
                   <option value="SORTIE BUREAU PARIS">SORTIE BUREAU PARIS</option>
                   <option value="DEPOTS BUREAU GLEIZE">DEPOTS BUREAU GLEIZE</option>
                   <option value="SORTIE BUREAU GLEIZE">SORTIE BUREAU GLEIZE</option>
+                  <option value="DEPOT BUREAU TANGER">DEPOT BUREAU TANGER</option>
+                  <option value="SORTIE BUREAU TANGER">SORTIE BUREAU TANGER</option>
                   <option value="AUTRES">AUTRES</option>
                   <option value="CHEZ CLIENT">CHEZ CLIENT</option>
                 </select>
@@ -1328,7 +1298,7 @@ export default function CarePage() {
               )}
 
               {/* Champ client (conditionnel pour autres actions) */}
-              {scanAction !== 'ENVOIE MATERIEL' && scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE'].includes(scanAction) && (
+              {scanAction !== 'ENVOIE MATERIEL' && scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'SORTIE BUREAU TANGER', 'CHEZ CLIENT'].includes(scanAction) && (
                 <div>
                   <label className="label">Saisir client *</label>
                   <input
@@ -1341,7 +1311,7 @@ export default function CarePage() {
               )}
 
               {/* Champ état (conditionnel pour autres actions) */}
-              {scanAction !== 'ENVOIE MATERIEL' && scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOTS BUREAU GLEIZE'].includes(scanAction) && (
+              {scanAction !== 'ENVOIE MATERIEL' && scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOTS BUREAU GLEIZE', 'DEPOT BUREAU TANGER', 'SORTIE BUREAU TANGER', 'CHEZ CLIENT'].includes(scanAction) && (
                 <div>
                   <label className="label">Saisir état *</label>
                   <select

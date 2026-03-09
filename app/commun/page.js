@@ -57,14 +57,8 @@ export default function CommunPage() {
           })))
         }
 
-        // SORT: Problem tools first, then alphabetical by name
-        freshTools.sort((a, b) => {
-          const aProblem = a.lastScanEtat === 'Problème' || a.lastScanEtat === 'Abîmé' || a.state === 'Problème' || a.state === 'Abîmé'
-          const bProblem = b.lastScanEtat === 'Problème' || b.lastScanEtat === 'Abîmé' || b.state === 'Problème' || b.state === 'Abîmé'
-          if (aProblem && !bProblem) return -1
-          if (!aProblem && bProblem) return 1
-          return (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' })
-        })
+        // SORT: Ordre alphabétique fixe
+        freshTools.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' }))
 
         setTools(freshTools)
         setFilteredTools([...freshTools])
@@ -160,19 +154,8 @@ export default function CommunPage() {
       return matchesSearch && matchesLocation && matchesState
     })
 
-    // SORT: Put tools with problems (Problème/Abîmé) at the TOP of the list
-    filtered.sort((a, b) => {
-      const aProblem = a.lastScanEtat === 'Problème' || a.lastScanEtat === 'Abîmé' || a.state === 'Problème' || a.state === 'Abîmé'
-      const bProblem = b.lastScanEtat === 'Problème' || b.lastScanEtat === 'Abîmé' || b.state === 'Problème' || b.state === 'Abîmé'
-
-      if (aProblem && !bProblem) return -1  // a comes first
-      if (!aProblem && bProblem) return 1   // b comes first
-
-      // If both have problems or both don't, sort by most recent scan
-      const aDate = a.lastScanAt ? new Date(a.lastScanAt).getTime() : 0
-      const bDate = b.lastScanAt ? new Date(b.lastScanAt).getTime() : 0
-      return bDate - aDate  // Most recent first
-    })
+    // SORT: Ordre alphabétique fixe
+    filtered.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' }))
 
     console.log('[FILTER] ✅ Filtered result:', filtered.length, 'tools')
     console.log('[FILTER] First 3 tools after sort:', filtered.slice(0, 3).map(t => ({
@@ -263,16 +246,8 @@ export default function CommunPage() {
       // FORCE NEW ARRAY REFERENCE so React detects the change!
       const freshTools = [...(toolsData.tools || [])]
 
-      // SORT: Put problem tools first (before any filtering)
-      freshTools.sort((a, b) => {
-        const aProblem = a.lastScanEtat === 'Problème' || a.lastScanEtat === 'Abîmé' || a.state === 'Problème' || a.state === 'Abîmé'
-        const bProblem = b.lastScanEtat === 'Problème' || b.lastScanEtat === 'Abîmé' || b.state === 'Problème' || b.state === 'Abîmé'
-        if (aProblem && !bProblem) return -1
-        if (!aProblem && bProblem) return 1
-        const aDate = a.lastScanAt ? new Date(a.lastScanAt).getTime() : 0
-        const bDate = b.lastScanAt ? new Date(b.lastScanAt).getTime() : 0
-        return bDate - aDate
-      })
+      // SORT: Ordre alphabétique fixe
+      freshTools.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' }))
 
       setTools(freshTools)
 
@@ -727,7 +702,7 @@ export default function CommunPage() {
                 </div>
                 {/* Métadonnées */}
                 <div className="flex flex-wrap gap-x-5 gap-y-0.5 mt-1.5 text-xs">
-                  <span className="text-gray-500"><span className="text-gray-400">Lieu : </span>{t.lastScanLieu || 'N/D'}</span>
+                  <span className="text-gray-500"><span className="text-gray-400">Lieu : </span><span className="font-semibold">{t.lastScanLieu || 'N/D'}</span></span>
                   {t.lastScanAt && (
                     <span className="text-gray-500">
                       <span className="text-gray-400">Date : </span>
@@ -1099,18 +1074,21 @@ export default function CommunPage() {
                   onChange={(e) => setEditForm({...editForm, lastScanLieu: e.target.value})}
                 >
                   <option value="">Sélectionner position</option>
-                  <option value="Paris Bureau">Paris Bureau</option>
-                  <option value="Gleizé Bureau">Gleizé Bureau</option>
-                  <option value="Tanger">Tanger</option>
-                  <option value="Tunisie">Tunisie</option>
-                  <option value="Chez client">Chez client</option>
-                  <option value="En transit">En transit</option>
-                  <option value="Autres">Autres</option>
+                  <option value="ENVOIE MATERIEL">ENVOIE MATÉRIEL</option>
+                  <option value="RECEPTION MATERIEL">RECEPTION MATERIEL</option>
+                  <option value="DEPOT BUREAU PARIS">DEPOT BUREAU PARIS</option>
+                  <option value="SORTIE BUREAU PARIS">SORTIE BUREAU PARIS</option>
+                  <option value="DEPOTS BUREAU GLEIZE">DEPOTS BUREAU GLEIZE</option>
+                  <option value="SORTIE BUREAU GLEIZE">SORTIE BUREAU GLEIZE</option>
+                  <option value="DEPOT BUREAU TANGER">DEPOT BUREAU TANGER</option>
+                  <option value="SORTIE BUREAU TANGER">SORTIE BUREAU TANGER</option>
+                  <option value="AUTRES">AUTRES</option>
+                  <option value="CHEZ CLIENT">CHEZ CLIENT</option>
                 </select>
               </div>
 
               {/* Champ Client (si Chez client) */}
-              {editForm.lastScanLieu === 'Chez client' && (
+              {editForm.lastScanLieu === 'CHEZ CLIENT' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Nom du client *
@@ -1455,6 +1433,8 @@ export default function CommunPage() {
                   <option value="SORTIE BUREAU PARIS">SORTIE BUREAU PARIS</option>
                   <option value="DEPOTS BUREAU GLEIZE">DEPOTS BUREAU GLEIZE</option>
                   <option value="SORTIE BUREAU GLEIZE">SORTIE BUREAU GLEIZE</option>
+                  <option value="DEPOT BUREAU TANGER">DEPOT BUREAU TANGER</option>
+                  <option value="SORTIE BUREAU TANGER">SORTIE BUREAU TANGER</option>
                   <option value="AUTRES">AUTRES</option>
                   <option value="CHEZ CLIENT">CHEZ CLIENT</option>
                 </select>
@@ -1514,7 +1494,7 @@ export default function CommunPage() {
               )}
 
               {/* Champ client (conditionnel pour autres actions) */}
-              {scanAction !== 'ENVOIE MATERIEL' && scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE'].includes(scanAction) && (
+              {scanAction !== 'ENVOIE MATERIEL' && scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'SORTIE BUREAU TANGER', 'CHEZ CLIENT'].includes(scanAction) && (
                 <div>
                   <label className="label">Saisir client *</label>
                   <input
@@ -1527,7 +1507,7 @@ export default function CommunPage() {
               )}
 
               {/* Champ état (conditionnel pour autres actions) */}
-              {scanAction !== 'ENVOIE MATERIEL' && scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOTS BUREAU GLEIZE'].includes(scanAction) && (
+              {scanAction !== 'ENVOIE MATERIEL' && scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOTS BUREAU GLEIZE', 'DEPOT BUREAU TANGER', 'SORTIE BUREAU TANGER', 'CHEZ CLIENT'].includes(scanAction) && (
                 <div>
                   <label className="label">Saisir état *</label>
                   <select
