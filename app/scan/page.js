@@ -174,7 +174,7 @@ export default function ScanPage() {
         case 'SORTIE BUREAU PARIS':
           location = form.client
           break
-        case 'DEPOTS BUREAU GLEIZE':
+        case 'DEPOT BUREAU GLEIZE':
           location = 'Gleizé Bureau'
           break
         case 'SORTIE BUREAU GLEIZE':
@@ -266,7 +266,7 @@ export default function ScanPage() {
 
   // Déterminer si on doit afficher les champs client et état
   const showClientField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE'].includes(scanAction)
-  const showStateField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOTS BUREAU GLEIZE'].includes(scanAction)
+  const showStateField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOT BUREAU GLEIZE'].includes(scanAction)
   const showEnvoiFields = scanAction === 'ENVOIE MATERIEL'
 
   return (
@@ -424,7 +424,7 @@ export default function ScanPage() {
                   <option value="RECEPTION MATERIEL">RECEPTION MATERIEL</option>
                   <option value="DEPOT BUREAU PARIS">DEPOT BUREAU PARIS</option>
                   <option value="SORTIE BUREAU PARIS">SORTIE BUREAU PARIS</option>
-                  <option value="DEPOTS BUREAU GLEIZE">DEPOTS BUREAU GLEIZE</option>
+                  <option value="DEPOT BUREAU GLEIZE">DEPOT BUREAU GLEIZE</option>
                   <option value="SORTIE BUREAU GLEIZE">SORTIE BUREAU GLEIZE</option>
                   <option value="AUTRES">AUTRES</option>
                   <option value="CHEZ CLIENT">CHEZ CLIENT</option>

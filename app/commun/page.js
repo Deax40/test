@@ -378,7 +378,7 @@ export default function CommunPage() {
         case 'SORTIE BUREAU PARIS':
           location = scanForm.client
           break
-        case 'DEPOTS BUREAU GLEIZE':
+        case 'DEPOT BUREAU GLEIZE':
           location = 'Gleizé Bureau'
           break
         case 'SORTIE BUREAU GLEIZE':
@@ -1078,7 +1078,7 @@ export default function CommunPage() {
                   <option value="RECEPTION MATERIEL">RECEPTION MATERIEL</option>
                   <option value="DEPOT BUREAU PARIS">DEPOT BUREAU PARIS</option>
                   <option value="SORTIE BUREAU PARIS">SORTIE BUREAU PARIS</option>
-                  <option value="DEPOTS BUREAU GLEIZE">DEPOTS BUREAU GLEIZE</option>
+                  <option value="DEPOT BUREAU GLEIZE">DEPOT BUREAU GLEIZE</option>
                   <option value="SORTIE BUREAU GLEIZE">SORTIE BUREAU GLEIZE</option>
                   <option value="DEPOT BUREAU TANGER">DEPOT BUREAU TANGER</option>
                   <option value="SORTIE BUREAU TANGER">SORTIE BUREAU TANGER</option>
@@ -1431,7 +1431,7 @@ export default function CommunPage() {
                   <option value="RECEPTION MATERIEL">RECEPTION MATERIEL</option>
                   <option value="DEPOT BUREAU PARIS">DEPOT BUREAU PARIS</option>
                   <option value="SORTIE BUREAU PARIS">SORTIE BUREAU PARIS</option>
-                  <option value="DEPOTS BUREAU GLEIZE">DEPOTS BUREAU GLEIZE</option>
+                  <option value="DEPOT BUREAU GLEIZE">DEPOT BUREAU GLEIZE</option>
                   <option value="SORTIE BUREAU GLEIZE">SORTIE BUREAU GLEIZE</option>
                   <option value="DEPOT BUREAU TANGER">DEPOT BUREAU TANGER</option>
                   <option value="SORTIE BUREAU TANGER">SORTIE BUREAU TANGER</option>
@@ -1507,7 +1507,7 @@ export default function CommunPage() {
               )}
 
               {/* Champ état (conditionnel pour autres actions) */}
-              {scanAction !== 'ENVOIE MATERIEL' && scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOTS BUREAU GLEIZE', 'DEPOT BUREAU TANGER', 'SORTIE BUREAU TANGER', 'CHEZ CLIENT'].includes(scanAction) && (
+              {scanAction !== 'ENVOIE MATERIEL' && scanAction && ['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOT BUREAU GLEIZE', 'DEPOT BUREAU TANGER', 'SORTIE BUREAU TANGER', 'CHEZ CLIENT'].includes(scanAction) && (
                 <div>
                   <label className="label">Saisir état *</label>
                   <select
