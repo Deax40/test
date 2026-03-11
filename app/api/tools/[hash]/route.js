@@ -140,19 +140,33 @@ export async function PATCH(req, { params }) {
 
   let updated
   try {
-    // UPSERT: Create if doesn't exist, update if exists
-    console.log('[TOOLS] Executing upsert...')
-    updated = await prisma.tool.upsert({
-      where: { hash: normalized },
-      update: updateData,
-      create: {
-        hash: normalized,
-        name: data.name || `Tool ${normalized}`,
-        category: 'Commun Tools',
-        qrData: `TOOL_${normalized}`,
-        ...updateData,
-      },
+    // Find tool case-insensitively to avoid duplicate creation (lowercase vs uppercase hash mismatch)
+    console.log('[TOOLS] Executing find+update operation...')
+    const existingTool = await prisma.tool.findFirst({
+      where: {
+        OR: [
+          { hash: normalized },
+          { hash: normalized.toLowerCase() },
+        ]
+      }
     })
+
+    if (existingTool) {
+      updated = await prisma.tool.update({
+        where: { id: existingTool.id },
+        data: updateData,
+      })
+    } else {
+      updated = await prisma.tool.create({
+        data: {
+          hash: normalized,
+          name: data.name || `Tool ${normalized}`,
+          category: 'Commun Tools',
+          qrData: `TOOL_${normalized}`,
+          ...updateData,
+        },
+      })
+    }
 
     console.log('[TOOLS] ✅ Database save SUCCESS:', updated.id, updated.name)
   } catch (dbError) {

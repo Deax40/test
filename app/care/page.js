@@ -296,6 +296,7 @@ export default function CarePage() {
           location = 'Non spécifié'
       }
 
+      formData.append('name', scanningTool.name)
       formData.append('location', location)
       formData.append('state', scanForm.state)
       formData.append('user', session?.user?.name || '')

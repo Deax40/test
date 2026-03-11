@@ -190,6 +190,7 @@ export default function ScanPage() {
           location = 'Non spécifié'
       }
 
+      formData.append('name', tool.name)
       formData.append('location', location)
       formData.append('state', form.state)
       formData.append('user', user?.name || '')
