@@ -22,7 +22,7 @@ export default function AdminPage() {
   const [problemTools, setProblemTools] = useState([])
   const [showScansPopup, setShowScansPopup] = useState(false)
   const [showProblemsPopup, setShowProblemsPopup] = useState(false)
-  const [newUser, setNewUser] = useState({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH' })
+  const [newUser, setNewUser] = useState({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH', teamTag: '' })
   const [editingUser, setEditingUser] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [newHabilitation, setNewHabilitation] = useState({ userId: '', file: null, expiresAt: '', title: '' })
@@ -111,7 +111,7 @@ export default function AdminPage() {
 
       if (res.ok) {
         setSuccess('Utilisateur créé avec succès')
-        setNewUser({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH' })
+        setNewUser({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH', teamTag: '' })
         loadData() // Reload data
       } else {
         const errorData = await res.json()
@@ -514,6 +514,16 @@ export default function AdminPage() {
                   >
                     <option value="TECH">Technicien</option>
                     <option value="ADMIN">Administrateur</option>
+                  </select>
+                  <select
+                    className="input"
+                    value={newUser.teamTag}
+                    onChange={(e) => setNewUser({ ...newUser, teamTag: e.target.value })}
+                  >
+                    <option value="">— Aucune équipe —</option>
+                    <option value="EF Sud">EF Sud</option>
+                    <option value="EF Nord">EF Nord</option>
+                    <option value="EMA">EMA</option>
                   </select>
                   <button className="btn btn-success" onClick={createUser}>
                     Créer l'utilisateur

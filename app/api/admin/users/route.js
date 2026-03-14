@@ -28,6 +28,7 @@ export async function GET() {
         name: true,
         email: true,
         role: true,
+        teamTag: true,
         createdAt: true
       },
       orderBy: {
@@ -57,7 +58,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
-    const { username, name, email, password, role } = await request.json()
+    const { username, name, email, password, role, teamTag } = await request.json()
 
     // Validation
     if (!username || !name || !password) {
@@ -94,7 +95,8 @@ export async function POST(request) {
         name,
         email: email || null,
         passwordHash,
-        role: role || 'TECH'
+        role: role || 'TECH',
+        teamTag: teamTag || null
       },
       select: {
         id: true,
@@ -102,6 +104,7 @@ export async function POST(request) {
         name: true,
         email: true,
         role: true,
+        teamTag: true,
         createdAt: true
       }
     })

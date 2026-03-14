@@ -57,6 +57,10 @@ export async function PATCH(request, { params }) {
       updateFields.role = updateData.role
     }
 
+    if (updateData.teamTag !== undefined) {
+      updateFields.teamTag = updateData.teamTag || null
+    }
+
     if (updateData.password) {
       updateFields.passwordHash = await bcrypt.hash(updateData.password, 10)
     }
@@ -70,6 +74,7 @@ export async function PATCH(request, { params }) {
         name: true,
         email: true,
         role: true,
+        teamTag: true,
         createdAt: true
       }
     })

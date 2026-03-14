@@ -17,7 +17,10 @@ export default function Nav({ active }) {
   const adminNavItems = session?.user?.role === 'ADMIN' ? [
     { href: '/admin', label: 'ADMIN', key: 'admin' },
     { href: '/admin/certificats', label: 'CERTIFICATS', key: 'certificats' },
-    { href: '/admin/files', label: 'FICHIERS', key: 'admin-files' }
+    { href: '/admin/files', label: 'FICHIERS', key: 'admin-files' },
+    { href: '/mon-equipe', label: 'MON ÉQUIPE', key: 'mon-equipe' },
+    { href: '/admin/certifications-perso', label: 'CERTIF. PERSO', key: 'certifications-perso' },
+    { href: '/admin/equipes', label: 'ÉQUIPES', key: 'equipes' }
   ] : []
 
   return (

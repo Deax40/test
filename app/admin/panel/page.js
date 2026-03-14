@@ -14,7 +14,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true)
   const [isResetting, setIsResetting] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
-  const [newUser, setNewUser] = useState({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH' })
+  const [newUser, setNewUser] = useState({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH', teamTag: '' })
   const [editingUser, setEditingUser] = useState(null)
   const [viewingUser, setViewingUser] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -93,7 +93,7 @@ export default function AdminPanel() {
 
       if (res.ok) {
         setSuccess('Utilisateur créé avec succès')
-        setNewUser({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH' })
+        setNewUser({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH', teamTag: '' })
         // Recharger les utilisateurs
         const usersRes = await fetch('/api/admin/users')
         if (usersRes.ok) {
@@ -476,6 +476,19 @@ export default function AdminPanel() {
                   >
                     <option value="TECH">Technicien</option>
                     <option value="ADMIN">Administrateur</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Équipe</label>
+                  <select
+                    className="input"
+                    value={newUser.teamTag}
+                    onChange={(e) => setNewUser({ ...newUser, teamTag: e.target.value })}
+                  >
+                    <option value="">— Aucune équipe —</option>
+                    <option value="EF Sud">EF Sud</option>
+                    <option value="EF Nord">EF Nord</option>
+                    <option value="EMA">EMA</option>
                   </select>
                 </div>
                 <div className="flex items-end">
