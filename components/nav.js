@@ -11,15 +11,14 @@ export default function Nav({ active }) {
   const mainNavItems = [
     { href: '/scan', label: 'SCAN', key: 'scan' },
     { href: '/care', label: 'CARE', key: 'care' },
-    { href: '/commun', label: 'COMMUN', key: 'commun' }
+    { href: '/commun', label: 'COMMUN', key: 'commun' },
+    ...(session?.user?.role === 'ADMIN' ? [{ href: '/mon-equipe', label: 'MON ÉQUIPE', key: 'mon-equipe' }] : [])
   ]
 
   const adminNavItems = session?.user?.role === 'ADMIN' ? [
     { href: '/admin', label: 'ADMIN', key: 'admin' },
     { href: '/admin/certificats', label: 'CERTIFICATS', key: 'certificats' },
     { href: '/admin/files', label: 'FICHIERS', key: 'admin-files' },
-    { href: '/mon-equipe', label: 'MON ÉQUIPE', key: 'mon-equipe' },
-    { href: '/admin/certifications-perso', label: 'CERTIF. PERSO', key: 'certifications-perso' },
     { href: '/admin/equipes', label: 'ÉQUIPES', key: 'equipes' }
   ] : []
 
@@ -101,7 +100,7 @@ export default function Nav({ active }) {
                 {session?.user?.name || 'Mon compte'}
               </Link>
               <button
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={() => { localStorage.setItem('autoLogin', 'false'); signOut({ callbackUrl: '/' }) }}
                 className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,6 +179,7 @@ export default function Nav({ active }) {
                 </Link>
                 <button
                   onClick={() => {
+                    localStorage.setItem('autoLogin', 'false')
                     signOut({ callbackUrl: '/' })
                     setIsMenuOpen(false)
                   }}

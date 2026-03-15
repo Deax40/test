@@ -14,6 +14,8 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true)
   const [isResetting, setIsResetting] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
+  const [unnamedTools, setUnnamedTools] = useState([])
+  const [renameValues, setRenameValues] = useState({})
   const [newUser, setNewUser] = useState({ username: '', name: '', email: '', password: '', confirmPassword: '', role: 'TECH', teamTag: '' })
   const [editingUser, setEditingUser] = useState(null)
   const [viewingUser, setViewingUser] = useState(null)
@@ -62,6 +64,17 @@ export default function AdminPanel() {
         if (habilitationsRes.ok) {
           const habilitationsData = await habilitationsRes.json()
           setHabilitations(habilitationsData.habilitations || [])
+        }
+
+        // Charger les outils sans nom correct
+        const unnamedRes = await fetch('/api/admin/rename-tools')
+        if (unnamedRes.ok) {
+          const unnamedData = await unnamedRes.json()
+          const tools = unnamedData.tools || []
+          setUnnamedTools(tools)
+          const vals = {}
+          for (const t of tools) vals[t.id] = t.name.startsWith('Tool ') || t.name === 'Outil sans nom' ? '' : t.name
+          setRenameValues(vals)
         }
 
         setLoading(false)
@@ -233,6 +246,30 @@ export default function AdminPanel() {
     }
   }
 
+  const renameTool = async (toolId) => {
+    const newName = renameValues[toolId]?.trim()
+    if (!newName) {
+      setError('Le nom ne peut pas être vide')
+      return
+    }
+    try {
+      const res = await fetch('/api/admin/rename-tools', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: toolId, name: newName })
+      })
+      if (res.ok) {
+        setSuccess(`Outil renommé : "${newName}"`)
+        setUnnamedTools(prev => prev.filter(t => t.id !== toolId))
+      } else {
+        const err = await res.json()
+        setError(err.error || 'Erreur lors du renommage')
+      }
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
   const handleDatabaseReset = async () => {
     if (!confirm('⚠️ ATTENTION: Cette action va réinitialiser toute la base de données et ne conserver que les 6 derniers scans par outil. Cette action est irréversible. Êtes-vous sûr de vouloir continuer ?')) {
       return
@@ -334,6 +371,17 @@ export default function AdminPanel() {
               onClick={() => setActiveTab('logs')}
             >
               Logs Système
+            </button>
+            <button
+              className={`px-4 py-2 border-b-2 flex items-center gap-2 ${activeTab === 'rename' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-600'}`}
+              onClick={() => setActiveTab('rename')}
+            >
+              Outils à nommer
+              {unnamedTools.length > 0 && (
+                <span className="bg-orange-500 text-white text-xs rounded-full px-1.5 py-0.5 font-bold">
+                  {unnamedTools.length}
+                </span>
+              )}
             </button>
           </div>
 
@@ -908,6 +956,54 @@ export default function AdminPanel() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'rename' && (
+          <div className="card">
+            <h2 className="text-lg font-semibold mb-2">Outils à nommer</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Ces outils ont un nom généré automatiquement. Saisissez le vrai nom et cliquez sur Renommer.
+            </p>
+            {unnamedTools.length === 0 ? (
+              <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                <span className="text-green-600 font-medium">✅ Tous les outils ont un nom correct.</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {unnamedTools.map(tool => (
+                  <div key={tool.id} className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div className="flex flex-col md:flex-row md:items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-orange-700 font-mono truncate mb-1">
+                          Nom actuel : <span className="font-bold">{tool.name}</span>
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {tool.category} · Hash : {tool.hash}
+                          {tool.lastScanLieu && ` · Dernier lieu : ${tool.lastScanLieu}`}
+                          {tool.lastScanAt && ` · ${new Date(tool.lastScanAt).toLocaleDateString('fr-FR')}`}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0 w-full md:w-auto">
+                        <input
+                          className="input flex-1 md:w-64"
+                          placeholder="Nouveau nom..."
+                          value={renameValues[tool.id] || ''}
+                          onChange={e => setRenameValues({ ...renameValues, [tool.id]: e.target.value })}
+                          onKeyDown={e => e.key === 'Enter' && renameTool(tool.id)}
+                        />
+                        <button
+                          className="btn btn-success btn-sm flex-shrink-0"
+                          onClick={() => renameTool(tool.id)}
+                        >
+                          Renommer
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

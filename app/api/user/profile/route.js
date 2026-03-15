@@ -21,6 +21,7 @@ export async function GET() {
         name: true,
         email: true,
         role: true,
+        teamTag: true,
         createdAt: true
       }
     })
@@ -29,7 +30,16 @@ export async function GET() {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 })
     }
 
-    return NextResponse.json({ user })
+    // Trouver le chef d'équipe (admin avec le même teamTag)
+    let manager = null
+    if (user.teamTag) {
+      manager = await prisma.user.findFirst({
+        where: { role: 'ADMIN', teamTag: user.teamTag },
+        select: { id: true, name: true, username: true, email: true }
+      })
+    }
+
+    return NextResponse.json({ user, manager })
   } catch (error) {
     console.error('Erreur lors de la récupération du profil:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

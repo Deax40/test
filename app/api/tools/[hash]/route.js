@@ -160,7 +160,7 @@ export async function PATCH(req, { params }) {
       updated = await prisma.tool.create({
         data: {
           hash: normalized,
-          name: data.name || `Tool ${normalized}`,
+          name: data.name || 'Outil sans nom',
           category: 'Commun Tools',
           qrData: `TOOL_${normalized}`,
           ...updateData,
@@ -262,5 +262,45 @@ export async function PATCH(req, { params }) {
     success: true,
     saved: true
   })
+}
+
+export async function DELETE(request, { params }) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user || session.user.role !== 'ADMIN') {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const normalized = String(params.hash).trim().toUpperCase()
+
+    const tool = await prisma.tool.findFirst({
+      where: {
+        OR: [
+          { hash: normalized },
+          { hash: normalized.toLowerCase() },
+        ]
+      }
+    })
+
+    if (!tool) {
+      return Response.json({ error: 'Tool not found' }, { status: 404 })
+    }
+
+    // Suppression des enregistrements liés avant de supprimer l'outil
+    await prisma.careLog.deleteMany({ where: { toolId: tool.id } })
+    await prisma.scanHistory.deleteMany({ where: { toolHash: tool.hash } })
+    await prisma.certification.updateMany({
+      where: { toolId: tool.id },
+      data: { toolId: null }
+    })
+
+    await prisma.tool.delete({ where: { id: tool.id } })
+
+    console.log('[TOOLS] ✅ Tool deleted:', tool.name, tool.hash)
+    return Response.json({ success: true })
+  } catch (error) {
+    console.error('[TOOLS] ❌ Delete failed:', error.message)
+    return Response.json({ error: 'Delete failed', details: error.message }, { status: 500 })
+  }
 }
 

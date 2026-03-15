@@ -7,8 +7,8 @@ import Nav from '@/components/nav'
 export default function ProfilePage() {
   const { data: session } = useSession()
   const [user, setUser] = useState(null)
+  const [manager, setManager] = useState(null)
   const [habilitations, setHabilitations] = useState([])
-  const [userCertifications, setUserCertifications] = useState([])
   const [userLogs, setUserLogs] = useState([])
   const [editMode, setEditMode] = useState(false)
   const [editForm, setEditForm] = useState({ email: '', password: '', confirmPassword: '' })
@@ -30,6 +30,7 @@ export default function ProfilePage() {
         if (userRes.ok) {
           const userData = await userRes.json()
           setUser(userData.user)
+          setManager(userData.manager || null)
           setEditForm({ email: userData.user.email || '', password: '', confirmPassword: '' })
           userId = userData.user?.id
         }
@@ -39,15 +40,6 @@ export default function ProfilePage() {
         if (habRes.ok) {
           const habData = await habRes.json()
           setHabilitations(habData.habilitations || [])
-        }
-
-        // Charger les certifications personnelles
-        if (userId) {
-          const certRes = await fetch(`/api/user-certifications?userId=${userId}`)
-          if (certRes.ok) {
-            const certData = await certRes.json()
-            setUserCertifications(certData.certifications || [])
-          }
         }
 
         // Charger les logs de l'utilisateur (l'API détermine automatiquement l'utilisateur)
@@ -232,6 +224,31 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* Mon Équipe */}
+        {user.teamTag && (
+          <div className="card">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">Mon Équipe</h2>
+            <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <div className="w-10 h-10 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-bold text-lg flex-shrink-0">
+                👥
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-blue-900">{user.teamTag}</p>
+                {manager ? (
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    Chef d'équipe : <span className="font-medium text-gray-800">{manager.name}</span>
+                    {manager.email && (
+                      <span className="text-gray-500"> · {manager.email}</span>
+                    )}
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-400 mt-0.5">Chef d'équipe non assigné</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Habilitations */}
         <div className="card">
           <h2 className="text-2xl font-bold mb-6 text-gray-800">Mes Habilitations</h2>
@@ -311,61 +328,6 @@ export default function ProfilePage() {
                   </div>
                 )
               })}
-            </div>
-          )}
-        </div>
-
-        {/* Mes Certifications Personnelles */}
-        <div className="card">
-          <h2 className="text-2xl font-bold mb-6 text-gray-800">Mes Certifications</h2>
-
-          {userCertifications.length === 0 ? (
-            <p className="text-gray-500">Aucune certification personnelle</p>
-          ) : (
-            <div className="space-y-4">
-              {userCertifications.map((cert, index) => (
-                <div key={index} className="p-5 rounded-lg border-2 bg-blue-50 border-blue-300 shadow-sm">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-1">{cert.title}</h3>
-                      {cert.toolName && (
-                        <p className="text-sm text-gray-600">🔧 Outil : {cert.toolName}</p>
-                      )}
-                      {cert.managerName && (
-                        <p className="text-sm text-gray-500">Ajouté par : {cert.managerName}</p>
-                      )}
-                    </div>
-                    <span className="px-3 py-1 rounded-full text-sm font-bold bg-blue-200 text-blue-900">
-                      Certification
-                    </span>
-                  </div>
-                  <div className="mb-4 space-y-1">
-                    <p className="text-sm font-medium text-gray-700">
-                      📅 Date de révision : <span className="font-bold">{formatDate(cert.revisionDate)}</span>
-                    </p>
-                    {cert.notes && (
-                      <p className="text-sm text-gray-600 italic">{cert.notes}</p>
-                    )}
-                    <p className="text-xs text-gray-500">
-                      Ajouté le : {formatDate(cert.createdAt)}
-                    </p>
-                  </div>
-                  {cert.pdfType && (
-                    <div className="flex gap-2">
-                      <button
-                        className="btn btn-primary flex items-center gap-2"
-                        onClick={() => window.open(`/api/user-certifications/${cert.id}/pdf`, '_blank')}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                        </svg>
-                        Voir le PDF
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
             </div>
           )}
         </div>
