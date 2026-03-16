@@ -35,6 +35,8 @@ export default function CommunPage() {
     lieuEnvoi: ''
   })
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [confirmDeleteTool, setConfirmDeleteTool] = useState(false)
+  const [siteTagFilter, setSiteTagFilter] = useState('all')
 
   useEffect(() => {
     async function load() {
@@ -93,6 +95,7 @@ export default function CommunPage() {
       dimensionWidth: tool.dimensionWidth || '',
       dimensionHeight: tool.dimensionHeight || '',
       dimensionType: tool.dimensionType || 'piece',
+      siteTag: tool.siteTag || '',
     })
     setDamageForm({ photo: null, description: '' })
     setShowEditModal(true)
@@ -125,9 +128,10 @@ export default function CommunPage() {
     setError('')
   }
 
-  const applyFilters = (toolsList, search, location, state) => {
+  const applyFilters = (toolsList, search, location, state, siteTag) => {
     console.log('[FILTER] === APPLYING FILTERS ===')
-    console.log('[FILTER] Input:', { toolsCount: toolsList.length, search, location, state })
+    const activeSiteTag = siteTag !== undefined ? siteTag : siteTagFilter
+    console.log('[FILTER] Input:', { toolsCount: toolsList.length, search, location, state, siteTag: activeSiteTag })
 
     let filtered = toolsList.filter(tool => {
       const matchesSearch = tool.name.toLowerCase().includes(search.toLowerCase())
@@ -137,6 +141,7 @@ export default function CommunPage() {
         tool.lastScanLieu?.includes(location) ||
         tool.name.toLowerCase().includes(location.toLowerCase())
       const matchesState = !state || tool.state === state || tool.lastScanEtat === state
+      const matchesSite = activeSiteTag === 'all' || tool.siteTag === activeSiteTag
 
       // DEBUG: Log filtering for tools with Problème
       if (tool.lastScanEtat === 'Problème' || tool.lastScanEtat === 'Abîmé') {
@@ -147,11 +152,11 @@ export default function CommunPage() {
           matchesState,
           lastScanLieu: tool.lastScanLieu,
           lastScanEtat: tool.lastScanEtat,
-          PASSES: matchesSearch && matchesLocation && matchesState
+          PASSES: matchesSearch && matchesLocation && matchesState && matchesSite
         })
       }
 
-      return matchesSearch && matchesLocation && matchesState
+      return matchesSearch && matchesLocation && matchesState && matchesSite
     })
 
     // SORT: Ordre alphabétique fixe
@@ -182,10 +187,16 @@ export default function CommunPage() {
     applyFilters(tools, searchTerm, locationFilter, state)
   }
 
+  const handleSiteTagFilter = (tag) => {
+    setSiteTagFilter(tag)
+    applyFilters(tools, searchTerm, locationFilter, stateFilter, tag)
+  }
+
   const clearFilters = () => {
     setSearchTerm('')
     setLocationFilter('')
     setStateFilter('')
+    setSiteTagFilter('all')
     // Force new array reference
     setFilteredTools([...tools])
   }
@@ -482,6 +493,7 @@ export default function CommunPage() {
         if (editForm.complementaryInfo) {
           formData.append('complementaryInfo', editForm.complementaryInfo)
         }
+        formData.append('siteTag', editForm.siteTag || '')
 
         console.log('[FRONTEND] Calling PATCH /api/commons/' + editingTool + ' with FormData')
         response = await fetch(`/api/commons/${editingTool}`, {
@@ -504,6 +516,7 @@ export default function CommunPage() {
           tracking: editForm.tracking,
           transporteur: editForm.transporteur,
           complementaryInfo: editForm.complementaryInfo,
+          siteTag: editForm.siteTag,
           user: session?.user?.name || 'User'
         }
         console.log('[FRONTEND] JSON payload:', jsonPayload)
@@ -555,6 +568,20 @@ export default function CommunPage() {
     }
   }
 
+  async function deleteTool(tool) {
+    try {
+      const res = await fetch(`/api/tools/${tool.hash}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Échec de la suppression')
+      setSelectedTool(null)
+      setSelectedToolCertificates([])
+      setSelectedToolHistory([])
+      setConfirmDeleteTool(false)
+      await resyncData()
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
   return (
     <div>
       <Nav active="commun" />
@@ -586,6 +613,21 @@ export default function CommunPage() {
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
           />
+        </div>
+
+        {/* Filtre par site */}
+        <div className="flex gap-2 flex-wrap mb-4">
+          {['all', 'Paris', 'Gleize', 'Tanzer'].map(tag => (
+            <button
+              key={tag}
+              onClick={() => handleSiteTagFilter(tag)}
+              className={`px-3 py-1 rounded-full text-sm font-medium border transition-all ${
+                siteTagFilter === tag ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'
+              }`}
+            >
+              {tag === 'all' ? 'Tous les sites' : tag}
+            </button>
+          ))}
         </div>
 
         {/* Filtres */}
@@ -694,6 +736,15 @@ export default function CommunPage() {
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${hasProblem ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
                       {hasProblem ? (t.lastScanEtat || t.state || 'Problème') : 'RAS'}
                     </span>
+                    {t.siteTag && (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                        t.siteTag === 'Paris' ? 'bg-blue-100 text-blue-800' :
+                        t.siteTag === 'Gleize' ? 'bg-green-100 text-green-800' :
+                        'bg-orange-100 text-orange-800'
+                      }`}>
+                        {t.siteTag}
+                      </span>
+                    )}
                   </div>
                   <div className="flex gap-1.5 flex-wrap">
                     <button className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full hover:bg-green-200 transition-colors whitespace-nowrap" onClick={() => startQuickScan(t)}>J'ai l'outil</button>
@@ -740,16 +791,45 @@ export default function CommunPage() {
           <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-800">{selectedTool.name}</h2>
-              <button
-                className="text-gray-500 hover:text-gray-700 text-3xl font-bold"
-                onClick={() => {
-                  setSelectedTool(null)
-                  setSelectedToolCertificates([])
-                  setSelectedToolHistory([])
-                }}
-              >
-                ×
-              </button>
+              <div className="flex items-center gap-2">
+                {session?.user?.role === 'ADMIN' && (
+                  confirmDeleteTool ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-red-600 font-medium">Confirmer ?</span>
+                      <button
+                        className="px-3 py-1 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700"
+                        onClick={() => deleteTool(selectedTool)}
+                      >
+                        Oui, supprimer
+                      </button>
+                      <button
+                        className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300"
+                        onClick={() => setConfirmDeleteTool(false)}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="px-3 py-1 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200"
+                      onClick={() => setConfirmDeleteTool(true)}
+                    >
+                      Supprimer
+                    </button>
+                  )
+                )}
+                <button
+                  className="text-gray-500 hover:text-gray-700 text-3xl font-bold"
+                  onClick={() => {
+                    setSelectedTool(null)
+                    setSelectedToolCertificates([])
+                    setSelectedToolHistory([])
+                    setConfirmDeleteTool(false)
+                  }}
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1253,6 +1333,25 @@ export default function CommunPage() {
                     placeholder="Ajoutez des informations complémentaires visibles par tous les utilisateurs..."
                     rows="3"
                   />
+                </div>
+              )}
+
+              {/* Site physique (Admin uniquement) */}
+              {session?.user?.role === 'ADMIN' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Site physique
+                  </label>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    value={editForm.siteTag || ''}
+                    onChange={(e) => setEditForm({...editForm, siteTag: e.target.value})}
+                  >
+                    <option value="">— Non assigné —</option>
+                    <option value="Paris">Paris</option>
+                    <option value="Gleize">Gleize</option>
+                    <option value="Tanzer">Tanzer</option>
+                  </select>
                 </div>
               )}
 

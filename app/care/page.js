@@ -34,6 +34,8 @@ export default function CarePage() {
     lieuEnvoi: ''
   })
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [confirmDeleteTool, setConfirmDeleteTool] = useState(false)
+  const [siteTagFilter, setSiteTagFilter] = useState('all')
 
   useEffect(() => {
     async function load() {
@@ -75,6 +77,7 @@ export default function CarePage() {
       weight: tool.weight || '',
       imoNumber: tool.imoNumber || '',
       complementaryInfo: tool.complementaryInfo || '',
+      siteTag: tool.siteTag || '',
     })
     setDamageForm({ photo: null, description: '' })
     setShowEditModal(true)
@@ -105,14 +108,16 @@ export default function CarePage() {
     setError('')
   }
 
-  const applyFilters = (toolsList, search, location, state) => {
+  const applyFilters = (toolsList, search, location, state, siteTag) => {
+    const activeSiteTag = siteTag !== undefined ? siteTag : siteTagFilter
     let filtered = toolsList.filter(tool => {
       const matchesSearch = tool.name.toLowerCase().includes(search.toLowerCase())
       const matchesLocation = !location ||
         tool.lastScanLieu?.includes(location) ||
         tool.name.toLowerCase().includes(location.toLowerCase())
       const matchesState = !state || tool.lastScanEtat === state
-      return matchesSearch && matchesLocation && matchesState
+      const matchesSite = activeSiteTag === 'all' || tool.siteTag === activeSiteTag
+      return matchesSearch && matchesLocation && matchesState && matchesSite
     })
 
     // SORT: Ordre alphabétique fixe
@@ -136,10 +141,16 @@ export default function CarePage() {
     applyFilters(tools, searchTerm, locationFilter, state)
   }
 
+  const handleSiteTagFilter = (tag) => {
+    setSiteTagFilter(tag)
+    applyFilters(tools, searchTerm, locationFilter, stateFilter, tag)
+  }
+
   const clearFilters = () => {
     setSearchTerm('')
     setLocationFilter('')
     setStateFilter('')
+    setSiteTagFilter('all')
     setFilteredTools([...tools])
   }
 
@@ -368,6 +379,7 @@ export default function CarePage() {
         if (editForm.complementaryInfo) {
           formData.append('complementaryInfo', editForm.complementaryInfo)
         }
+        formData.append('siteTag', editForm.siteTag || '')
 
         response = await fetch(`/api/care/${editingTool}`, {
           method: 'PATCH',
@@ -385,6 +397,7 @@ export default function CarePage() {
           weight: editForm.weight,
           imoNumber: editForm.imoNumber,
           complementaryInfo: editForm.complementaryInfo,
+          siteTag: editForm.siteTag,
           user: session?.user?.name || 'Care User'
         }
 
@@ -412,6 +425,20 @@ export default function CarePage() {
       setStateFilter('')
     } catch (e) {
       console.error('[FRONTEND CARE] Error in saveEdit:', e)
+      setError(e.message)
+    }
+  }
+
+  async function deleteTool(tool) {
+    try {
+      const res = await fetch(`/api/tools/${tool.hash}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Échec de la suppression')
+      setSelectedTool(null)
+      setSelectedToolCertificates([])
+      setSelectedToolHistory([])
+      setConfirmDeleteTool(false)
+      await resyncData()
+    } catch (e) {
       setError(e.message)
     }
   }
@@ -447,6 +474,21 @@ export default function CarePage() {
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
           />
+        </div>
+
+        {/* Filtre par site */}
+        <div className="flex gap-2 flex-wrap mb-4">
+          {['all', 'Paris', 'Gleize', 'Tanzer'].map(tag => (
+            <button
+              key={tag}
+              onClick={() => handleSiteTagFilter(tag)}
+              className={`px-3 py-1 rounded-full text-sm font-medium border transition-all ${
+                siteTagFilter === tag ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+              }`}
+            >
+              {tag === 'all' ? 'Tous les sites' : tag}
+            </button>
+          ))}
         </div>
 
         {/* Filtres */}
@@ -559,6 +601,15 @@ export default function CarePage() {
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${hasProblem ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
                       {hasProblem ? (t.lastScanEtat || 'Problème') : 'RAS'}
                     </span>
+                    {t.siteTag && (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                        t.siteTag === 'Paris' ? 'bg-blue-100 text-blue-800' :
+                        t.siteTag === 'Gleize' ? 'bg-green-100 text-green-800' :
+                        'bg-orange-100 text-orange-800'
+                      }`}>
+                        {t.siteTag}
+                      </span>
+                    )}
                   </div>
                   <div className="flex gap-1.5 flex-wrap">
                     <button className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full hover:bg-green-200 transition-colors whitespace-nowrap" onClick={() => startQuickScan(t)}>J'ai l'outil</button>
@@ -607,18 +658,47 @@ export default function CarePage() {
       {selectedTool && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-6 gap-3 flex-wrap">
               <h2 className="text-2xl font-bold text-gray-800">{selectedTool.name}</h2>
-              <button
-                className="text-gray-500 hover:text-gray-700 text-3xl font-bold"
-                onClick={() => {
-                  setSelectedTool(null)
-                  setSelectedToolCertificates([])
-                  setSelectedToolHistory([])
-                }}
-              >
-                ×
-              </button>
+              <div className="flex items-center gap-2">
+                {session?.user?.role === 'ADMIN' && (
+                  confirmDeleteTool ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-red-600 font-medium">Confirmer ?</span>
+                      <button
+                        className="px-3 py-1 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700"
+                        onClick={() => deleteTool(selectedTool)}
+                      >
+                        Oui, supprimer
+                      </button>
+                      <button
+                        className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300"
+                        onClick={() => setConfirmDeleteTool(false)}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="px-3 py-1 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200"
+                      onClick={() => setConfirmDeleteTool(true)}
+                    >
+                      Supprimer
+                    </button>
+                  )
+                )}
+                <button
+                  className="text-gray-500 hover:text-gray-700 text-3xl font-bold"
+                  onClick={() => {
+                    setSelectedTool(null)
+                    setSelectedToolCertificates([])
+                    setSelectedToolHistory([])
+                    setConfirmDeleteTool(false)
+                  }}
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1057,6 +1137,25 @@ export default function CarePage() {
                     placeholder="Ajoutez des informations complémentaires visibles par tous les utilisateurs..."
                     rows="3"
                   />
+                </div>
+              )}
+
+              {/* Site physique (Admin uniquement) */}
+              {session?.user?.role === 'ADMIN' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Site physique
+                  </label>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={editForm.siteTag || ''}
+                    onChange={(e) => setEditForm({...editForm, siteTag: e.target.value})}
+                  >
+                    <option value="">— Non assigné —</option>
+                    <option value="Paris">Paris</option>
+                    <option value="Gleize">Gleize</option>
+                    <option value="Tanzer">Tanzer</option>
+                  </select>
                 </div>
               )}
 

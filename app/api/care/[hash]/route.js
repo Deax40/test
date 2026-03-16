@@ -152,6 +152,7 @@ export async function PATCH(request, { params }) {
     if (data.weight !== undefined) updateData.weight = data.weight !== null && data.weight !== '' ? String(data.weight).trim() : null
     if (data.imoNumber !== undefined) updateData.imoNumber = data.imoNumber !== null && data.imoNumber !== '' ? String(data.imoNumber).trim() : null
     if (data.complementaryInfo !== undefined) updateData.complementaryInfo = data.complementaryInfo !== null && data.complementaryInfo !== '' ? String(data.complementaryInfo).trim() : null
+    if (data.siteTag !== undefined) updateData.siteTag = data.siteTag !== null && data.siteTag !== '' ? String(data.siteTag).trim() : null
 
     // Client/tracking fields
     if (data.client !== undefined) updateData.client = data.client !== null && data.client !== '' ? String(data.client).trim() : null

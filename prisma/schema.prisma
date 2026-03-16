@@ -91,6 +91,7 @@ model Tool {
   transporteur   String?         // Nom du transporteur
   typeEnvoi      String?         // Type envoi/réception (Care: "Envoi", "Réception")
   ouEstAppareil  String?         // Où est l'appareil (Care)
+  siteTag        String?         // "Paris", "Gleize", "Tanzer" ou null
   createdAt      DateTime        @default(now())
   certifications Certification[]
   careLogs       CareLog[]

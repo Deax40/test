@@ -105,6 +105,7 @@ export async function PATCH(req, { params }) {
   if (data.transporteur !== undefined) updateData.transporteur = data.transporteur !== null && data.transporteur !== '' ? String(data.transporteur).trim() : null
   if (data.tracking !== undefined) updateData.tracking = data.tracking !== null && data.tracking !== '' ? String(data.tracking).trim() : null
   if (data.complementaryInfo !== undefined) updateData.complementaryInfo = data.complementaryInfo !== null && data.complementaryInfo !== '' ? String(data.complementaryInfo).trim() : null
+  if (data.siteTag !== undefined) updateData.siteTag = data.siteTag !== null && data.siteTag !== '' ? String(data.siteTag).trim() : null
 
   // Dimensions (from scan page)
   if (data.dimensionLength !== undefined) updateData.dimensionLength = data.dimensionLength !== null && data.dimensionLength !== '' ? String(data.dimensionLength).trim() : null

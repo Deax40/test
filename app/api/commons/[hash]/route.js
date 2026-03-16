@@ -102,6 +102,7 @@ export async function PATCH(req, { params }) {
     if (weight !== undefined) updateData.weight = weight !== null && weight !== '' ? String(weight).trim() : null
     if (imoNumber !== undefined) updateData.imoNumber = imoNumber !== null && imoNumber !== '' ? String(imoNumber).trim() : null
     if (complementaryInfo !== undefined) updateData.complementaryInfo = complementaryInfo !== null && complementaryInfo !== '' ? String(complementaryInfo).trim() : null
+    if (body.siteTag !== undefined) updateData.siteTag = body.siteTag !== null && body.siteTag !== '' ? String(body.siteTag).trim() : null
 
     // Client/tracking fields
     if (body.client !== undefined) updateData.client = body.client !== null && body.client !== '' ? String(body.client).trim() : null
