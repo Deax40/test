@@ -24,8 +24,11 @@ export async function GET() {
       return Response.json({ teamTag: null, members: [] })
     }
 
+    // Supporte les équipes multiples (ex: "EF Sud,EMA")
+    const adminTeams = teamTag.split(',').map(t => t.trim()).filter(Boolean)
+
     const members = await prisma.user.findMany({
-      where: { role: 'TECH', teamTag },
+      where: { role: 'TECH', teamTag: { in: adminTeams } },
       select: {
         id: true,
         name: true,

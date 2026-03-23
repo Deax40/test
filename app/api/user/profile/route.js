@@ -30,11 +30,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 })
     }
 
-    // Trouver le chef d'équipe (admin avec le même teamTag)
+    // Trouver le chef d'équipe (admin dont le teamTag contient l'équipe du TECH)
+    // Supporte les admins avec équipes multiples (ex: "EF Sud,EMA")
     let manager = null
     if (user.teamTag) {
       manager = await prisma.user.findFirst({
-        where: { role: 'ADMIN', teamTag: user.teamTag },
+        where: { role: 'ADMIN', teamTag: { contains: user.teamTag } },
         select: { id: true, name: true, username: true, email: true }
       })
     }

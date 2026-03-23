@@ -17,13 +17,6 @@ export default function MonEquipePage() {
   // Modal profil membre
   const [selectedMember, setSelectedMember] = useState(null)
 
-  // Modal certification
-  const [showCertModal, setShowCertModal] = useState(false)
-  const [editingCert, setEditingCert] = useState(null)
-  const [certForm, setCertForm] = useState({
-    userId: '', title: '', revisionDate: '', toolName: '', notes: '', pdfFile: null
-  })
-
   // Modal habilitation
   const [showHabModal, setShowHabModal] = useState(false)
   const [habForm, setHabForm] = useState({
@@ -65,73 +58,6 @@ export default function MonEquipePage() {
         const updated = data.members?.find(m => m.id === memberId)
         if (updated) setSelectedMember(updated)
       }
-    }
-  }
-
-  // ---- CERTIFICATIONS ----
-  const openAddCertModal = (userId = '') => {
-    setEditingCert(null)
-    setCertForm({ userId, title: '', revisionDate: '', toolName: '', notes: '', pdfFile: null })
-    setShowCertModal(true)
-  }
-
-  const openEditCertModal = (cert) => {
-    setEditingCert(cert)
-    setCertForm({
-      userId: cert.userId,
-      title: cert.title,
-      revisionDate: cert.revisionDate ? cert.revisionDate.split('T')[0] : '',
-      toolName: cert.toolName || '',
-      notes: cert.notes || '',
-      pdfFile: null
-    })
-    setShowCertModal(true)
-  }
-
-  const saveCert = async () => {
-    setError('')
-    setSuccess('')
-    if (!certForm.userId || !certForm.title || !certForm.revisionDate) {
-      setError('Utilisateur, titre et date sont obligatoires')
-      return
-    }
-    const formData = new FormData()
-    formData.append('userId', certForm.userId)
-    formData.append('title', certForm.title)
-    formData.append('revisionDate', certForm.revisionDate)
-    if (certForm.toolName) formData.append('toolName', certForm.toolName)
-    if (certForm.notes) formData.append('notes', certForm.notes)
-    if (certForm.pdfFile) formData.append('pdfFile', certForm.pdfFile)
-
-    try {
-      const res = editingCert
-        ? await fetch(`/api/user-certifications/${editingCert.id}`, { method: 'PUT', body: formData })
-        : await fetch('/api/user-certifications', { method: 'POST', body: formData })
-
-      if (res.ok) {
-        setSuccess(editingCert ? 'Certification modifiée' : 'Certification ajoutée')
-        setShowCertModal(false)
-        await refreshAndUpdateSelected(selectedMember?.id)
-      } else {
-        setError(await res.text() || 'Erreur lors de la sauvegarde')
-      }
-    } catch (e) {
-      setError(e.message)
-    }
-  }
-
-  const deleteCert = async (certId) => {
-    if (!confirm('Supprimer cette certification ?')) return
-    try {
-      const res = await fetch(`/api/user-certifications/${certId}`, { method: 'DELETE' })
-      if (res.ok) {
-        setSuccess('Certification supprimée')
-        await refreshAndUpdateSelected(selectedMember?.id)
-      } else {
-        setError('Erreur lors de la suppression')
-      }
-    } catch (e) {
-      setError(e.message)
     }
   }
 
@@ -196,9 +122,10 @@ export default function MonEquipePage() {
   }
 
   const teamTag = teamData?.teamTag
+  const adminTeams = teamTag ? teamTag.split(',').map(t => t.trim()).filter(Boolean) : []
   const members = teamData?.members || []
-  const teamUsers = teamTag
-    ? users.filter(u => u.role === 'TECH' && u.teamTag === teamTag)
+  const teamUsers = adminTeams.length > 0
+    ? users.filter(u => u.role === 'TECH' && adminTeams.includes(u.teamTag))
     : users.filter(u => u.role === 'TECH')
 
   return (
@@ -211,8 +138,11 @@ export default function MonEquipePage() {
           <div className="flex justify-between items-center mb-2">
             <div>
               <h1 className="text-2xl font-bold text-blue-900">Mon Équipe</h1>
-              {teamTag ? (
-                <p className="text-blue-700 font-medium mt-1">Équipe : {teamTag} — {members.length} membre(s)</p>
+              {adminTeams.length > 0 ? (
+                <p className="text-blue-700 font-medium mt-1">
+                  {adminTeams.length > 1 ? 'Équipes : ' : 'Équipe : '}
+                  {adminTeams.join(' · ')} — {members.length} membre(s)
+                </p>
               ) : (
                 <p className="text-orange-600 font-medium mt-1">
                   Aucune équipe assignée —{' '}
@@ -223,9 +153,6 @@ export default function MonEquipePage() {
             <div className="flex gap-2">
               <button className="btn btn-primary" onClick={() => openAddHabModal()}>
                 + Habilitation
-              </button>
-              <button className="btn btn-success" onClick={() => openAddCertModal()}>
-                + Certification
               </button>
             </div>
           </div>
@@ -238,7 +165,7 @@ export default function MonEquipePage() {
         {members.length === 0 ? (
           <div className="card">
             <p className="text-gray-500">
-              {teamTag ? 'Aucun technicien dans cette équipe.' : 'Assignez une équipe à votre compte dans /admin/equipes.'}
+              {adminTeams.length > 0 ? 'Aucun technicien dans ces équipes.' : 'Assignez une équipe à votre compte dans /admin/equipes.'}
             </p>
           </div>
         ) : (
@@ -246,7 +173,6 @@ export default function MonEquipePage() {
             {members.map(member => {
               const memberHabs = allHabilitations.filter(h => h.user?.id === member.id)
               const expiredHabs = memberHabs.filter(h => new Date(h.expiresAt) < new Date())
-              const certCount = member.userCertifications?.length || 0
 
               return (
                 <div
@@ -272,10 +198,6 @@ export default function MonEquipePage() {
                         <span className="text-red-600 font-medium">({expiredHabs.length} expirée{expiredHabs.length > 1 ? 's' : ''})</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5 text-sm">
-                      <span className="w-2 h-2 rounded-full bg-blue-500" />
-                      <span className="text-gray-600">{certCount} certif.</span>
-                    </div>
                   </div>
                 </div>
               )
@@ -287,7 +209,6 @@ export default function MonEquipePage() {
       {/* ======= MODAL PROFIL MEMBRE ======= */}
       {selectedMember && (() => {
         const memberHabs = allHabilitations.filter(h => h.user?.id === selectedMember.id)
-        const certs = selectedMember.userCertifications || []
         return (
           <div className="fixed inset-0 bg-black bg-opacity-60 flex items-start justify-center z-50 pt-8 pb-8 px-4 overflow-y-auto">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
@@ -359,49 +280,6 @@ export default function MonEquipePage() {
                   )}
                 </div>
 
-                {/* Certifications personnelles */}
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
-                      Certifications personnelles ({certs.length})
-                    </h3>
-                    <button
-                      className="btn btn-success btn-sm"
-                      onClick={() => openAddCertModal(selectedMember.id)}
-                    >
-                      + Ajouter
-                    </button>
-                  </div>
-                  {certs.length === 0 ? (
-                    <p className="text-gray-400 text-sm">Aucune certification personnelle</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {certs.map(cert => (
-                        <div key={cert.id} className="flex justify-between items-start p-3 rounded-lg border bg-blue-50 border-blue-200">
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900 text-sm">{cert.title}</p>
-                            <p className="text-xs text-gray-500">
-                              📅 {new Date(cert.revisionDate).toLocaleDateString('fr-FR')}
-                              {cert.toolName && ` · 🔧 ${cert.toolName}`}
-                            </p>
-                            {cert.notes && <p className="text-xs text-gray-600 italic mt-1">{cert.notes}</p>}
-                          </div>
-                          <div className="flex gap-1 ml-3 flex-shrink-0">
-                            {cert.pdfType && (
-                              <button
-                                className="btn btn-primary btn-sm"
-                                onClick={() => window.open(`/api/user-certifications/${cert.id}/pdf`, '_blank')}
-                              >PDF</button>
-                            )}
-                            <button className="btn btn-secondary btn-sm" onClick={() => openEditCertModal(cert)}>Mod.</button>
-                            <button className="btn btn-danger btn-sm" onClick={() => deleteCert(cert.id)}>Suppr.</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
 
               <div className="p-4 border-t flex justify-end">
@@ -469,60 +347,6 @@ export default function MonEquipePage() {
         </div>
       )}
 
-      {/* ======= MODAL CERTIFICATION ======= */}
-      {showCertModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] px-4">
-          <div className="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">
-                {editingCert ? 'Modifier la certification' : 'Ajouter une certification'}
-              </h3>
-              <button className="text-gray-500 hover:text-gray-700 text-2xl" onClick={() => setShowCertModal(false)}>×</button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="label">Utilisateur *</label>
-                <select
-                  className="input"
-                  value={certForm.userId}
-                  onChange={e => setCertForm({ ...certForm, userId: e.target.value })}
-                >
-                  <option value="">Sélectionner...</option>
-                  {teamUsers.map(u => (
-                    <option key={u.id} value={u.id}>{u.name} (@{u.username})</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="label">Titre *</label>
-                <input className="input" value={certForm.title} onChange={e => setCertForm({ ...certForm, title: e.target.value })} placeholder="Ex: Formation sécurité..." />
-              </div>
-              <div>
-                <label className="label">Date de révision *</label>
-                <input type="date" className="input" value={certForm.revisionDate} onChange={e => setCertForm({ ...certForm, revisionDate: e.target.value })} />
-              </div>
-              <div>
-                <label className="label">Outil (optionnel)</label>
-                <input className="input" value={certForm.toolName} onChange={e => setCertForm({ ...certForm, toolName: e.target.value })} placeholder="Nom de l'outil" />
-              </div>
-              <div>
-                <label className="label">Notes (optionnel)</label>
-                <textarea className="input" rows={2} value={certForm.notes} onChange={e => setCertForm({ ...certForm, notes: e.target.value })} placeholder="Notes..." />
-              </div>
-              <div>
-                <label className="label">PDF (optionnel)</label>
-                <input type="file" accept=".pdf" className="input" onChange={e => setCertForm({ ...certForm, pdfFile: e.target.files[0] })} />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button className="btn btn-success flex-1" onClick={saveCert}>
-                  {editingCert ? 'Enregistrer' : 'Ajouter'}
-                </button>
-                <button className="btn btn-secondary" onClick={() => setShowCertModal(false)}>Annuler</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

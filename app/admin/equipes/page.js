@@ -43,6 +43,15 @@ export default function AdminEquipesPage() {
     }
   }
 
+  const toggleTeam = (userId, team) => {
+    const current = pendingTags[userId] || ''
+    const teams = current ? current.split(',').map(t => t.trim()).filter(Boolean) : []
+    const idx = teams.indexOf(team)
+    if (idx >= 0) teams.splice(idx, 1)
+    else teams.push(team)
+    setPendingTags({ ...pendingTags, [userId]: teams.join(',') })
+  }
+
   const saveTag = async (userId) => {
     setError('')
     setSuccess('')
@@ -78,7 +87,40 @@ export default function AdminEquipesPage() {
   const admins = users.filter(u => u.role === 'ADMIN')
   const techs = users.filter(u => u.role === 'TECH')
 
-  const renderRow = (user) => (
+  const renderAdminRow = (user) => {
+    const selectedTeams = (pendingTags[user.id] || '').split(',').map(t => t.trim()).filter(Boolean)
+    return (
+      <tr key={user.id} className="border-b hover:bg-gray-50">
+        <td className="px-4 py-3 font-medium">{user.name}</td>
+        <td className="px-4 py-3 text-gray-500">@{user.username}</td>
+        <td className="px-4 py-3">
+          <div className="flex flex-wrap gap-3">
+            {TEAM_OPTIONS.map(t => (
+              <label key={t} className="flex items-center gap-1.5 cursor-pointer text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedTeams.includes(t)}
+                  onChange={() => toggleTeam(user.id, t)}
+                  className="rounded"
+                />
+                {t}
+              </label>
+            ))}
+          </div>
+          {selectedTeams.length > 0 && (
+            <p className="text-xs text-purple-600 mt-1">{selectedTeams.join(', ')}</p>
+          )}
+        </td>
+        <td className="px-4 py-3">
+          <button className="btn btn-primary btn-sm" onClick={() => saveTag(user.id)}>
+            Enregistrer
+          </button>
+        </td>
+      </tr>
+    )
+  }
+
+  const renderTechRow = (user) => (
     <tr key={user.id} className="border-b hover:bg-gray-50">
       <td className="px-4 py-3 font-medium">{user.name}</td>
       <td className="px-4 py-3 text-gray-500">@{user.username}</td>
@@ -95,10 +137,7 @@ export default function AdminEquipesPage() {
         </select>
       </td>
       <td className="px-4 py-3">
-        <button
-          className="btn btn-primary btn-sm"
-          onClick={() => saveTag(user.id)}
-        >
+        <button className="btn btn-primary btn-sm" onClick={() => saveTag(user.id)}>
           Enregistrer
         </button>
       </td>
@@ -140,7 +179,7 @@ export default function AdminEquipesPage() {
                     <th className="px-4 py-2">Action</th>
                   </tr>
                 </thead>
-                <tbody>{admins.map(renderRow)}</tbody>
+                <tbody>{admins.map(renderAdminRow)}</tbody>
               </table>
             </div>
           )}
@@ -165,7 +204,7 @@ export default function AdminEquipesPage() {
                     <th className="px-4 py-2">Action</th>
                   </tr>
                 </thead>
-                <tbody>{techs.map(renderRow)}</tbody>
+                <tbody>{techs.map(renderTechRow)}</tbody>
               </table>
             </div>
           )}
