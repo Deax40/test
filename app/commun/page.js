@@ -617,7 +617,7 @@ export default function CommunPage() {
 
         {/* Filtre par site */}
         <div className="flex gap-2 flex-wrap mb-4">
-          {['all', 'Paris', 'Gleize', 'Tanzer'].map(tag => (
+          {['all', 'Paris', 'Gleizé', 'Tanger'].map(tag => (
             <button
               key={tag}
               onClick={() => handleSiteTagFilter(tag)}
@@ -672,44 +672,6 @@ export default function CommunPage() {
           </div>
         )}
 
-        {/* Filtres rapides par emplacement */}
-        <div className="mb-6">
-          <h3 className="text-xs sm:text-sm font-semibold text-gray-700 mb-3">Filtres rapides</h3>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                !locationFilter ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-              onClick={() => {
-                setLocationFilter('')
-                applyFilters(tools, searchTerm, '', stateFilter)
-              }}
-            >
-              Tous ({tools.length})
-            </button>
-            {['Paris', 'Tanger', 'Tunisie', 'Gleizé'].map(location => {
-              const count = tools.filter(t => t.lastScanLieu?.includes(location)).length;
-              if (count === 0) return null;
-              const isActive = locationFilter === location;
-              return (
-                <button
-                  key={location}
-                  className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300'
-                  }`}
-                  onClick={() => handleLocationFilter(location)}
-                >
-                  <span className="hidden sm:inline">{location}</span>
-                  <span className="sm:hidden">{location.substring(0, 3)}</span>
-                  {' '}({count})
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             {error}
@@ -739,7 +701,7 @@ export default function CommunPage() {
                     {t.siteTag && (
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                         t.siteTag === 'Paris' ? 'bg-blue-100 text-blue-800' :
-                        t.siteTag === 'Gleize' ? 'bg-green-100 text-green-800' :
+                        t.siteTag === 'Gleizé' ? 'bg-green-100 text-green-800' :
                         'bg-orange-100 text-orange-800'
                       }`}>
                         {t.siteTag}
@@ -1349,8 +1311,8 @@ export default function CommunPage() {
                   >
                     <option value="">— Non assigné —</option>
                     <option value="Paris">Paris</option>
-                    <option value="Gleize">Gleize</option>
-                    <option value="Tanzer">Tanzer</option>
+                    <option value="Gleizé">Gleizé</option>
+                    <option value="Tanger">Tanger</option>
                   </select>
                 </div>
               )}
