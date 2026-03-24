@@ -1,8 +1,22 @@
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
+
+// Supprime les accents, apostrophes, tirets et normalise pour la recherche
+function normalizeStr(str) {
+  if (!str) return ''
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')   // supprime les diacritiques (é→e, à→a…)
+    .replace(/[''`´ʼ]/g, '')           // supprime les apostrophes (droites et courbes)
+    .replace(/[-_()[\]]/g, ' ')        // remplace tirets/underscores/parenthèses par espace
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 export async function POST(req) {
   const session = await getServerSession(authOptions)
@@ -33,13 +47,13 @@ export async function POST(req) {
 
   if (!hash && !name && raw) {
     const candidate = raw.trim()
-    // Check for CARE_ prefix
     if (candidate.startsWith('CARE_')) {
       hash = candidate.replace('CARE_', '')
+    } else if (candidate.startsWith('COMMUN_')) {
+      hash = candidate.replace('COMMUN_', '')
     } else if (/^[a-fA-F0-9]{64}$/.test(candidate)) {
-      hash = candidate.toLowerCase()
+      hash = candidate.toUpperCase()
     } else if (/^[a-fA-F0-9]{8}$/.test(candidate.toUpperCase())) {
-      // Care tool hash format
       hash = candidate.toUpperCase()
     } else {
       name = candidate
@@ -55,38 +69,106 @@ export async function POST(req) {
 
   console.log('[SCAN] Looking for tool:', { hash, name })
 
-  // Search in Prisma database
   let tool = null
   let source = 'unknown'
 
   try {
+    // --- Niveau 1 : recherche par hash exact (case-insensitive) ---
     if (hash) {
       const normalized = String(hash).trim().toUpperCase()
-      // Try exact hash match
-      tool = await prisma.tool.findUnique({
-        where: { hash: normalized }
+
+      tool = await prisma.tool.findFirst({
+        where: {
+          OR: [
+            { hash: normalized },
+            { hash: normalized.toLowerCase() },
+          ]
+        }
       })
 
-      // Try qrData match
+      // --- Niveau 2 : recherche dans qrData ---
       if (!tool) {
         tool = await prisma.tool.findFirst({
           where: {
             OR: [
               { qrData: { contains: normalized, mode: 'insensitive' } },
               { qrData: { contains: `CARE_${normalized}`, mode: 'insensitive' } },
-              { qrData: { contains: `COMMUN_${normalized}`, mode: 'insensitive' } }
+              { qrData: { contains: `COMMUN_${normalized}`, mode: 'insensitive' } },
+              { qrData: { contains: `TOOL_${normalized}`, mode: 'insensitive' } },
             ]
           }
         })
       }
+
+      // --- Niveau 3 : le hash QR est peut-être SHA-256 du nom de fichier ---
+      // Badge Studio peut générer des QR avec SHA-256 du filename
+      if (!tool && normalized.length === 64) {
+        const allTools = await prisma.tool.findMany({
+          select: { id: true, hash: true, name: true, fileName: true, category: true,
+                    lastScanAt: true, lastScanUser: true, lastScanLieu: true,
+                    lastScanEtat: true, client: true, tracking: true, transporteur: true,
+                    complementaryInfo: true, problemDescription: true, typeEnvoi: true,
+                    weight: true, imoNumber: true, qrData: true, createdAt: true }
+        })
+
+        for (const t of allTools) {
+          // Teste SHA-256 du fileName ET du name courant (résiste au rename)
+          const variants = [
+            t.fileName,
+            t.fileName ? t.fileName.replace(/\.bs$/i, '') : null,
+            normalizeStr(t.fileName),
+            t.fileName ? normalizeStr(t.fileName.replace(/\.bs$/i, '')) : null,
+            t.name,
+            normalizeStr(t.name),
+          ].filter(Boolean)
+          for (const v of variants) {
+            const sha = crypto.createHash('sha256').update(v).digest('hex').toUpperCase()
+            if (sha === normalized) {
+              tool = t
+              break
+            }
+          }
+          if (tool) break
+        }
+      }
     }
 
+    // --- Niveau 4 : recherche par nom exact (insensitive) ---
     if (!tool && name) {
       tool = await prisma.tool.findFirst({
-        where: {
-          name: { contains: name, mode: 'insensitive' }
-        }
+        where: { name: { contains: name, mode: 'insensitive' } }
       })
+    }
+
+    // --- Niveau 5 : recherche par nom sans accents ---
+    if (!tool) {
+      const searchStr = normalizeStr(name || hash || '')
+      if (searchStr.length >= 3) {
+        const allTools = await prisma.tool.findMany({
+          select: { id: true, hash: true, name: true, fileName: true, category: true,
+                    lastScanAt: true, lastScanUser: true, lastScanLieu: true,
+                    lastScanEtat: true, client: true, tracking: true, transporteur: true,
+                    complementaryInfo: true, problemDescription: true, typeEnvoi: true,
+                    weight: true, imoNumber: true, qrData: true, createdAt: true }
+        })
+
+        for (const t of allTools) {
+          const normName = normalizeStr(t.name)
+          const normFile = normalizeStr(t.fileName || '')
+          const normQr = normalizeStr(t.qrData || '')
+          if (
+            normName === searchStr ||
+            normName.includes(searchStr) ||
+            searchStr.includes(normName) ||
+            normFile.includes(searchStr) ||
+            searchStr.includes(normFile) ||
+            normQr.includes(searchStr)
+          ) {
+            tool = t
+            break
+          }
+        }
+      }
     }
 
     if (!tool) {
@@ -112,7 +194,7 @@ export async function POST(req) {
         createdAt: tool.createdAt?.toISOString() || null
       },
       source,
-      editSessionToken: null // Not used anymore, direct Prisma saves
+      editSessionToken: null
     })
   } catch (error) {
     console.error('[SCAN] ❌ Error:', error.message)
