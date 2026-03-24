@@ -28,6 +28,8 @@ export default function ScanPage() {
   const [cameraError, setCameraError] = useState(false)
   const [manualInput, setManualInput] = useState('')
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [scanKey, setScanKey] = useState(0) // force re-mount Scanner on each scan
+  const [scanLocked, setScanLocked] = useState(false) // bloque le scanner tant que l'action n'est pas terminée
 
   useEffect(() => {
     async function loadSession() {
@@ -53,7 +55,21 @@ export default function ScanPage() {
     return () => clearInterval(interval)
   }, [])
 
+  function resetToScanner() {
+    setShowForm(false)
+    setTool(null)
+    setToken(null)
+    setError('')
+    setMessage('')
+    setCameraError(false)
+    setScanAction('')
+    setScanLocked(false)
+    setScanKey(k => k + 1)
+    setForm({ client: '', state: 'RAS', problemDescription: '', problemPhoto: null, transporteur: '', tracking: '', lieuEnvoi: '' })
+  }
+
   function handleScan(result) {
+    if (scanLocked) return
     if (!result) return
     const text = Array.isArray(result)
       ? result[0]?.rawValue || result[0]?.text
@@ -107,6 +123,8 @@ export default function ScanPage() {
         tracking: '',
         lieuEnvoi: ''
       })
+      setScanLocked(true)
+      setScanKey(k => k + 1)
       setShowForm(true)
       setToken(data.editSessionToken)
     } catch (e) {
@@ -141,7 +159,7 @@ export default function ScanPage() {
     }
 
     // Validation pour les actions qui requièrent un client
-    if (['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE'].includes(scanAction)) {
+    if (['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'SORTIE BUREAU TANGER'].includes(scanAction)) {
       if (!form.client.trim()) {
         setError('Le nom du client est obligatoire pour cette action')
         return
@@ -178,6 +196,12 @@ export default function ScanPage() {
           location = 'Gleizé Bureau'
           break
         case 'SORTIE BUREAU GLEIZE':
+          location = form.client
+          break
+        case 'DEPOT BUREAU TANGER':
+          location = 'Tanger Bureau'
+          break
+        case 'SORTIE BUREAU TANGER':
           location = form.client
           break
         case 'AUTRES':
@@ -245,6 +269,7 @@ export default function ScanPage() {
       console.log('[SCAN] ✅ Save successful:', data)
       setTool(data.tool)
       setMessage(form.state === 'Abîmé' ? 'Outil abîmé signalé et transféré vers Admin.' : 'Mise à jour enregistrée !')
+      setScanLocked(false)
 
       // Reset form
       setScanAction('')
@@ -266,66 +291,100 @@ export default function ScanPage() {
   const disabled = !tool
 
   // Déterminer si on doit afficher les champs client et état
-  const showClientField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE'].includes(scanAction)
-  const showStateField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'DEPOT BUREAU PARIS', 'DEPOT BUREAU GLEIZE'].includes(scanAction)
+  const showClientField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'SORTIE BUREAU TANGER'].includes(scanAction)
+  const showStateField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'SORTIE BUREAU TANGER', 'DEPOT BUREAU PARIS', 'DEPOT BUREAU GLEIZE', 'DEPOT BUREAU TANGER'].includes(scanAction)
   const showEnvoiFields = scanAction === 'ENVOIE MATERIEL'
 
   return (
     <div>
       <Nav active="scan" />
       {!showForm ? (
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-lg mx-auto">
           <div className="card text-center">
             <h1 className="text-2xl font-bold text-gray-800 mb-2">Scanner QR Code</h1>
-            <p className="text-gray-600 mb-6">Placez le QR code de l'outil dans le cadre ci-dessous</p>
+            <p className="text-gray-600 mb-4">Placez le QR code de l'outil dans le cadre ci-dessous</p>
 
             {!cameraError && (
-              <div className="rounded-xl overflow-hidden bg-gray-100 max-w-md mx-auto">
+              <div
+                className="rounded-xl overflow-hidden bg-black mx-auto"
+                style={{ width: '100%', maxWidth: '360px', height: '360px', position: 'relative' }}
+              >
                 <Scanner
+                  key={scanKey}
                   onScan={handleScan}
                   onError={handleCameraError}
-                  constraints={{ width: 400, height: 400 }}
+                  constraints={{ facingMode: 'environment' }}
+                  styles={{ container: { width: '100%', height: '100%' }, video: { width: '100%', height: '100%', objectFit: 'cover' } }}
                 />
               </div>
             )}
 
-            {error && <p className="text-red-600 mt-4">{error}</p>}
+            {cameraError && (
+              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-2">
+                <p className="text-yellow-800 font-medium">⚠️ Caméra inaccessible</p>
+                <p className="text-sm text-yellow-700 mt-1">Utilisez la saisie manuelle ci-dessous</p>
+              </div>
+            )}
+
+            {error && <p className="text-red-600 mt-3 text-sm">{error}</p>}
           </div>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="flex flex-col gap-4 md:grid md:grid-cols-2 md:gap-6">
+          {/* Bloc caméra — compact sur mobile */}
           <div className="card">
-            <h2 className="text-lg font-semibold mb-4">Scanner un autre outil</h2>
+            <h2 className="text-base font-semibold mb-3">Scanner un outil</h2>
 
-            {!cameraError ? (
-              <div className="rounded-xl overflow-hidden bg-gray-100">
-                <Scanner onScan={handleScan} onError={handleCameraError} />
+            {scanLocked ? (
+              <div
+                className="rounded-xl bg-gray-900 flex items-center justify-center mb-3"
+                style={{ width: '100%', height: '240px' }}
+              >
+                <div className="text-center text-white px-4">
+                  <div className="text-4xl mb-3">🔒</div>
+                  <p className="font-medium">Scanner verrouillé</p>
+                  <p className="text-xs text-gray-400 mt-1">Enregistrez ou annulez l'action en cours</p>
+                </div>
+              </div>
+            ) : !cameraError ? (
+              <div
+                className="rounded-xl overflow-hidden bg-black"
+                style={{ width: '100%', height: '240px', position: 'relative' }}
+              >
+                <Scanner
+                  key={scanKey}
+                  onScan={handleScan}
+                  onError={handleCameraError}
+                  constraints={{ facingMode: 'environment' }}
+                  styles={{ container: { width: '100%', height: '100%' }, video: { width: '100%', height: '100%', objectFit: 'cover' } }}
+                />
               </div>
             ) : (
-              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
+              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-3">
                 <p className="text-yellow-800 font-medium">⚠️ Caméra inaccessible</p>
                 <p className="text-sm text-yellow-700 mt-1">Utilisez la saisie manuelle ci-dessous</p>
               </div>
             )}
 
             <button
-              className="btn btn-secondary w-full mt-4"
-              onClick={() => {
-                setShowForm(false)
-                setTool(null)
-                setToken(null)
-                setError('')
-                setMessage('')
-                setCameraError(false)
-                setScanAction('')
-              }}
+              className="btn btn-secondary w-full mt-3"
+              onClick={resetToScanner}
             >
-              Retour au scanner principal
+              Annuler / Retour au scanner
             </button>
           </div>
+
+          {/* Bloc formulaire */}
           <div className="card space-y-4">
             {error && <p className="text-red-600">{error}</p>}
-            {message && <p className="text-green-600">{message}</p>}
+            {message && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <p className="text-green-700 font-medium mb-3">{message}</p>
+                <button className="btn btn-primary w-full" onClick={resetToScanner}>
+                  Scanner un autre outil
+                </button>
+              </div>
+            )}
             {tool && (
             <>
               {/* Nom de l'outil en haut */}
@@ -427,6 +486,8 @@ export default function ScanPage() {
                   <option value="SORTIE BUREAU PARIS">SORTIE BUREAU PARIS</option>
                   <option value="DEPOT BUREAU GLEIZE">DEPOT BUREAU GLEIZE</option>
                   <option value="SORTIE BUREAU GLEIZE">SORTIE BUREAU GLEIZE</option>
+                  <option value="DEPOT BUREAU TANGER">DEPOT BUREAU TANGER</option>
+                  <option value="SORTIE BUREAU TANGER">SORTIE BUREAU TANGER</option>
                   <option value="AUTRES">AUTRES</option>
                   <option value="CHEZ CLIENT">CHEZ CLIENT</option>
                 </select>
