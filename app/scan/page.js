@@ -270,6 +270,7 @@ export default function ScanPage() {
       setTool(data.tool)
       setMessage(form.state === 'Abîmé' ? 'Outil abîmé signalé et transféré vers Admin.' : 'Mise à jour enregistrée !')
       setScanLocked(false)
+      setTimeout(() => resetToScanner(), 2000)
 
       // Reset form
       setScanAction('')

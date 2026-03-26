@@ -19,6 +19,7 @@ export default function Nav({ active }) {
     { href: '/admin', label: 'ADMIN', key: 'admin' },
     { href: '/admin/certificats', label: 'CERTIFICATS', key: 'certificats' },
     { href: '/admin/files', label: 'FICHIERS', key: 'admin-files' },
+    { href: '/admin/nouveau-qr', label: 'NOUVEAU QR', key: 'nouveau-qr' },
     { href: '/admin/equipes', label: 'ÉQUIPES', key: 'equipes' }
   ] : []
 
@@ -29,8 +30,8 @@ export default function Nav({ active }) {
           {/* Logo/Brand */}
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
-                ENGEL QR
+              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+                ENGEL
               </span>
             </div>
           </div>

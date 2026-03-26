@@ -11,7 +11,12 @@ export async function GET() {
   // Prefer database (works on Vercel); fallback to file-based if empty
   try {
     const dbTools = await prisma.tool.findMany({
-      where: { category: 'CARE' },
+      where: {
+        OR: [
+          { category: 'CARE' },
+          { category: 'Care Tools' },
+        ]
+      },
       orderBy: { name: 'asc' }
     })
 
