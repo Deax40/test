@@ -37,6 +37,10 @@ export default function CommunPage() {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [confirmDeleteTool, setConfirmDeleteTool] = useState(false)
   const [siteTagFilter, setSiteTagFilter] = useState('all')
+  const [showRenameModal, setShowRenameModal] = useState(false)
+  const [renamingTool, setRenamingTool] = useState(null)
+  const [renameValue, setRenameValue] = useState('')
+  const [renameError, setRenameError] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -568,6 +572,34 @@ export default function CommunPage() {
     }
   }
 
+  const openRename = (tool) => {
+    setRenamingTool(tool)
+    setRenameValue(tool.name)
+    setRenameError('')
+    setShowRenameModal(true)
+  }
+
+  const saveRename = async () => {
+    const trimmed = renameValue.trim()
+    if (!trimmed) { setRenameError('Le nom ne peut pas être vide'); return }
+    if (trimmed === renamingTool.name) { setShowRenameModal(false); return }
+    setRenameError('')
+    try {
+      const res = await fetch('/api/admin/rename-tools', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: renamingTool.id, name: trimmed })
+      })
+      const data = await res.json()
+      if (!res.ok) { setRenameError(data.error || 'Erreur lors du renommage'); return }
+      setShowRenameModal(false)
+      setRenamingTool(null)
+      await resyncData(true)
+    } catch (e) {
+      setRenameError(e.message)
+    }
+  }
+
   async function deleteTool(tool) {
     try {
       const res = await fetch(`/api/tools/${tool.hash}`, { method: 'DELETE' })
@@ -711,6 +743,9 @@ export default function CommunPage() {
                   <div className="flex gap-1.5 flex-wrap">
                     <button className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full hover:bg-green-200 transition-colors whitespace-nowrap" onClick={() => startQuickScan(t)}>J'ai l'outil</button>
                     <button className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full hover:bg-blue-200 transition-colors whitespace-nowrap" onClick={() => startEdit(t)}>Modifier</button>
+                    {session?.user?.role === 'ADMIN' && (
+                      <button className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full hover:bg-yellow-200 transition-colors whitespace-nowrap" onClick={() => openRename(t)}>Renommer</button>
+                    )}
                     <button className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full hover:bg-gray-200 transition-colors whitespace-nowrap" onClick={() => { setSelectedTool(t); loadToolCertificates(t.hash); loadToolHistory(t.hash) }}>Détails</button>
                   </div>
                 </div>
@@ -1660,6 +1695,34 @@ export default function CommunPage() {
                   Annuler
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Renommer (admin) */}
+      {showRenameModal && renamingTool && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6">
+            <h2 className="text-lg font-bold text-gray-800 mb-1">Renommer l'outil</h2>
+            <p className="text-sm text-gray-500 mb-4">Nom actuel : <span className="font-medium text-gray-700">{renamingTool.name}</span></p>
+            <input
+              type="text"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 mb-2"
+              value={renameValue}
+              onChange={e => { setRenameValue(e.target.value); setRenameError('') }}
+              onKeyDown={e => e.key === 'Enter' && saveRename()}
+              autoFocus
+              placeholder="Nouveau nom..."
+            />
+            {renameError && <p className="text-red-600 text-sm mb-2">{renameError}</p>}
+            <div className="flex gap-3 mt-4">
+              <button className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition-colors" onClick={saveRename}>
+                Enregistrer
+              </button>
+              <button className="px-4 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors" onClick={() => setShowRenameModal(false)}>
+                Annuler
+              </button>
             </div>
           </div>
         </div>

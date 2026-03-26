@@ -53,6 +53,14 @@ export async function PATCH(req) {
       return NextResponse.json({ error: 'id et name requis' }, { status: 400 })
     }
 
+    // Vérifier doublon (insensible à la casse)
+    const duplicate = await prisma.tool.findFirst({
+      where: { name: { equals: name.trim(), mode: 'insensitive' }, NOT: { id } }
+    })
+    if (duplicate) {
+      return NextResponse.json({ error: `Un outil nommé "${duplicate.name}" existe déjà` }, { status: 409 })
+    }
+
     const updated = await prisma.tool.update({
       where: { id },
       data: { name: name.trim() },

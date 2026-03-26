@@ -149,6 +149,7 @@ export async function PATCH(request, { params }) {
     }
 
     // Admin-only fields (keep empty strings, don't convert to null)
+    if (data.name !== undefined && String(data.name).trim()) updateData.name = String(data.name).trim()
     if (data.weight !== undefined) updateData.weight = data.weight !== null && data.weight !== '' ? String(data.weight).trim() : null
     if (data.imoNumber !== undefined) updateData.imoNumber = data.imoNumber !== null && data.imoNumber !== '' ? String(data.imoNumber).trim() : null
     if (data.complementaryInfo !== undefined) updateData.complementaryInfo = data.complementaryInfo !== null && data.complementaryInfo !== '' ? String(data.complementaryInfo).trim() : null
