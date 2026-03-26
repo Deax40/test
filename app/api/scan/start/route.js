@@ -113,20 +113,32 @@ export async function POST(req) {
 
         for (const t of allTools) {
           // Teste SHA-256 du fileName ET du name courant (résiste au rename)
-          const variants = [
+          // Essaie plusieurs variantes de normalisation Unicode et d'encodage
+          // pour couvrir Badge Studio (Windows latin-1, macOS NFD, etc.)
+          const base = [
             t.fileName,
             t.fileName ? t.fileName.replace(/\.bs$/i, '') : null,
-            normalizeStr(t.fileName),
-            t.fileName ? normalizeStr(t.fileName.replace(/\.bs$/i, '')) : null,
             t.name,
-            normalizeStr(t.name),
           ].filter(Boolean)
+
+          const variants = []
+          for (const b of base) {
+            variants.push(b)                          // brut (UTF-8 NFC par défaut JS)
+            variants.push(b.normalize('NFC'))          // Windows Unicode
+            variants.push(b.normalize('NFD'))          // macOS Unicode
+            variants.push(normalizeStr(b))             // sans accents/lowercase
+          }
+
+          let found = false
           for (const v of variants) {
-            const sha = crypto.createHash('sha256').update(v).digest('hex').toUpperCase()
-            if (sha === normalized) {
-              tool = t
-              break
+            // UTF-8 (standard) puis Latin-1 (Windows-1252 pour les accents)
+            for (const enc of ['utf8', 'latin1']) {
+              const sha = crypto.createHash('sha256')
+                .update(Buffer.from(v, enc))
+                .digest('hex').toUpperCase()
+              if (sha === normalized) { tool = t; found = true; break }
             }
+            if (found) break
           }
           if (tool) break
         }
@@ -159,9 +171,9 @@ export async function POST(req) {
           if (
             normName === searchStr ||
             normName.includes(searchStr) ||
-            searchStr.includes(normName) ||
-            normFile.includes(searchStr) ||
-            searchStr.includes(normFile) ||
+            (normName.length >= 3 && searchStr.includes(normName)) ||
+            (normFile.length >= 3 && normFile.includes(searchStr)) ||
+            (normFile.length >= 3 && searchStr.includes(normFile)) ||
             normQr.includes(searchStr)
           ) {
             tool = t
