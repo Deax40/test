@@ -292,8 +292,8 @@ export default function ScanPage() {
   const disabled = !tool
 
   // Déterminer si on doit afficher les champs client et état
-  const showClientField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'SORTIE BUREAU TANGER'].includes(scanAction)
-  const showStateField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'SORTIE BUREAU TANGER', 'DEPOT BUREAU PARIS', 'DEPOT BUREAU GLEIZE', 'DEPOT BUREAU TANGER'].includes(scanAction)
+  const showClientField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'CHEZ CLIENT', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'SORTIE BUREAU TANGER'].includes(scanAction)
+  const showStateField = scanAction && ['ENVOIE MATERIEL', 'RECEPTION MATERIEL', 'AUTRES', 'CHEZ CLIENT', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'SORTIE BUREAU TANGER', 'DEPOT BUREAU PARIS', 'DEPOT BUREAU GLEIZE', 'DEPOT BUREAU TANGER'].includes(scanAction)
   const showEnvoiFields = scanAction === 'ENVOIE MATERIEL'
 
   return (

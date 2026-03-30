@@ -730,15 +730,6 @@ export default function CommunPage() {
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${hasProblem ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
                       {hasProblem ? (t.lastScanEtat || t.state || 'Problème') : 'RAS'}
                     </span>
-                    {t.siteTag && (
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                        t.siteTag === 'Paris' ? 'bg-blue-100 text-blue-800' :
-                        t.siteTag === 'Gleizé' ? 'bg-green-100 text-green-800' :
-                        'bg-orange-100 text-orange-800'
-                      }`}>
-                        {t.siteTag}
-                      </span>
-                    )}
                   </div>
                   <div className="flex gap-1.5 flex-wrap">
                     <button className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full hover:bg-green-200 transition-colors whitespace-nowrap" onClick={() => startQuickScan(t)}>J'ai l'outil</button>
@@ -751,7 +742,7 @@ export default function CommunPage() {
                 </div>
                 {/* Métadonnées */}
                 <div className="flex flex-wrap gap-x-5 gap-y-0.5 mt-1.5 text-xs">
-                  <span className="text-gray-500"><span className="text-gray-400">Lieu : </span><span className="font-semibold">{t.lastScanLieu || 'N/D'}</span></span>
+                  <span className="text-gray-500"><span className="text-gray-400">Lieu : </span><span className="font-semibold text-green-700">{t.lastScanLieu || 'N/D'}</span></span>
                   {t.lastScanAt && (
                     <span className="text-gray-500">
                       <span className="text-gray-400">Date : </span>
