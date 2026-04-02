@@ -1,11 +1,44 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import Nav from '@/components/nav'
+import QRCode from 'react-qr-code'
 
 export default function CarePage() {
   const { data: session } = useSession()
+  const qrDetailRef = useRef(null)
+
+  const downloadQR = (format) => {
+    const svgEl = qrDetailRef.current?.querySelector('svg')
+    if (!svgEl) return
+    const clone = svgEl.cloneNode(true)
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    const name = (qrDetailRef.current?.dataset?.toolname || 'outil').replace(/\s+/g, '_')
+    const hash = qrDetailRef.current?.dataset?.toolhash || ''
+    if (format === 'svg') {
+      const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml;charset=utf-8' })
+      const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `${name}_${hash}.svg` })
+      document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    } else {
+      const SIZE = 512
+      const canvas = document.createElement('canvas')
+      canvas.width = SIZE; canvas.height = SIZE
+      const ctx = canvas.getContext('2d')
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, SIZE, SIZE)
+      clone.setAttribute('width', SIZE); clone.setAttribute('height', SIZE)
+      const img = new Image()
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, SIZE, SIZE)
+        canvas.toBlob(blob => {
+          const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `${name}_${hash}.png` })
+          document.body.appendChild(a); a.click(); document.body.removeChild(a)
+        }, 'image/png')
+      }
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(new XMLSerializer().serializeToString(clone))))
+    }
+  }
+
   const [tools, setTools] = useState([])
   const [filteredTools, setFilteredTools] = useState([])
   const [error, setError] = useState('')
@@ -210,7 +243,7 @@ export default function CarePage() {
 
       if (clearFiltersFlag) {
         setFilteredTools([...freshTools])
-      } else if (!searchTerm && !locationFilter && !stateFilter) {
+      } else if (!searchTerm && !locationFilter && !stateFilter && siteTagFilter === 'all') {
         setFilteredTools([...freshTools])
       } else {
         applyFilters(freshTools, searchTerm, locationFilter, stateFilter)
@@ -595,6 +628,16 @@ export default function CarePage() {
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${hasProblem ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
                       {hasProblem ? (t.lastScanEtat || 'Problème') : 'RAS'}
                     </span>
+                    {t.typeEnvoi && (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                        {t.typeEnvoi}
+                      </span>
+                    )}
+                    {t.client && (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-800">
+                        {t.client}
+                      </span>
+                    )}
                   </div>
                   <div className="flex gap-1.5 flex-wrap">
                     <button className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full hover:bg-green-200 transition-colors whitespace-nowrap" onClick={() => startQuickScan(t)}>J'ai l'outil</button>
@@ -923,7 +966,7 @@ export default function CarePage() {
                 </div>
               </div>
 
-              {/* Statut visuel */}
+              {/* Statut visuel + QR */}
               <div className="space-y-4">
                 <div className="text-center">
                   <div className={`w-16 h-16 rounded-full mx-auto mb-2 flex items-center justify-center text-2xl ${
@@ -933,10 +976,28 @@ export default function CarePage() {
                   }`}>
                     {selectedTool.lastScanEtat === 'Abîmé' || selectedTool.lastScanEtat === 'Problème' ? '!' : '✓'}
                   </div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Outil Care
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Outil Care</p>
                 </div>
+
+                {/* QR Code */}
+                {selectedTool.qrData && (
+                  <div className="text-center">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">QR Code</p>
+                    <div
+                      ref={qrDetailRef}
+                      data-toolname={selectedTool.name}
+                      data-toolhash={selectedTool.hash}
+                      className="inline-block p-3 bg-white border border-gray-200 rounded-xl shadow-sm"
+                    >
+                      <QRCode value={selectedTool.qrData} size={140} level="M" bgColor="#ffffff" fgColor="#000000" />
+                    </div>
+                    <p className="text-xs text-gray-400 font-mono mt-1 break-all">{selectedTool.qrData}</p>
+                    <div className="flex gap-2 justify-center mt-2">
+                      <button onClick={() => downloadQR('svg')} className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg font-medium transition-colors">SVG</button>
+                      <button onClick={() => downloadQR('png')} className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg font-medium transition-colors">PNG</button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
