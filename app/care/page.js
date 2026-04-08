@@ -243,10 +243,9 @@ export default function CarePage() {
 
       if (clearFiltersFlag) {
         setFilteredTools([...freshTools])
-      } else if (!searchTerm && !locationFilter && !stateFilter && siteTagFilter === 'all') {
-        setFilteredTools([...freshTools])
       } else {
-        applyFilters(freshTools, searchTerm, locationFilter, stateFilter)
+        // Toujours passer siteTagFilter explicitement pour éviter les closures périmées
+        applyFilters(freshTools, searchTerm, locationFilter, stateFilter, siteTagFilter)
       }
     } catch (e) {
       console.error('[RESYNC] Error:', e)

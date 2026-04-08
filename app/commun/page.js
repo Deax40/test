@@ -306,12 +306,10 @@ export default function CommunPage() {
         setFilteredTools([...freshTools])
       }
       // Check if filters are empty (just cleared after save)
-      else if (!searchTerm && !locationFilter && !stateFilter && siteTagFilter === 'all') {
-        console.log('[RESYNC] No filters active, showing all tools')
-        setFilteredTools([...freshTools])
-      } else {
-        console.log('[RESYNC] Applying filters:', { searchTerm, locationFilter, stateFilter })
-        applyFilters(freshTools, searchTerm, locationFilter, stateFilter)
+      else {
+        // Toujours passer siteTagFilter explicitement pour éviter les closures périmées
+        console.log('[RESYNC] Applying filters with siteTagFilter:', siteTagFilter)
+        applyFilters(freshTools, searchTerm, locationFilter, stateFilter, siteTagFilter)
       }
       console.log('[RESYNC] ✅ State updated successfully')
 
