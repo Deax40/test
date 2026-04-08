@@ -820,45 +820,17 @@ export default function CommunPage() {
           <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-800">{selectedTool.name}</h2>
-              <div className="flex items-center gap-2">
-                {session?.user?.role === 'ADMIN' && (
-                  confirmDeleteTool ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-red-600 font-medium">Confirmer ?</span>
-                      <button
-                        className="px-3 py-1 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700"
-                        onClick={() => deleteTool(selectedTool)}
-                      >
-                        Oui, supprimer
-                      </button>
-                      <button
-                        className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300"
-                        onClick={() => setConfirmDeleteTool(false)}
-                      >
-                        Annuler
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      className="px-3 py-1 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200"
-                      onClick={() => setConfirmDeleteTool(true)}
-                    >
-                      Supprimer
-                    </button>
-                  )
-                )}
-                <button
-                  className="text-gray-500 hover:text-gray-700 text-3xl font-bold"
-                  onClick={() => {
-                    setSelectedTool(null)
-                    setSelectedToolCertificates([])
-                    setSelectedToolHistory([])
-                    setConfirmDeleteTool(false)
-                  }}
-                >
-                  ×
-                </button>
-              </div>
+              <button
+                className="text-gray-500 hover:text-gray-700 text-3xl font-bold"
+                onClick={() => {
+                  setSelectedTool(null)
+                  setSelectedToolCertificates([])
+                  setSelectedToolHistory([])
+                  setConfirmDeleteTool(false)
+                }}
+              >
+                ×
+              </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1167,6 +1139,39 @@ export default function CommunPage() {
                 </div>
               </div>
             </div>
+
+            {/* Zone danger — suppression (admin uniquement) */}
+            {session?.user?.role === 'ADMIN' && (
+              <div className="mt-6 pt-4 border-t-2 border-red-100">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-red-400 font-medium uppercase tracking-wide">Zone admin — action irréversible</p>
+                  {confirmDeleteTool ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-red-600 font-medium">Confirmer la suppression ?</span>
+                      <button
+                        className="px-3 py-1 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700"
+                        onClick={() => deleteTool(selectedTool)}
+                      >
+                        Oui, supprimer
+                      </button>
+                      <button
+                        className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300"
+                        onClick={() => setConfirmDeleteTool(false)}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="px-3 py-1 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 border border-red-200"
+                      onClick={() => setConfirmDeleteTool(true)}
+                    >
+                      Supprimer l&apos;outil
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
