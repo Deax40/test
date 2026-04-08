@@ -43,7 +43,7 @@ export default function Nav({ active }) {
                 <Link
                   key={item.key}
                   href={item.href}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                     active === item.key
                       ? 'bg-blue-100 text-blue-700 shadow-md'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'

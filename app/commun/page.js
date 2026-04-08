@@ -392,7 +392,7 @@ export default function CommunPage() {
     }
 
     // Validation pour les actions qui requièrent un client
-    if (['RECEPTION MATERIEL', 'AUTRES', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE'].includes(scanAction)) {
+    if (['RECEPTION MATERIEL', 'AUTRES', 'CHEZ CLIENT', 'SORTIE BUREAU PARIS', 'SORTIE BUREAU GLEIZE', 'SORTIE BUREAU TANGER'].includes(scanAction)) {
       if (!scanForm.client.trim()) {
         setError('Le nom du client est obligatoire pour cette action')
         return
@@ -430,11 +430,17 @@ export default function CommunPage() {
         case 'SORTIE BUREAU GLEIZE':
           location = scanForm.client
           break
+        case 'DEPOT BUREAU TANGER':
+          location = 'Tanger Bureau'
+          break
+        case 'SORTIE BUREAU TANGER':
+          location = scanForm.client
+          break
         case 'AUTRES':
           location = scanForm.client
           break
         case 'CHEZ CLIENT':
-          location = 'Chez client'
+          location = scanForm.client || 'Chez client'
           break
         default:
           location = 'Non spécifié'
@@ -446,7 +452,7 @@ export default function CommunPage() {
       formData.append('user', session?.user?.name || '')
       formData.append('client', scanForm.client)
       formData.append('problemDescription', scanForm.problemDescription)
-      formData.append('scanAction', scanAction)
+      formData.append('typeEnvoi', scanAction)
       formData.append('transporteur', scanForm.transporteur)
       formData.append('tracking', scanForm.tracking)
 

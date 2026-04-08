@@ -208,7 +208,7 @@ export default function ScanPage() {
           location = form.client
           break
         case 'CHEZ CLIENT':
-          location = 'Chez client'
+          location = form.client || 'Chez client'
           break
         default:
           location = 'Non spécifié'
@@ -220,7 +220,7 @@ export default function ScanPage() {
       formData.append('user', user?.name || '')
       formData.append('client', form.client)
       formData.append('problemDescription', form.problemDescription)
-      formData.append('scanAction', scanAction)
+      formData.append('typeEnvoi', scanAction)
       formData.append('transporteur', form.transporteur)
       formData.append('tracking', form.tracking)
 
