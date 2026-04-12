@@ -70,10 +70,11 @@ export async function PATCH(req, { params }) {
       body = await req.json()
     }
 
-    const { name, location, state, weight, imoNumber, user, problemDescription, complementaryInfo, problemPhotoBuffer, problemPhotoType } = body
+    const { name, location, state, weight, imoNumber, problemDescription, complementaryInfo, problemPhotoBuffer, problemPhotoType } = body
 
     const normalized = String(params.hash).trim().toUpperCase()
-    const userName = user || session.user.name || 'user'
+    // Toujours utiliser la session serveur — ne jamais faire confiance au champ 'user' du client
+    const userName = session.user.name || session.user.username || 'user'
 
     console.log('[COMMONS] ====== START DATABASE OPERATION ======')
     console.log('[COMMONS] Normalized hash:', normalized)

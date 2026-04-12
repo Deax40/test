@@ -77,13 +77,9 @@ export async function PATCH(request, { params }) {
     if (data.state) {
       data.lastScanEtat = data.state
     }
-    if (data.user) {
-      data.lastScanUser = data.user
-      data.lastScanAt = new Date().toISOString()
-    } else {
-      data.lastScanUser = userName
-      data.lastScanAt = new Date().toISOString()
-    }
+    // Toujours utiliser la session serveur — ne jamais faire confiance au champ 'user' du client
+    data.lastScanUser = userName
+    data.lastScanAt = new Date().toISOString()
 
     // Handle file upload - Save to database instead of filesystem
     const problemPhoto = formData.get('problemPhoto')
@@ -108,13 +104,9 @@ export async function PATCH(request, { params }) {
     if (data.state) {
       data.lastScanEtat = data.state
     }
-    if (data.user) {
-      data.lastScanUser = data.user
-      data.lastScanAt = new Date().toISOString()
-    } else {
-      data.lastScanUser = userName
-      data.lastScanAt = new Date().toISOString()
-    }
+    // Toujours utiliser la session serveur — ne jamais faire confiance au champ 'user' du client
+    data.lastScanUser = userName
+    data.lastScanAt = new Date().toISOString()
   }
 
   // SKIP MEMORY SYSTEM - GO DIRECTLY TO PRISMA
